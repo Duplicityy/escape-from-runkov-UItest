@@ -951,7 +951,8 @@ input[type="range"] {
 .boss-bar {
     position: absolute;
     left: 50%;
-    top: 16px;
+    /* Under the chat box, however tall it is (chat.ts sets --chat-h) */
+    top: calc(16px + var(--chat-h, 0px));
     transform: translateX(-50%);
     width: 420px;
 }
@@ -1394,6 +1395,175 @@ input[type="range"] {
 
 .tasks-done {
     width: min(560px, 92vw);
+}
+
+/* The chat box at the top (version 105, ui/chat.ts): a bar that folds and
+   opens, the run's messages and the party's chat. On the page's body, over
+   the guild's screens and the HUD. */
+.chat {
+    position: fixed;
+    left: 50%;
+    top: calc(8px + var(--safe-top));
+    transform: translateX(-50%);
+    /* Between the HUD's bars on the left and the minimap on the right */
+    width: clamp(260px, calc(100vw - 720px), 560px);
+    z-index: 30;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    text-shadow: var(--shadow);
+}
+
+.chat[hidden] {
+    display: none;
+}
+
+.chat-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    height: 28px;
+    padding: 0 10px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--edge-light);
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    text-align: left;
+}
+
+.chat-title {
+    flex: none;
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--orange);
+}
+
+.chat-latest {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--muted);
+}
+
+.chat-badge {
+    flex: none;
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--red);
+    color: #fff;
+    text-align: center;
+    line-height: 18px;
+}
+
+.chat-badge[hidden] {
+    display: none;
+}
+
+.chat-caret::after {
+    content: "\25BE";
+    color: var(--muted);
+}
+
+.chat.open .chat-caret::after {
+    content: "\25B4";
+}
+
+/* Folded: the newest lines under the bar for a moment, over the game */
+.chat-ticker {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    padding: 2px 10px;
+    pointer-events: none;
+}
+
+.chat-panel {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--edge-light);
+    border-top: none;
+}
+
+.chat-panel[hidden] {
+    display: none;
+}
+
+.chat-log {
+    height: 150px;
+    overflow-y: auto;
+    padding: 4px 10px;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    scrollbar-color: var(--edge-light) transparent;
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.chat-line {
+    line-height: 18px;
+    overflow-wrap: anywhere;
+}
+
+.chat-line.game {
+    color: var(--text);
+}
+
+.chat-line.system {
+    color: var(--orange);
+}
+
+.chat-name {
+    color: var(--yellow);
+}
+
+.chat-name .crown {
+    margin-right: 3px;
+}
+
+.chat-text {
+    color: #8fd3ff;
+}
+
+.chat-form {
+    display: flex;
+    gap: 6px;
+    padding: 6px;
+    border-top: 1px solid var(--edge);
+}
+
+.chat-form[hidden] {
+    display: none;
+}
+
+.chat-input {
+    flex: 1;
+    min-width: 0;
+    padding: 4px 6px;
+    font: inherit;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--edge);
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.chat-send {
+    flex: none;
+    padding: 2px 10px;
+}
+
+/* A guild screen (the co-op lobby) starts below the chat box, open or
+   folded (chat.ts sets --chat-h) */
+body.chat-shown .screen {
+    padding-top: calc(var(--chat-h, 0px) + 16px + var(--safe-top));
+    /* From the top, so a tall screen scrolls rather than losing its heading
+       above the fold */
+    justify-content: flex-start;
 }
 
 /* The save code box over the menu (version 101), with its Copy button */
@@ -2121,6 +2291,35 @@ input[type="range"] {
         width: 56vw;
         max-height: calc(100dvh - 16px);
         padding-bottom: 10px;
+    }
+}
+
+/* A phone: the folded chat bar sits between the HUD's bars and the minimap's
+   buttons; opened, it drops down wider over the game, shorter */
+@media (pointer: coarse) {
+    .chat {
+        left: calc(min(300px, 50vw) + 20px);
+        transform: none;
+        width: clamp(120px, calc(100vw - min(300px, 50vw) - 280px), 300px);
+        font-size: 13px;
+    }
+
+    .chat.open {
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(480px, 94vw);
+    }
+
+    .chat-log {
+        height: 110px;
+    }
+
+    .chat-line {
+        line-height: 16px;
+    }
+
+    .boss-bar {
+        top: max(calc(96px + var(--safe-top)), calc(var(--chat-h, 0px) + 16px));
     }
 }
 

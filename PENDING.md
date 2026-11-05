@@ -202,6 +202,15 @@ plays the client's sound (2676 melee, 2677 missiles, 2675 magic, ids from the OS
 files) and shows its overhead icon (the cache's headicons_prayer frames 0 to 2, exported with
 Run Escape's new scripts/cache/export-sprites.ts into public/ui/headicons), over this player
 and over every mate: a guest's move carries `p`, a snapshot's hero state a tenth element.
+Version 104: the owner's crown is dark grey with a red jewel and O (`public/ui/owner-crown.png`:
+the pack's grey one with blue, each blue pixel made the red of the same shade the pack's gold
+crown with red uses), and "Owner" under it is red (#e01b1b).
+Version 105: a chat box at the top (ui/chat.ts), folding to a bar: the run's own messages (no
+longer at the bottom left) and, in a co-op room, the party's chat in the lobby and the run.
+Enter opens it to type, Esc leaves it without pausing. The relay passes `chat` to everyone in
+the room, the sayer too, naming who said it itself, one line of at most 120 characters with
+control, hidden and backwards-text characters taken out, five at once then one every 1.5
+seconds. Lines are drawn as text only. The relay needs deploying for chat to work.
 
 Version 35 (3 November 2026): food prices up another 250% (shrimps 105, shark 7,875).
 

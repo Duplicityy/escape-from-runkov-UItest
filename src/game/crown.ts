@@ -22,11 +22,12 @@ export type Crown = {
 
 // By the SHA-256 of the key
 const CROWNS: Record<string, Crown> = {
-    // The owner's: a blue jewel and an O
+    // The owner's: dark grey with a red jewel and O (version 104: the pack's
+    // grey one with blue, ui/mod-crown.png, its blue made red)
     "4e0f860e8d27645123e773042753a6cf8ad67908bf69c0a660d06809cbb539bd": {
-        image: "ui/mod-crown.png",
+        image: "ui/owner-crown.png",
         word: "Owner",
-        color: "#00aeff",
+        color: "#e01b1b",
         alt: "owner",
     },
     // The developer's: a green jewel and an S (the pack's mod crown, its M

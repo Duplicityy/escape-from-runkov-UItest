@@ -336,8 +336,21 @@ it. A **public** server (the default) is in the list on the Co-op screen for any
 its host, map and how many are in; a **private** server stays off the list and is joined by typing
 its eight-letter code, which the host gives their friends. The host can switch a server between
 public and private until the run starts. (The list is asked for every three seconds while the
-screen is up; `browse()` in `coop.ts`.) The game's maker wears the owner's crown, grey with a
-blue jewel and O (`public/ui/mod-crown.png`, from an RSPS forum crown pack), and their
+screen is up; `browse()` in `coop.ts`.)
+
+**Chat** (version 105, `src/ui/chat.ts`): a box at the top of the screen, folding to a bar (it
+remembers which; folded on a phone to begin with). It holds the run's own messages, which used to
+fade at the bottom left, and, in a co-op room, what the party says, in the lobby and through the
+run. Enter opens it to type and Esc leaves it without pausing; folded, the newest lines show under
+the bar for a moment and a count shows what the party said. The relay (`chat` in
+`relay/coop-relay.mjs`) sends a line to everyone in the room, the sayer included. The relay names
+who said it, from their character. A line is one line of at most 120 characters, with control,
+hidden and backwards-text characters taken out, and five can be sent at once, then one every 1.5
+seconds. The game only ever draws lines as text, never as HTML.
+
+The game's maker wears the owner's crown, dark grey with
+a red jewel and O (`public/ui/owner-crown.png` since version 104: the RSPS forum crown pack's
+grey one with blue, `mod-crown.png`, its blue pixels made red), and their
 playtester the developer's, grey with a green jewel and S (`public/ui/dev-crown.png`): by
 their name on the title screen and in the party list, and over their head in a run with their
 title under it ("Owner" in the blue, "Salmon Dev" in the green; over the name, for the others),

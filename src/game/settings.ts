@@ -24,6 +24,8 @@ export type Settings = {
     // How big the hotbar is drawn in a run, 1 the old size (version 96:
     // on a 1440p or 4K screen its keys were too small to read)
     hotbarSize: number;
+    // The chat box (version 105) open, or folded to its bar
+    chatOpen: boolean;
 };
 
 export type MenuLayout = "rail" | "card";
@@ -43,6 +45,14 @@ function defaultHotbar(): number {
         return Math.min(2, Math.max(HOTBAR_MIN, Math.round((window.innerHeight / 800) * 10) / 10));
     } catch {
         return 1;
+    }
+}
+
+function coarsePointer(): boolean {
+    try {
+        return window.matchMedia("(pointer: coarse)").matches;
+    } catch {
+        return false;
     }
 }
 
@@ -76,6 +86,8 @@ function defaults(): Settings {
         menuLayout: "rail",
         fixedStick: false,
         hotbarSize: defaultHotbar(),
+        // Open on a computer; folded on a phone, where the screen is small
+        chatOpen: !coarsePointer(),
     };
 }
 
@@ -99,7 +111,7 @@ function load(): Settings {
         if (typeof data.hotbarSize === "number") {
             s.hotbarSize = Math.min(HOTBAR_MAX, Math.max(HOTBAR_MIN, data.hotbarSize));
         }
-        for (const key of ["muted", "menuSpin", "healthBars", "fixedStick"] as const) {
+        for (const key of ["muted", "menuSpin", "healthBars", "fixedStick", "chatOpen"] as const) {
             if (typeof data[key] === "boolean") {
                 s[key] = data[key];
             }

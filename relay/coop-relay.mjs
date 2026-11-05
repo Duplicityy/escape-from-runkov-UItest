@@ -147,6 +147,11 @@ const MAX_BYTES_PER_SECOND = 2 * MAX_MESSAGE_BYTES;
 // or bigger than this goes no further
 const MAX_UP_BYTES = 1024;
 const MAX_UPS_PER_SECOND = 60;
+// Chat in a room (game version 105): a line this long at most, and this
+// many in a burst, coming back one every CHAT_REFILL_MS
+export const MAX_CHAT_CHARS = 120;
+const CHAT_BURST = 5;
+const CHAT_REFILL_MS = 1500;
 // What a host sends through its room (its runs' starts, and their frames),
 // which goes on to each guest: a run's frames are a few KB a second. What's
 // not used builds up to one of the biggest messages, for a start with
@@ -594,6 +599,31 @@ function clampInt(value, min, max, fallback) {
 
 function cleanId(id) {
     return typeof id === "string" ? id.replace(/[^a-z0-9_]/g, "").slice(0, 40) : "";
+}
+
+// A line of chat as it's passed on: one line, no control characters, no
+// characters that turn text backwards or hide it, spaces run together, and
+// at most MAX_CHAT_CHARS characters (whole ones, never half an emoji)
+// Code points that make text hidden, backwards or broken across lines
+const HIDDEN_CHARS = [
+    [0x00, 0x1f],
+    [0x7f, 0x9f],
+    [0x200b, 0x200f],
+    [0x2028, 0x202e],
+    [0x2060, 0x206f],
+    [0xfeff, 0xfeff],
+];
+
+export function chatText(text) {
+    const clean = [...text]
+        .map((c) => {
+            const n = c.codePointAt(0);
+            return HIDDEN_CHARS.some(([from, to]) => n >= from && n <= to) ? " " : c;
+        })
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim();
+    return [...clean].slice(0, MAX_CHAT_CHARS).join("");
 }
 
 // limits: any of the relay's limits to change (the tests' tighter or looser
@@ -1053,6 +1083,23 @@ export function createRelay(limits = {}) {
         return undefined;
     }
 
+    // Whether a player may say another line now: CHAT_BURST at once, then
+    // one every CHAT_REFILL_MS
+    function allowChat(client) {
+        const now = Date.now();
+        if (client.chatTokens === undefined) {
+            client.chatTokens = CHAT_BURST;
+            client.chatAt = now;
+        }
+        client.chatTokens = Math.min(CHAT_BURST, client.chatTokens + (now - client.chatAt) / CHAT_REFILL_MS);
+        client.chatAt = now;
+        if (client.chatTokens < 1) {
+            return false;
+        }
+        client.chatTokens -= 1;
+        return true;
+    }
+
     // Whether a guest's input is the size and rate a game sends
     function allowUp(client, payload) {
         const second = Math.floor(Date.now() / 1000);
@@ -1344,6 +1391,33 @@ export function createRelay(limits = {}) {
                     roomChanged(room);
                 }
                 return;
+            // A line of chat, for everyone in the room, the sayer too (so
+            // they see it went), in the lobby or in the run: the relay names
+            // who said it, and the text is cleaned of anything but one line
+            case "chat": {
+                if (!room || typeof message.text !== "string") {
+                    return;
+                }
+                const text = chatText(message.text);
+                if (!text) {
+                    return;
+                }
+                if (!allowChat(client)) {
+                    client.connection.send({ t: "chat", from: "", name: "", text: "You're sending messages too fast. Wait a moment.", system: true });
+                    return;
+                }
+                const line = encodeFrame(
+                    0x1,
+                    Buffer.from(
+                        JSON.stringify({ t: "chat", from: client.id, name: characterName(client) || client.name, text }),
+                        "utf8",
+                    ),
+                );
+                for (const member of room.members) {
+                    member.connection.write(line);
+                }
+                return;
+            }
             // The game's own traffic, nearly all of what comes through, goes on
             // as it came rather than encoded again: the same JSON, so every
             // player reads what the relay did

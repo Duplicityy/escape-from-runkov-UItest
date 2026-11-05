@@ -28,6 +28,7 @@ import {
 import { iconElement, setIcon } from "../game/icons";
 import { TASKS, Task } from "../content/tasks";
 import { isKept } from "../game/kit";
+import { Chat } from "./chat";
 import { FullMap } from "./fullmap";
 import { REGEN_DELAY, soak } from "../game/combat";
 import { GameStart, Loadout, MemberView, Session } from "../game/coop";
@@ -257,7 +258,6 @@ export class UI {
         // How long until the way out closes
         clock: HTMLElement;
         prompt: HTMLElement;
-        messages: HTMLElement;
         inventory: HTMLElement;
         inventoryOpen: boolean;
         signature: string;
@@ -281,7 +281,9 @@ export class UI {
         // The full map over the run (version 91; fullmap.ts)
         fullMap: FullMap;
     };
-    private messages: { text: string; at: number }[] = [];
+    // The chat box at the top (version 105): the run's messages, and the
+    // party's chat in a co-op room
+    private readonly chat: Chat;
     // A line for the title screen's record card, set from outside (a save
     // cleared by a new version, say)
     notice?: string;
@@ -311,6 +313,7 @@ export class UI {
         private readonly session: Session,
         private readonly hooks: UIHooks,
     ) {
+        this.chat = new Chat(session);
         window.addEventListener("keydown", (e) => {
             if (!this.hud) {
                 return;
@@ -413,6 +416,12 @@ export class UI {
         // Only the co-op screen wants the list of servers (it asks again)
         this.session.browse(false);
         this.root.replaceChildren(...children.filter((c): c is Node | string => !!c));
+        this.updateChat();
+    }
+
+    // The chat box shows in a run, and in a co-op room's lobby
+    private updateChat(): void {
+        this.chat.setActive(this.hud !== undefined || this.session.room !== undefined);
     }
 
     private persist(): void {
@@ -842,6 +851,7 @@ export class UI {
     // The session changed (the relay said something): the co-op screen
     // draws itself again if it's up
     onSessionChange(): void {
+        this.updateChat();
         // Never over a run, or while one loads
         if (this.hud || this.loading) {
             return;
@@ -2437,7 +2447,6 @@ export class UI {
         const coins = h("div", { class: "floor" });
         const clock = h("div", { class: "clock" });
         const prompt = h("div", { class: "prompt", hidden: true });
-        const messages = h("div", { class: "messages" });
         const inventory = h("div", { class: "inventory", hidden: true });
         const minimap = document.createElement("canvas");
         minimap.className = "minimap";
@@ -2475,7 +2484,6 @@ export class UI {
             hotbar.append(slot);
             return { kind, slot, img, count, timer };
         });
-        this.messages = [];
         // On a touch screen, the stick's zone goes in first so everything
         // after it takes its own taps
         const touch = isTouch ? touchControls(run, { togglePack: () => this.toggleInventory(), pause: () => this.togglePause(), openMap: () => this.openFullMap() }) : undefined;
@@ -2496,7 +2504,6 @@ export class UI {
                 ),
                 boss,
                 prompt,
-                messages,
                 inventory,
                 hotbar,
                 minimap,
@@ -2521,7 +2528,6 @@ export class UI {
             coins,
             clock,
             prompt,
-            messages,
             inventory,
             inventoryOpen: false,
             signature: "",
@@ -2535,6 +2541,7 @@ export class UI {
             dropMode: false,
             fullMap,
         };
+        this.updateChat();
         this.updateHud();
     }
 
@@ -2558,21 +2565,10 @@ export class UI {
         }
     }
 
+    // The run's own messages go in the chat box (version 105; before, a few
+    // lines faded at the bottom left)
     message(text: string): void {
-        this.messages.push({ text, at: performance.now() });
-        if (this.messages.length > 4) {
-            this.messages.shift();
-        }
-        this.renderMessages();
-    }
-
-    private renderMessages(): void {
-        if (!this.hud) {
-            return;
-        }
-        const now = performance.now();
-        this.messages = this.messages.filter((m) => now - m.at < 5000);
-        this.hud.messages.replaceChildren(...this.messages.map((m) => h("div", {}, m.text)));
+        this.chat.game(text);
     }
 
     updateHud(): void {
@@ -2628,9 +2624,6 @@ export class UI {
             slot.timer.textContent = left > 0 ? `${Math.ceil(left)}s` : "";
             slot.slot.classList.toggle("empty", !stack);
             slot.slot.classList.toggle("active", left > 0);
-        }
-        if (this.messages.length > 0 && performance.now() - this.messages[0].at > 5000) {
-            this.renderMessages();
         }
         hud.inventory.hidden = !hud.inventoryOpen;
         if (hud.inventoryOpen) {

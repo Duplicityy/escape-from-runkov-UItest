@@ -11,7 +11,7 @@ import { Character, Equipment } from "./save";
 
 // The build a game is: a room only takes players on the host's (the relay
 // compares them). Raised with every push to itch.
-export const GAME_BUILD = "103";
+export const GAME_BUILD = "105";
 
 // Where the relay is: the build's VITE_COOP_URL, a saved override (for
 // trying one), the local relay beside a dev server, or the one on Fly.io
@@ -129,7 +129,16 @@ type ServerMessage =
     | { t: "start"; game: GameStart }
     | { t: "left"; id: string }
     | { t: "up"; from: string; d: unknown }
-    | { t: "down"; d: unknown };
+    | { t: "down"; d: unknown }
+    | { t: "chat"; from: string; name: string; text: string; system?: boolean };
+
+// A line of chat from the room (version 105): who said it (the relay's id
+// and their character's name, both set by the relay), or a word from the
+// relay itself
+export type ChatLine = { from: string; name: string; text: string; system: boolean };
+
+// How long a line can be (the relay cuts it there too)
+export const MAX_CHAT_CHARS = 120;
 
 export type SessionView = {
     status: "offline" | "connecting" | "online";
@@ -162,6 +171,7 @@ export class Session {
     onDown?: (message: unknown) => void;
     onLeft?: (id: string) => void;
     onGone?: (reason: GoneReason) => void;
+    onChat?: (line: ChatLine) => void;
 
     get room(): RoomView | undefined {
         return this.view.room;
@@ -326,7 +336,22 @@ export class Session {
             case "left":
                 this.onLeft?.(message.id);
                 break;
+            case "chat":
+                if (typeof message.text === "string") {
+                    this.onChat?.({ from: String(message.from ?? ""), name: String(message.name ?? ""), text: message.text, system: message.system === true });
+                }
+                break;
         }
+    }
+
+    // A line of chat for everyone in the room, in the lobby or in the run
+    sendChat(text: string): boolean {
+        const line = text.trim().slice(0, MAX_CHAT_CHARS);
+        if (!line || !this.view.room) {
+            return false;
+        }
+        this.send({ t: "chat", text: line });
+        return true;
     }
 
     // Who this player is, for the room: sent on joining and whenever it
