@@ -1,0 +1,2306 @@
+[
+  {
+    "id": "lumbridge",
+    "name": "Lumbridge",
+    "description": "Farm animals, goblins and the undead of Draynor Manor. Count Draynor wakes halfway, and the Wise Old Man comes at the end.",
+    "tier": 1,
+    "difficulty": {
+      "hp": 1,
+      "damage": 1
+    },
+    "enemies": [
+      {
+        "id": "chicken",
+        "npcId": 1173,
+        "name": "Chicken",
+        "hp": 3,
+        "damage": 1,
+        "speed": 1.7,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 5386,
+          "walk": 5385,
+          "attack": 5387,
+          "death": 5389
+        },
+        "sounds": {
+          "attack": 355,
+          "hit": 357,
+          "death": 356
+        },
+        "bytes": 2336076
+      },
+      {
+        "id": "imp",
+        "npcId": 5007,
+        "name": "Imp",
+        "hp": 7,
+        "damage": 2,
+        "speed": 3,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 171,
+          "walk": 168,
+          "attack": 169,
+          "death": 172
+        },
+        "sounds": {
+          "attack": 534,
+          "hit": 536,
+          "death": 535
+        },
+        "bytes": 998136
+      },
+      {
+        "id": "man",
+        "npcId": 3014,
+        "name": "Man",
+        "hp": 16,
+        "damage": 3,
+        "speed": 1.9,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 850628
+      },
+      {
+        "id": "giant_rat",
+        "npcId": 2510,
+        "name": "Giant rat",
+        "hp": 26,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.45,
+        "size": 2,
+        "anims": {
+          "idle": 4932,
+          "walk": 4931,
+          "attack": 4933,
+          "death": 4935
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 3974424
+      },
+      {
+        "id": "zombie",
+        "npcId": 26,
+        "name": "Zombie",
+        "hp": 38,
+        "damage": 4,
+        "speed": 1.5,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 5565,
+          "walk": 5566,
+          "attack": 5568,
+          "death": 5569
+        },
+        "sounds": {
+          "attack": 918,
+          "hit": 923,
+          "death": 922
+        },
+        "bytes": 3383556
+      },
+      {
+        "id": "skeleton",
+        "npcId": 70,
+        "name": "Skeleton",
+        "hp": 46,
+        "damage": 5,
+        "speed": 2,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 5483,
+          "walk": 5481,
+          "attack": 5487,
+          "death": 5491
+        },
+        "sounds": {
+          "attack": 776,
+          "hit": 779,
+          "death": 777
+        },
+        "bytes": 1834748
+      },
+      {
+        "id": "ghost",
+        "npcId": 85,
+        "name": "Ghost",
+        "hp": 54,
+        "damage": 6,
+        "speed": 1.9,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 5538,
+          "walk": 5539,
+          "attack": 5540,
+          "death": 5542
+        },
+        "sounds": {
+          "attack": 436,
+          "hit": 439,
+          "death": 438
+        },
+        "bytes": 1576996
+      }
+    ],
+    "boss": {
+      "id": "wise_old_man",
+      "npcId": 2108,
+      "name": "Wise Old Man",
+      "hp": 7500,
+      "damage": 0,
+      "speed": 2.2,
+      "radius": 0.45,
+      "scale": 2,
+      "size": 1,
+      "anims": {
+        "idle": 808,
+        "walk": 819,
+        "attack": 711,
+        "death": 836
+      },
+      "sounds": {
+        "attack": 2564,
+        "hit": 513,
+        "death": 512
+      },
+      "boss": true,
+      "bytes": 2735724
+    }
+  },
+  {
+    "id": "barrows",
+    "name": "Barrows",
+    "description": "Crypt rats, spiders and bloodworms, ghouls, Mort'ton's afflicted and shades, and feral vampyres. The six Barrows brothers climb out of their crypts one by one, every two and a half minutes. Dharok comes last.",
+    "tier": 2,
+    "difficulty": {
+      "hp": 1.25,
+      "damage": 1.15
+    },
+    "enemies": [
+      {
+        "id": "crypt_rat",
+        "npcId": 1679,
+        "name": "Crypt rat",
+        "hp": 5,
+        "damage": 1,
+        "speed": 2,
+        "radius": 0.3,
+        "scale": 1.4,
+        "size": 1,
+        "anims": {
+          "idle": 242,
+          "walk": 239,
+          "attack": 240,
+          "death": 243
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 32668
+      },
+      {
+        "id": "bloodworm",
+        "npcId": 1678,
+        "name": "Bloodworm",
+        "hp": 8,
+        "damage": 2,
+        "speed": 1.6,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 2071,
+          "walk": 2069,
+          "attack": 2070,
+          "death": 2073
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 662156
+      },
+      {
+        "id": "afflicted",
+        "npcId": 1293,
+        "name": "Afflicted",
+        "hp": 15,
+        "damage": 3,
+        "speed": 1.5,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 1306,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 729968
+      },
+      {
+        "id": "crypt_spider",
+        "npcId": 1683,
+        "name": "Crypt spider",
+        "hp": 26,
+        "damage": 3,
+        "speed": 2.6,
+        "radius": 0.35,
+        "scale": 1.3,
+        "size": 1,
+        "anims": {
+          "idle": 6247,
+          "walk": 6248,
+          "attack": 6249,
+          "death": 6251
+        },
+        "sounds": {
+          "attack": 6963,
+          "hit": 6958,
+          "death": 3606
+        },
+        "bytes": 1149572
+      },
+      {
+        "id": "giant_crypt_rat",
+        "npcId": 1680,
+        "name": "Giant crypt rat",
+        "hp": 28,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.45,
+        "size": 2,
+        "anims": {
+          "idle": 4932,
+          "walk": 4931,
+          "attack": 4933,
+          "death": 4935
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 3974436
+      },
+      {
+        "id": "ghoul",
+        "npcId": 289,
+        "name": "Ghoul",
+        "hp": 40,
+        "damage": 4,
+        "speed": 1.6,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 1275,
+          "walk": 819,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 918,
+          "hit": 923,
+          "death": 922
+        },
+        "bytes": 546784
+      },
+      {
+        "id": "skeleton",
+        "npcId": 70,
+        "name": "Skeleton",
+        "hp": 46,
+        "damage": 5,
+        "speed": 2,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 5483,
+          "walk": 5481,
+          "attack": 5487,
+          "death": 5491
+        },
+        "sounds": {
+          "attack": 776,
+          "hit": 779,
+          "death": 777
+        },
+        "bytes": 1834748
+      }
+    ],
+    "boss": {
+      "id": "verac",
+      "npcId": 1677,
+      "name": "Verac the Defiled",
+      "hp": 4600,
+      "damage": 0,
+      "speed": 2.4,
+      "radius": 0.4,
+      "scale": 1.5,
+      "size": 1,
+      "anims": {
+        "idle": 808,
+        "walk": 819,
+        "attack": 2062,
+        "death": 836
+      },
+      "sounds": {
+        "attack": 2564,
+        "hit": 513,
+        "death": 512
+      },
+      "boss": true,
+      "bytes": 1886196
+    }
+  },
+  {
+    "id": "wilderness",
+    "name": "Wilderness",
+    "description": "Revenants, bandits, dark warriors and chaos druids, the undead of the Graveyard of Shadows, hill giants and the Ankou. The Crazy archaeologist and the Chaos Fanatic, and the King Black Dragon at the end.",
+    "tier": 2,
+    "difficulty": {
+      "hp": 1.5,
+      "damage": 1.3
+    },
+    "enemies": [
+      {
+        "id": "revenant_imp",
+        "npcId": 7881,
+        "name": "Revenant imp",
+        "hp": 5,
+        "damage": 1,
+        "speed": 2.4,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 171,
+          "walk": 168,
+          "attack": 169,
+          "death": 172
+        },
+        "sounds": {
+          "attack": 534,
+          "hit": 536,
+          "death": 535
+        },
+        "bytes": 1611464
+      },
+      {
+        "id": "revenant_goblin",
+        "npcId": 7931,
+        "name": "Revenant goblin",
+        "hp": 10,
+        "damage": 2,
+        "speed": 1.9,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 6181,
+          "walk": 6180,
+          "attack": 6184,
+          "death": 6182
+        },
+        "sounds": {
+          "attack": 469,
+          "hit": 472,
+          "death": 471
+        },
+        "bytes": 4592024
+      },
+      {
+        "id": "bandit",
+        "npcId": 6605,
+        "name": "Bandit",
+        "hp": 16,
+        "damage": 3,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1017416
+      },
+      {
+        "id": "revenant_hobgoblin",
+        "npcId": 7933,
+        "name": "Revenant hobgoblin",
+        "hp": 28,
+        "damage": 3,
+        "speed": 2,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 166,
+          "walk": 162,
+          "attack": 163,
+          "death": 167
+        },
+        "sounds": {
+          "attack": 469,
+          "hit": 472,
+          "death": 471
+        },
+        "bytes": 585572
+      },
+      {
+        "id": "revenant_pyrefiend",
+        "npcId": 7932,
+        "name": "Revenant pyrefiend",
+        "hp": 30,
+        "damage": 4,
+        "speed": 2.2,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 1578,
+          "walk": 1579,
+          "attack": 1582,
+          "death": 1580
+        },
+        "sounds": {
+          "attack": 534,
+          "hit": 536,
+          "death": 535
+        },
+        "bytes": 1258212
+      },
+      {
+        "id": "zombie",
+        "npcId": 26,
+        "name": "Zombie",
+        "hp": 38,
+        "damage": 4,
+        "speed": 1.5,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 5565,
+          "walk": 5566,
+          "attack": 5568,
+          "death": 5569
+        },
+        "sounds": {
+          "attack": 918,
+          "hit": 923,
+          "death": 922
+        },
+        "bytes": 3383556
+      },
+      {
+        "id": "dark_warrior",
+        "npcId": 531,
+        "name": "Dark warrior",
+        "hp": 44,
+        "damage": 5,
+        "speed": 1.9,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 995728
+      }
+    ],
+    "boss": {
+      "id": "chaos_fanatic",
+      "npcId": 6619,
+      "name": "Chaos Fanatic",
+      "hp": 3600,
+      "damage": 0,
+      "speed": 2.3,
+      "radius": 0.4,
+      "scale": 1.6,
+      "size": 1,
+      "anims": {
+        "idle": 808,
+        "walk": 819,
+        "attack": 711,
+        "death": 836
+      },
+      "sounds": {
+        "attack": 2564,
+        "hit": 513,
+        "death": 512
+      },
+      "boss": true,
+      "bytes": 2279452
+    }
+  },
+  {
+    "id": "desert",
+    "name": "Kharidian Desert",
+    "description": "Lizards, scorpions and jackals, desert bandits, kalphites out of their hive, crocodiles, mummies and locust riders. Desert Treasure's Fareed, Dessous and Damis come one by one, and the Kalphite Queen at the end.",
+    "tier": 3,
+    "difficulty": {
+      "hp": 1.75,
+      "damage": 1.45
+    },
+    "enemies": [
+      {
+        "id": "desert_lizard",
+        "npcId": 459,
+        "name": "Desert lizard",
+        "hp": 5,
+        "damage": 1,
+        "speed": 2.3,
+        "radius": 0.3,
+        "scale": 0.75,
+        "size": 2,
+        "anims": {
+          "idle": 2774,
+          "walk": 2775,
+          "attack": 2776,
+          "death": 2778
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 893620
+      },
+      {
+        "id": "scarab_swarm",
+        "npcId": 1782,
+        "name": "Scarab swarm",
+        "hp": 6,
+        "damage": 2,
+        "speed": 2.8,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 1947,
+          "walk": 1945,
+          "attack": 1948
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 157592
+      },
+      {
+        "id": "jackal",
+        "npcId": 4185,
+        "name": "Jackal",
+        "hp": 9,
+        "damage": 2,
+        "speed": 2.6,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 6561,
+          "walk": 6560,
+          "attack": 6559,
+          "death": 6558
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 2748212
+      },
+      {
+        "id": "scorpion",
+        "npcId": 3024,
+        "name": "Scorpion",
+        "hp": 10,
+        "damage": 2,
+        "speed": 2,
+        "radius": 0.35,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6252,
+          "walk": 6253,
+          "attack": 6254,
+          "death": 6256
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 1579780
+      },
+      {
+        "id": "desert_bandit",
+        "npcId": 690,
+        "name": "Desert bandit",
+        "hp": 18,
+        "damage": 3,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1032340
+      },
+      {
+        "id": "ugthanki",
+        "npcId": 4652,
+        "name": "Ugthanki",
+        "hp": 26,
+        "damage": 3,
+        "speed": 1.6,
+        "radius": 0.45,
+        "scale": 0.75,
+        "size": 2,
+        "anims": {
+          "idle": 51,
+          "walk": 45,
+          "attack": 49,
+          "death": 52
+        },
+        "sounds": {
+          "attack": 369,
+          "hit": 371,
+          "death": 370
+        },
+        "bytes": 477276
+      },
+      {
+        "id": "kalphite_worker",
+        "npcId": 955,
+        "name": "Kalphite worker",
+        "hp": 30,
+        "damage": 4,
+        "speed": 2.2,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6218,
+          "walk": 6220,
+          "attack": 6223,
+          "death": 6228
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 2954260
+      }
+    ],
+    "boss": {
+      "id": "kalphite_queen",
+      "npcId": 963,
+      "name": "Kalphite Queen",
+      "hp": 7000,
+      "damage": 0,
+      "speed": 1.6,
+      "radius": 0.45,
+      "scale": 0.55,
+      "size": 5,
+      "anims": {
+        "idle": 6239,
+        "walk": 6238,
+        "attack": 6240,
+        "death": 6242
+      },
+      "sounds": {
+        "attack": 6963,
+        "hit": 6958,
+        "death": 3606
+      },
+      "boss": true,
+      "bytes": 6750332
+    }
+  },
+  {
+    "id": "fremennik",
+    "name": "Fremennik Province",
+    "description": "Rock crabs and wolves, cockatrices and yaks, trolls, basilisks and jellies, dagannoths and wallasalki, kurasks and rock lobsters. The three Dagannoth Kings come one by one, and Vorkath at the end.",
+    "tier": 3,
+    "difficulty": {
+      "hp": 2,
+      "damage": 1.6
+    },
+    "enemies": [
+      {
+        "id": "rock_crab",
+        "npcId": 100,
+        "name": "Rock crab",
+        "hp": 5,
+        "damage": 1,
+        "speed": 2.1,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 1310,
+          "walk": 1311,
+          "attack": 1312,
+          "death": 1314
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 477432
+      },
+      {
+        "id": "wolf",
+        "npcId": 110,
+        "name": "Wolf",
+        "hp": 10,
+        "damage": 2,
+        "speed": 2.6,
+        "radius": 0.35,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6580,
+          "walk": 6556,
+          "attack": 6579,
+          "death": 6558
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 4764196
+      },
+      {
+        "id": "zombified_spawn",
+        "npcId": 8063,
+        "name": "Zombified spawn",
+        "hp": 20,
+        "damage": 5,
+        "speed": 1.8,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 7888,
+          "walk": 7887,
+          "attack": 7890,
+          "death": 7891
+        },
+        "sounds": {
+          "attack": 918,
+          "hit": 923,
+          "death": 922
+        },
+        "bytes": 1027676
+      },
+      {
+        "id": "mountain_troll",
+        "npcId": 936,
+        "name": "Mountain troll",
+        "hp": 30,
+        "damage": 4,
+        "speed": 1.8,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 286,
+          "walk": 283,
+          "attack": 284,
+          "death": 287
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 812024
+      },
+      {
+        "id": "jelly",
+        "npcId": 437,
+        "name": "Jelly",
+        "hp": 44,
+        "damage": 5,
+        "speed": 1.7,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 1583,
+          "walk": 1584,
+          "attack": 1586,
+          "death": 1587
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 601324
+      },
+      {
+        "id": "dagannoth",
+        "npcId": 973,
+        "name": "Dagannoth",
+        "hp": 50,
+        "damage": 6,
+        "speed": 2,
+        "radius": 0.45,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 1338,
+          "walk": 1339,
+          "attack": 1341,
+          "death": 1342
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 675984
+      },
+      {
+        "id": "kurask",
+        "npcId": 410,
+        "name": "Kurask",
+        "hp": 66,
+        "damage": 7,
+        "speed": 1.7,
+        "radius": 0.45,
+        "scale": 0.6,
+        "size": 3,
+        "anims": {
+          "idle": 1511,
+          "walk": 1510,
+          "attack": 1512,
+          "death": 1513
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 713200
+      }
+    ],
+    "boss": {
+      "id": "dagannoth_prime",
+      "npcId": 2266,
+      "name": "Dagannoth Prime",
+      "hp": 5000,
+      "damage": 0,
+      "speed": 2.2,
+      "radius": 0.45,
+      "scale": 0.85,
+      "size": 3,
+      "anims": {
+        "idle": 2850,
+        "walk": 2849,
+        "attack": 2855,
+        "death": 2856
+      },
+      "sounds": {
+        "attack": 4787,
+        "hit": 4492,
+        "death": 4479
+      },
+      "boss": true,
+      "bytes": 1408452
+    }
+  },
+  {
+    "id": "karamja",
+    "name": "Karamja",
+    "description": "Monkeys, snakes and jungle spiders, tribesmen, jogres and moss giants, lesser demons, and the TzHaar up out of the volcano. Elvarg, Nezikchened and Ket-Zek come one by one, and TzTok-Jad at the end.",
+    "tier": 3,
+    "difficulty": {
+      "hp": 2.25,
+      "damage": 1.75
+    },
+    "enemies": [
+      {
+        "id": "monkey",
+        "npcId": 1038,
+        "name": "Monkey",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2.5,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 222,
+          "walk": 219,
+          "attack": 220,
+          "death": 223
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 420660
+      },
+      {
+        "id": "tz_kih",
+        "npcId": 2189,
+        "name": "Tz-Kih",
+        "hp": 8,
+        "damage": 2,
+        "speed": 2.8,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 2618,
+          "walk": 2619,
+          "attack": 2621,
+          "death": 2620
+        },
+        "sounds": {
+          "attack": 292,
+          "hit": 294,
+          "death": 293
+        },
+        "bytes": 795060
+      },
+      {
+        "id": "snake",
+        "npcId": 1037,
+        "name": "Snake",
+        "hp": 9,
+        "damage": 2,
+        "speed": 2.3,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 277,
+          "walk": 274,
+          "attack": 275,
+          "death": 278
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 471540
+      },
+      {
+        "id": "jungle_spider",
+        "npcId": 3020,
+        "name": "Jungle spider",
+        "hp": 14,
+        "damage": 3,
+        "speed": 2.5,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 5326,
+          "walk": 5325,
+          "attack": 5327,
+          "death": 5329
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 1587520
+      },
+      {
+        "id": "tribesman",
+        "npcId": 530,
+        "name": "Tribesman",
+        "hp": 18,
+        "damage": 3,
+        "speed": 2.1,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 813,
+          "walk": 819,
+          "attack": 422,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 750304
+      },
+      {
+        "id": "yt_hurkot",
+        "npcId": 3128,
+        "name": "Yt-HurKot",
+        "hp": 30,
+        "damage": 4,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 2636,
+          "walk": 2634,
+          "attack": 2637,
+          "death": 2638
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1773284
+      },
+      {
+        "id": "jogre",
+        "npcId": 2094,
+        "name": "Jogre",
+        "hp": 32,
+        "damage": 4,
+        "speed": 1.8,
+        "radius": 0.4,
+        "scale": 0.85,
+        "size": 2,
+        "anims": {
+          "idle": 130,
+          "walk": 127,
+          "attack": 128,
+          "death": 131
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 615700
+      }
+    ],
+    "boss": {
+      "id": "tztok_jad",
+      "npcId": 3127,
+      "name": "TzTok-Jad",
+      "hp": 15500,
+      "damage": 0,
+      "speed": 1.5,
+      "radius": 0.45,
+      "scale": 0.55,
+      "size": 5,
+      "anims": {
+        "idle": 2650,
+        "walk": 2651,
+        "attack": 2655,
+        "death": 2654
+      },
+      "sounds": {
+        "attack": 2564,
+        "hit": 513,
+        "death": 512
+      },
+      "boss": true,
+      "bytes": 4212424
+    }
+  },
+  {
+    "id": "kourend",
+    "name": "Kourend",
+    "description": "Guanic bats, swamp crabs and lizards, lizardmen and their brutes, bloodvelds, Xeric's deathly rangers, mages and skeletal mystics, and hydras. The Lizardman shaman, Sarachnis and Skotizo come one by one, and the Alchemical Hydra at the end.",
+    "tier": 4,
+    "difficulty": {
+      "hp": 2.5,
+      "damage": 1.9
+    },
+    "enemies": [
+      {
+        "id": "guanic_bat",
+        "npcId": 7587,
+        "name": "Guanic bat",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2.6,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 35,
+          "walk": 29,
+          "attack": 30,
+          "death": 36
+        },
+        "sounds": {
+          "attack": 292,
+          "hit": 294,
+          "death": 293
+        },
+        "bytes": 563776
+      },
+      {
+        "id": "swamp_crab",
+        "npcId": 8297,
+        "name": "Swamp crab",
+        "hp": 9,
+        "damage": 2,
+        "speed": 2,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 1310,
+          "walk": 1311,
+          "attack": 1312,
+          "death": 1314
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 619844
+      },
+      {
+        "id": "shaman_spawn",
+        "npcId": 6768,
+        "name": "Spawn",
+        "hp": 10,
+        "damage": 4,
+        "speed": 2.4,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 7191,
+          "walk": 7195,
+          "attack": 7192,
+          "death": 7196
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 1963956
+      },
+      {
+        "id": "lizard",
+        "npcId": 458,
+        "name": "Lizard",
+        "hp": 14,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.35,
+        "scale": 0.6,
+        "size": 3,
+        "anims": {
+          "idle": 2774,
+          "walk": 2775,
+          "attack": 2776,
+          "death": 2778
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 856348
+      },
+      {
+        "id": "sulphur_lizard",
+        "npcId": 8614,
+        "name": "Sulphur lizard",
+        "hp": 18,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.35,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 8282,
+          "walk": 8281,
+          "attack": 8283,
+          "death": 8284
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 3181556
+      },
+      {
+        "id": "spawn_of_sarachnis",
+        "npcId": 8714,
+        "name": "Spawn of Sarachnis",
+        "hp": 24,
+        "damage": 4,
+        "speed": 2.3,
+        "radius": 0.35,
+        "scale": 0.7,
+        "size": 2,
+        "anims": {
+          "idle": 8320,
+          "walk": 8319,
+          "attack": 8147,
+          "death": 8318
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 3971464
+      },
+      {
+        "id": "reanimated_demon",
+        "npcId": 7287,
+        "name": "Reanimated demon spawn",
+        "hp": 26,
+        "damage": 4,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 66,
+          "walk": 63,
+          "attack": 64,
+          "death": 67
+        },
+        "sounds": {
+          "attack": 534,
+          "hit": 536,
+          "death": 535
+        },
+        "bytes": 6406592
+      }
+    ],
+    "boss": {
+      "id": "skotizo",
+      "npcId": 7286,
+      "name": "Skotizo",
+      "hp": 6000,
+      "damage": 0,
+      "speed": 2,
+      "radius": 0.45,
+      "scale": 0.55,
+      "size": 5,
+      "anims": {
+        "idle": 4675,
+        "walk": 4674,
+        "attack": 4680,
+        "death": 4624
+      },
+      "sounds": {
+        "attack": 534,
+        "hit": 536,
+        "death": 535
+      },
+      "boss": true,
+      "bytes": 10035592
+    }
+  },
+  {
+    "id": "varlamore",
+    "name": "Varlamore",
+    "description": "Jerboas, pyre foxes and antelopes, blood jaguars, serpent shamans and jaguar warriors, naguas, the Fremennik warband, gryphons and minotaurs. The Manticore and the Shockwave and Javelin Colossi come one by one, and Sol Heredit at the end.",
+    "tier": 4,
+    "difficulty": {
+      "hp": 2.75,
+      "damage": 2.05
+    },
+    "enemies": [
+      {
+        "id": "embertailed_jerboa",
+        "npcId": 13139,
+        "name": "Embertailed jerboa",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2.6,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 6089,
+          "walk": 6088,
+          "attack": 6090,
+          "death": 6092
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 642684
+      },
+      {
+        "id": "pyre_fox",
+        "npcId": 13138,
+        "name": "Pyre fox",
+        "hp": 9,
+        "damage": 2,
+        "speed": 2.6,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 7269,
+          "walk": 6577,
+          "attack": 6578,
+          "death": 6576
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 2987712
+      },
+      {
+        "id": "sunlight_antelope",
+        "npcId": 13133,
+        "name": "Sunlight antelope",
+        "hp": 15,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6374,
+          "walk": 6373,
+          "attack": 6376,
+          "death": 6377
+        },
+        "sounds": {
+          "attack": 369,
+          "hit": 371,
+          "death": 370
+        },
+        "bytes": 4285772
+      },
+      {
+        "id": "moonlight_antelope",
+        "npcId": 13132,
+        "name": "Moonlight antelope",
+        "hp": 17,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6374,
+          "walk": 6373,
+          "attack": 6376,
+          "death": 6377
+        },
+        "sounds": {
+          "attack": 369,
+          "hit": 371,
+          "death": 370
+        },
+        "bytes": 4285776
+      },
+      {
+        "id": "blood_jaguar",
+        "npcId": 13021,
+        "name": "Blood jaguar",
+        "hp": 20,
+        "damage": 3,
+        "speed": 2.4,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 9091,
+          "walk": 9090,
+          "attack": 9092
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 6077284
+      },
+      {
+        "id": "serpent_shaman",
+        "npcId": 12811,
+        "name": "Serpent shaman",
+        "hp": 30,
+        "damage": 4,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 813,
+          "walk": 1205,
+          "attack": 711,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 2870684
+      },
+      {
+        "id": "jaguar_warrior",
+        "npcId": 12810,
+        "name": "Jaguar warrior",
+        "hp": 36,
+        "damage": 5,
+        "speed": 2.2,
+        "radius": 0.4,
+        "size": 2,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 390,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 2495576
+      }
+    ],
+    "boss": {
+      "id": "javelin_colossus",
+      "npcId": 12817,
+      "name": "Javelin Colossus",
+      "hp": 6200,
+      "damage": 0,
+      "speed": 2,
+      "radius": 0.45,
+      "scale": 0.85,
+      "size": 3,
+      "anims": {
+        "idle": 10889,
+        "walk": 10879,
+        "attack": 10892,
+        "death": 10888
+      },
+      "sounds": {
+        "attack": 2564,
+        "hit": 513,
+        "death": 512
+      },
+      "boss": true,
+      "bytes": 17918552
+    }
+  },
+  {
+    "id": "morytania",
+    "name": "Morytania",
+    "description": "Ghasts, shades and zombies out of Mort Myre, vampyre juveniles and juvinates, werewolves, nail beasts and mutated bloodvelds, the Theatre of Blood's Nylocas and Darkmeyer's vyrewatch. Vanstrom Klause, the Pestilent Bloat and Sotetseg come one by one, and Verzik Vitur at the end.",
+    "tier": 4,
+    "difficulty": {
+      "hp": 3,
+      "damage": 2.2
+    },
+    "enemies": [
+      {
+        "id": "ghast",
+        "npcId": 946,
+        "name": "Ghast",
+        "hp": 5,
+        "damage": 1,
+        "speed": 2.3,
+        "radius": 0.35,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 1086,
+          "walk": 1085,
+          "attack": 1087,
+          "death": 1095
+        },
+        "sounds": {
+          "attack": 436,
+          "hit": 439,
+          "death": 438
+        },
+        "bytes": 603488
+      },
+      {
+        "id": "vampyre_juvenile",
+        "npcId": 3692,
+        "name": "Vampyre juvenile",
+        "hp": 9,
+        "damage": 2,
+        "speed": 2.5,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 4702,
+          "walk": 4699,
+          "attack": 4705,
+          "death": 4708
+        },
+        "sounds": {
+          "attack": 879,
+          "hit": 884,
+          "death": 882
+        },
+        "bytes": 511044
+      },
+      {
+        "id": "myre_zombie",
+        "npcId": 2507,
+        "name": "Zombie",
+        "hp": 15,
+        "damage": 3,
+        "speed": 1.9,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 5576,
+          "walk": 5577,
+          "attack": 5578,
+          "death": 5575
+        },
+        "sounds": {
+          "attack": 918,
+          "hit": 923,
+          "death": 922
+        },
+        "bytes": 4744024
+      },
+      {
+        "id": "fiyr_shade",
+        "npcId": 1286,
+        "name": "Fiyr shade",
+        "hp": 17,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 1282,
+          "walk": 1281,
+          "attack": 1284,
+          "death": 1287
+        },
+        "sounds": {
+          "attack": 436,
+          "hit": 439,
+          "death": 438
+        },
+        "bytes": 946500
+      },
+      {
+        "id": "nylocas_toxobolos",
+        "npcId": 8343,
+        "name": "Nylocas Toxobolos",
+        "hp": 18,
+        "damage": 3,
+        "speed": 2.3,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 7993,
+          "walk": 7997,
+          "attack": 7999,
+          "death": 7998
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 8215224
+      },
+      {
+        "id": "werewolf",
+        "npcId": 2593,
+        "name": "Werewolf",
+        "hp": 20,
+        "damage": 3,
+        "speed": 2.4,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 6539,
+          "walk": 6541,
+          "attack": 6536,
+          "death": 6537
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 3317596
+      },
+      {
+        "id": "vampyre_juvinate",
+        "npcId": 3694,
+        "name": "Vampyre juvinate",
+        "hp": 30,
+        "damage": 3,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 4702,
+          "walk": 4699,
+          "attack": 4711,
+          "death": 4708
+        },
+        "sounds": {
+          "attack": 879,
+          "hit": 884,
+          "death": 882
+        },
+        "bytes": 499172
+      }
+    ],
+    "boss": {
+      "id": "sotetseg",
+      "npcId": 8388,
+      "name": "Sotetseg",
+      "hp": 6700,
+      "damage": 0,
+      "speed": 1.9,
+      "radius": 0.45,
+      "scale": 0.6,
+      "size": 5,
+      "anims": {
+        "idle": 8137,
+        "walk": 8136,
+        "attack": 8138,
+        "death": 8140
+      },
+      "sounds": {
+        "attack": 3605,
+        "hit": 3607,
+        "death": 3606
+      },
+      "boss": true,
+      "bytes": 7860536
+    }
+  },
+  {
+    "id": "god_wars",
+    "name": "God Wars Dungeon",
+    "description": "The armies of Bandos, Armadyl, Saradomin and Zamorak, at war with each other as much as with you: goblins, orks and cyclopes, aviansies, knights and priests, imps, hellhounds and bloodvelds, and the gods' spiritual warriors. Commander Zilyana, Kree'arra and K'ril Tsutsaroth come one by one, General Graardor leads a charge, and Nex comes at the end.",
+    "tier": 5,
+    "difficulty": {
+      "hp": 3.25,
+      "damage": 1.95
+    },
+    "enemies": [
+      {
+        "id": "gwd_imp",
+        "npcId": 3134,
+        "name": "Imp",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2.7,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 171,
+          "walk": 168,
+          "attack": 169,
+          "death": 172
+        },
+        "sounds": {
+          "attack": 534,
+          "hit": 536,
+          "death": 535
+        },
+        "bytes": 971212
+      },
+      {
+        "id": "aviansie",
+        "npcId": 3169,
+        "name": "Aviansie",
+        "hp": 15,
+        "damage": 3,
+        "speed": 2.5,
+        "radius": 0.35,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6952,
+          "walk": 6953,
+          "attack": 6956,
+          "death": 6959
+        },
+        "sounds": {
+          "attack": 292,
+          "hit": 294,
+          "death": 293
+        },
+        "bytes": 4221696
+      },
+      {
+        "id": "armadyl_spiritual_ranger",
+        "npcId": 3167,
+        "name": "Spiritual ranger",
+        "hp": 34,
+        "damage": 4,
+        "speed": 2.3,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6952,
+          "walk": 6953,
+          "attack": 6956,
+          "death": 6959
+        },
+        "sounds": {
+          "attack": 292,
+          "hit": 294,
+          "death": 293
+        },
+        "bytes": 3276612
+      },
+      {
+        "id": "saradomin_spiritual_warrior",
+        "npcId": 2210,
+        "name": "Spiritual warrior",
+        "hp": 52,
+        "damage": 6,
+        "speed": 2.1,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 390,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1297348
+      },
+      {
+        "id": "bree",
+        "npcId": 2208,
+        "name": "Bree",
+        "hp": 80,
+        "damage": 5,
+        "speed": 2.2,
+        "radius": 0.45,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 4311,
+          "walk": 4310,
+          "attack": 7027,
+          "death": 7028
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 3467272
+      },
+      {
+        "id": "zakln_gritch",
+        "npcId": 3131,
+        "name": "Zakl'n Gritch",
+        "hp": 80,
+        "damage": 5,
+        "speed": 2.1,
+        "radius": 0.45,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 66,
+          "walk": 63,
+          "attack": 64,
+          "death": 67
+        },
+        "sounds": {
+          "attack": 534,
+          "hit": 536,
+          "death": 535
+        },
+        "bytes": 5230284
+      },
+      {
+        "id": "fumus",
+        "npcId": 11283,
+        "name": "Fumus",
+        "hp": 140,
+        "damage": 6,
+        "speed": 2.1,
+        "radius": 0.4,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 1979,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1898740
+      }
+    ],
+    "boss": {
+      "id": "kril_tsutsaroth",
+      "npcId": 3129,
+      "name": "K'ril Tsutsaroth",
+      "hp": 7000,
+      "damage": 0,
+      "speed": 1.8,
+      "radius": 0.45,
+      "scale": 1,
+      "size": 5,
+      "anims": {
+        "idle": 6935,
+        "walk": 4070,
+        "attack": 6948,
+        "death": 6949
+      },
+      "sounds": {
+        "attack": 534,
+        "hit": 536,
+        "death": 535
+      },
+      "boss": true,
+      "bytes": 10874504
+    }
+  },
+  {
+    "id": "prifddinas",
+    "name": "Prifddinas",
+    "description": "The Gauntlet's crystalline rats, bats, spiders, scorpions, wolves, bears and dark beasts, the city's guards, the Iorwerth's warriors and archers and Zulrah's snakelings, and the corrupted ones late on. Zulrah, Zalcano and the Crystalline Hunllef come one by one, and the Corrupted Hunllef at the end.",
+    "tier": 5,
+    "difficulty": {
+      "hp": 3.5,
+      "damage": 2.5
+    },
+    "enemies": [
+      {
+        "id": "crystalline_rat",
+        "npcId": 9026,
+        "name": "Crystalline rat",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2.4,
+        "radius": 0.3,
+        "scale": 0.7,
+        "size": 2,
+        "anims": {
+          "idle": 4932,
+          "walk": 4931,
+          "attack": 4933,
+          "death": 4935
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 4366432
+      },
+      {
+        "id": "crystalline_spider",
+        "npcId": 9027,
+        "name": "Crystalline spider",
+        "hp": 15,
+        "damage": 3,
+        "speed": 2.2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 8340,
+          "walk": 8341,
+          "attack": 8004,
+          "death": 8005
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 3526804
+      },
+      {
+        "id": "crystalline_wolf",
+        "npcId": 9031,
+        "name": "Crystalline wolf",
+        "hp": 20,
+        "damage": 3,
+        "speed": 2.4,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6580,
+          "walk": 6556,
+          "attack": 6579,
+          "death": 6558
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 5446268
+      },
+      {
+        "id": "snakeling",
+        "npcId": 2045,
+        "name": "Snakeling",
+        "hp": 30,
+        "damage": 4,
+        "speed": 2.4,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 1721,
+          "walk": 2405,
+          "attack": 2406,
+          "death": 2408
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 1705588
+      },
+      {
+        "id": "iorwerth_archer",
+        "npcId": 3428,
+        "name": "Iorwerth Archer",
+        "hp": 40,
+        "damage": 5,
+        "speed": 2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 808,
+          "walk": 819,
+          "attack": 426,
+          "death": 836
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1744432
+      },
+      {
+        "id": "corrupted_wolf",
+        "npcId": 9045,
+        "name": "Corrupted wolf",
+        "hp": 50,
+        "damage": 6,
+        "speed": 2.3,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6580,
+          "walk": 6556,
+          "attack": 6579,
+          "death": 6558
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 5446412
+      },
+      {
+        "id": "corrupted_scorpion",
+        "npcId": 9044,
+        "name": "Corrupted scorpion",
+        "hp": 56,
+        "damage": 6,
+        "speed": 2.3,
+        "radius": 0.4,
+        "scale": 0.8,
+        "size": 2,
+        "anims": {
+          "idle": 6252,
+          "walk": 6253,
+          "attack": 6254,
+          "death": 6256
+        },
+        "sounds": {
+          "attack": 3605,
+          "hit": 3607,
+          "death": 3606
+        },
+        "bytes": 1834804
+      }
+    ],
+    "boss": {
+      "id": "corrupted_hunllef",
+      "npcId": 9035,
+      "name": "Corrupted Hunllef",
+      "hp": 23000,
+      "damage": 0,
+      "speed": 2.1,
+      "radius": 0.45,
+      "scale": 0.6,
+      "size": 5,
+      "anims": {
+        "idle": 8417,
+        "walk": 8416,
+        "attack": 8418,
+        "death": 8421
+      },
+      "sounds": {
+        "attack": 4128,
+        "hit": 4492,
+        "death": 4075
+      },
+      "boss": true,
+      "bytes": 14728064
+    }
+  },
+  {
+    "id": "inferno",
+    "name": "The Inferno",
+    "description": "Mor Ul Rek's TzHaar and the Inferno's creatures: nibblers, Jal-MejRah bats, Jal-Ak blobs that split, Jal-ImKot that dig up near you, Jal-Xil, and Jal-Zek that raise the dead. JalTok-Jad, a Jal-Zek champion and a TzHaar-Ket champion come one by one, and three JalTok-Jads at once at the end.",
+    "tier": 5,
+    "difficulty": {
+      "hp": 3.75,
+      "damage": 2.7
+    },
+    "enemies": [
+      {
+        "id": "jal_nib",
+        "npcId": 7691,
+        "name": "Jal-Nib",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2.8,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 7573,
+          "walk": 7572,
+          "attack": 7574,
+          "death": 7576
+        },
+        "sounds": {
+          "attack": 710,
+          "hit": 713,
+          "death": 711
+        },
+        "bytes": 695784
+      },
+      {
+        "id": "jal_akrek_ket",
+        "npcId": 7696,
+        "name": "Jal-AkRek-Ket",
+        "hp": 4,
+        "damage": 1,
+        "speed": 2,
+        "radius": 0.3,
+        "size": 1,
+        "anims": {
+          "idle": 7586,
+          "walk": 7587,
+          "attack": 7582,
+          "death": 7584
+        },
+        "sounds": {
+          "attack": 4787,
+          "hit": 4492,
+          "death": 4479
+        },
+        "bytes": 1476728
+      },
+      {
+        "id": "tzhaar_hur",
+        "npcId": 2161,
+        "name": "TzHaar-Hur",
+        "hp": 8,
+        "damage": 2,
+        "speed": 2.3,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 2603,
+          "walk": 2601,
+          "attack": 2609,
+          "death": 2607
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1579428
+      },
+      {
+        "id": "jal_mejrah",
+        "npcId": 7692,
+        "name": "Jal-MejRah",
+        "hp": 9,
+        "damage": 2,
+        "speed": 2.6,
+        "radius": 0.35,
+        "scale": 0.7,
+        "size": 2,
+        "anims": {
+          "idle": 7577,
+          "walk": 7577,
+          "attack": 7578,
+          "death": 7580
+        },
+        "sounds": {
+          "attack": 292,
+          "hit": 294,
+          "death": 293
+        },
+        "bytes": 561120
+      },
+      {
+        "id": "tzhaar_xil",
+        "npcId": 2168,
+        "name": "TzHaar-Xil",
+        "hp": 15,
+        "damage": 2,
+        "speed": 2.2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 2603,
+          "walk": 2601,
+          "attack": 2613,
+          "death": 2607
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 2410860
+      },
+      {
+        "id": "tzhaar_mej",
+        "npcId": 2154,
+        "name": "TzHaar-Mej",
+        "hp": 17,
+        "damage": 2,
+        "speed": 2.1,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 2604,
+          "walk": 2602,
+          "attack": 2611,
+          "death": 2607
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 1268088
+      },
+      {
+        "id": "tzhaar_ket",
+        "npcId": 7679,
+        "name": "TzHaar-Ket",
+        "hp": 20,
+        "damage": 2,
+        "speed": 2.2,
+        "radius": 0.35,
+        "size": 1,
+        "anims": {
+          "idle": 2603,
+          "walk": 2601,
+          "attack": 2610,
+          "death": 2607
+        },
+        "sounds": {
+          "attack": 2564,
+          "hit": 513,
+          "death": 512
+        },
+        "bytes": 2389840
+      }
+    ],
+    "boss": {
+      "id": "jaltok_jad_finale",
+      "npcId": 10623,
+      "name": "JalTok-Jad",
+      "hp": 8800,
+      "damage": 0,
+      "speed": 1.5,
+      "radius": 0.45,
+      "scale": 0.55,
+      "size": 5,
+      "anims": {
+        "idle": 7589,
+        "walk": 7588,
+        "attack": 7590,
+        "death": 7594
+      },
+      "sounds": {
+        "attack": 2564,
+        "hit": 513,
+        "death": 512
+      },
+      "boss": true,
+      "bytes": 19917812
+    }
+  }
+]

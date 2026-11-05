@@ -1,0 +1,2388 @@
+/* The OSRS interface look: the client's stone background and border tiles,
+   its fonts, orange headings and yellow highlights. */
+
+@font-face {
+    font-family: "OSRS Bold";
+    src: url(../ui/RuneScape-Bold-12.ttf);
+}
+
+@font-face {
+    font-family: "OSRS Small";
+    src: url(../ui/RuneScape-Plain-11.ttf);
+}
+
+@font-face {
+    font-family: "OSRS Plain";
+    src: url(../ui/RuneScape-Plain-12.ttf);
+}
+
+:root {
+    --orange: #ff981f;
+    --yellow: #ffff00;
+    --text: #ffffff;
+    --muted: #c8b88f;
+    --dim: #8f8264;
+    --card: #3e3529;
+    --card-hover: #4e4333;
+    --edge: #1b1712;
+    --edge-light: #6b5e4a;
+    --red: #c62828;
+    --green: #2bb52b;
+    --shadow: 1px 1px 0 #000;
+    /* A phone's notch and home bar: 0 on most screens */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+    background: #000;
+    color: var(--text);
+    font-family: "OSRS Plain", "OSRS Small", sans-serif;
+    font-size: 16px;
+    text-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+#game {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+#ui {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+}
+
+#ui > * {
+    pointer-events: auto;
+}
+
+/* The HUD over a run lets the world under it take a click or a tap (a
+   swing); only its own parts take them (version 98: #ui > * above gave
+   the whole HUD the clicks, so a click or a tap on the world never swung,
+   and a passive imp or chicken, which the weapon leaves be on its own,
+   couldn't be fought without Space) */
+#ui > .hud {
+    pointer-events: none;
+}
+
+/* The stone panel every screen is built from */
+.rs-panel,
+.panel,
+.inventory,
+.prompt,
+.menu-box {
+    background-image: url(../ui/interface-bg.png);
+    border: 6px solid;
+    border-image: url(../ui/interface-border.png) 6 / 6px / 0 repeat;
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
+}
+
+/* Two small buttons side by side in a menu */
+.menu-box .row {
+    display: flex;
+    gap: 8px;
+}
+
+.menu-box .row button {
+    flex: 1;
+    width: auto;
+}
+
+button {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    color: var(--orange);
+    text-shadow: var(--shadow);
+    background: var(--card);
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+    padding: 7px 16px;
+    cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+    background: var(--card-hover);
+    color: var(--yellow);
+}
+
+button:disabled {
+    color: var(--dim);
+    cursor: default;
+}
+
+button.primary {
+    font-size: 22px;
+    padding: 12px 24px;
+    color: var(--yellow);
+}
+
+button.primary:hover {
+    color: #fff;
+}
+
+input[type="text"] {
+    font: inherit;
+    font-size: 16px;
+    color: var(--text);
+    text-shadow: var(--shadow);
+    background: #1e1a15;
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+    padding: 6px 10px;
+}
+
+input[type="range"] {
+    accent-color: var(--orange);
+}
+
+/* A screen between runs sits over the world, with the character in it, dimmed */
+.screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    gap: 14px;
+    overflow: auto;
+}
+
+/* The loading screen: nothing behind it worth seeing */
+.screen.solid {
+    background: #000 url(../ui/interface-bg.png);
+    background-blend-mode: multiply;
+    background-color: #5a5a5a;
+}
+
+/* The title screen: the world in full with the character in it, darkened
+   at the sides, the name top left and the guild's rooms down a rail on the
+   right, each saying what's waiting there; or, by the settings, the
+   character's card and a grid of rooms with the way in along the bottom */
+.screen.title {
+    display: block;
+    padding: 0;
+    background: none;
+    overflow: hidden;
+}
+
+.screen.title.layout-rail {
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 35%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.screen.title.layout-card {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 70%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+.screen.title h1 {
+    font-size: clamp(36px, 5vw, 60px);
+    line-height: 1;
+    text-shadow:
+        2px 2px 0 #000,
+        0 0 18px rgba(0, 0, 0, 0.8);
+}
+
+.screen.title .subtitle {
+    font-size: 15px;
+    max-width: 420px;
+}
+
+.title-left {
+    position: absolute;
+    left: 40px;
+    top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* The character's record */
+.record {
+    width: min(380px, 40vw);
+    box-sizing: border-box;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.record-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 18px;
+    color: var(--yellow);
+}
+
+.record-line {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.record-line.grave {
+    color: #c3b8ff;
+}
+
+.record-line.notice {
+    color: var(--yellow);
+}
+
+.record-line.with-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text);
+}
+
+/* The rooms, down the right */
+.rail {
+    position: absolute;
+    right: 40px;
+    top: 32px;
+    width: min(400px, 36vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.room {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 58px;
+    box-sizing: border-box;
+    padding: 6px 16px;
+    font-size: 20px;
+    text-align: left;
+}
+
+.room.primary {
+    height: 76px;
+    padding: 8px 16px;
+    font-size: 26px;
+}
+
+.room-icon {
+    width: 36px;
+    height: 32px;
+    flex: none;
+    image-rendering: pixelated;
+}
+
+.room-text {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.room-sub {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The small things along the bottom */
+.title-foot {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 28px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.title-foot .hint {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+    text-align: right;
+    max-width: 50%;
+}
+
+.row.small {
+    display: flex;
+    gap: 8px;
+}
+
+.row.small button {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    padding: 6px 12px;
+}
+
+.row.small button.quiet {
+    color: var(--muted);
+}
+
+/* The card layout */
+.screen.title.layout-card h1 {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 26px;
+    text-align: center;
+}
+
+.card-record {
+    position: absolute;
+    left: 40px;
+    top: 130px;
+    width: min(330px, 30vw);
+    padding: 14px 16px;
+    gap: 10px;
+}
+
+.card-record .record-name {
+    font-size: 24px;
+}
+
+.record-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px 12px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+}
+
+.record-grid .stat-label {
+    color: var(--muted);
+}
+
+.record-grid .stat-value {
+    color: var(--yellow);
+    text-align: right;
+}
+
+.record-rule {
+    height: 1px;
+    background: var(--edge-light);
+}
+
+.card-tiles {
+    position: absolute;
+    right: 40px;
+    top: 130px;
+    width: min(420px, 36vw);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.card-tiles .room {
+    flex-direction: column;
+    justify-content: center;
+    height: 92px;
+    gap: 6px;
+    padding: 8px;
+    font-size: 19px;
+    text-align: center;
+}
+
+.card-tiles .room-icon {
+    transform: scale(1.22);
+    margin: 4px 0;
+}
+
+.playbar {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 28px;
+    box-sizing: border-box;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.playbar .primary {
+    height: 64px;
+    padding: 0 28px;
+    font-size: 26px;
+}
+
+.playbar-note {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.chip {
+    height: 48px;
+    padding: 0 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+}
+
+.chip-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 14px;
+    color: var(--orange);
+}
+
+.chip:hover .chip-name {
+    color: var(--yellow);
+}
+
+.chip-sub {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.chip-sub.grave {
+    color: #c3b8ff;
+}
+
+.playbar .spacer {
+    flex: 1;
+}
+
+/* An item's icon: its cell of the one sheet (icons.ts sets the sheet and
+   each cell's position). The sheet's icons come already lifted out of the
+   cache's darkness (icons.ts lifts them in a canvas, version 99; before,
+   a live SVG filter did it, and Safari drew some icons through it as plain
+   white shapes). No filter is left anywhere: the fallback icons, each one's
+   own file when the sheet never came, are lifted in a canvas too. */
+.icon-sprite {
+    display: inline-block;
+    width: 36px;
+    height: 32px;
+    flex: none;
+    /* icons.ts sets the sheet and the cell on each one, in full addresses */
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+.room.primary .room-icon {
+    transform: scale(1.22);
+    margin: 0 4px;
+}
+
+/* A panel down the right, with the character in the world on the left,
+   turned by dragging on the world */
+.screen.side {
+    align-items: flex-end;
+    padding-right: 4vw;
+    cursor: grab;
+    touch-action: none;
+}
+
+.screen.side.dragging {
+    cursor: grabbing;
+}
+
+.screen.side .panel {
+    cursor: default;
+}
+
+.screen.side .panel {
+    width: min(540px, 90vw);
+    max-height: 88vh;
+    overflow: auto;
+    scrollbar-color: var(--edge-light) var(--edge);
+}
+
+.screen.side .panel .primary {
+    margin-top: 10px;
+}
+
+/* Settings: a label, a note and a control to a row */
+.panel.settings {
+    width: min(560px, 92vw);
+}
+
+.setting {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--edge);
+}
+
+.setting label {
+    flex: 1;
+    color: var(--orange);
+}
+
+.setting .stats {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+}
+
+.setting input[type="range"] {
+    width: 160px;
+}
+
+.setting input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--orange);
+}
+
+.panel.settings .subtitle {
+    margin-top: 10px;
+}
+
+.screen h1 {
+    font-family: "OSRS Bold", sans-serif;
+    font-weight: normal;
+    font-size: 40px;
+    margin: 0;
+    color: var(--orange);
+    text-shadow: 2px 2px 0 #000;
+}
+
+.screen h2,
+.panel h2 {
+    font-family: "OSRS Bold", sans-serif;
+    font-weight: normal;
+    font-size: 20px;
+    margin: 0 0 8px;
+    color: var(--orange);
+    text-align: center;
+}
+
+.subtitle {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+    margin-bottom: 8px;
+    text-align: center;
+    max-width: 640px;
+}
+
+.panel {
+    padding: 14px 18px;
+    min-width: 280px;
+}
+
+.columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    max-width: 1100px;
+    width: 95vw;
+}
+
+.columns > .panel {
+    flex: 1;
+    max-height: 70vh;
+    overflow: auto;
+    scrollbar-color: var(--edge-light) var(--edge);
+}
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 6px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--edge);
+}
+
+.item-row:hover {
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.item-row .icon-sprite {
+    flex: none;
+}
+
+.item-row .name {
+    flex: 1;
+    color: var(--orange);
+}
+
+.item-row .stats {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+}
+
+.item-row button {
+    padding: 4px 10px;
+    font-size: 14px;
+}
+
+/* The inventory grid, as the client draws it: items on the stone, no cells */
+.slots {
+    display: grid;
+    grid-template-columns: repeat(7, 44px);
+    gap: 2px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--edge);
+}
+
+.slot {
+    width: 44px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+}
+
+.slot .icon-sprite {
+    pointer-events: none;
+}
+
+.slot .count {
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--yellow);
+}
+
+.slot:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.slot.empty {
+    cursor: default;
+}
+
+/* The bank (version 92): tabs of icons along the top, a search and the
+   deposit buttons, a grid of the bank's things on the bank's dark brown,
+   and what's picked under it, kept in sight at the panel's foot */
+.bank-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-bottom: 6px;
+}
+
+.bank-tab {
+    min-width: 46px;
+    height: 40px;
+    padding: 0 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+}
+
+.bank-tab.active {
+    background: rgba(255, 152, 31, 0.25);
+    box-shadow: inset 0 0 0 1px var(--orange, #ff981f);
+}
+
+.bank-tab .icon-sprite {
+    pointer-events: none;
+}
+
+.bank-tab-text {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--orange, #ff981f);
+}
+
+.bank-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.bank-search {
+    flex: 1;
+    min-width: 140px;
+}
+
+.bank-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 2px;
+    padding: 4px;
+    background: #3e3529;
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+    min-height: 88px;
+}
+
+.bank-slot {
+    position: relative;
+    height: 40px;
+    min-width: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.bank-slot:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.bank-slot.selected {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: #ffffff;
+}
+
+.bank-slot.exclusive::after {
+    content: "";
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ffd700;
+}
+
+.bank-slot .icon-sprite {
+    pointer-events: none;
+}
+
+.bank-slot .count {
+    position: absolute;
+    left: 3px;
+    top: 0;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--yellow, #ffff00);
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+}
+
+.bank-slot .count.mid {
+    color: #ffffff;
+}
+
+.bank-slot .count.big {
+    color: #00ff80;
+}
+
+.bank-detail {
+    position: sticky;
+    bottom: -14px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #2b251c;
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+}
+
+.bank-detail.empty {
+    color: var(--dim);
+}
+
+.bank-detail-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.bank-detail-head .name {
+    color: var(--orange, #ff981f);
+}
+
+.bank-detail .stats {
+    margin-bottom: 6px;
+}
+
+.equipment {
+    display: grid;
+    grid-template-columns: repeat(5, 70px);
+    gap: 4px;
+}
+
+.equip-slot {
+    width: 70px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--dim);
+    cursor: pointer;
+}
+
+.equip-slot .icon-sprite {
+    pointer-events: none;
+}
+
+.equip-slot:hover {
+    color: var(--yellow);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.coins {
+    color: var(--yellow);
+}
+
+/* The stash screen's coins: how many to move, and which way */
+.coin-move {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.coin-move input[type="text"] {
+    width: 110px;
+    text-align: right;
+}
+
+/* The HUD */
+
+.hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.hud > * {
+    pointer-events: auto;
+}
+
+.hud .top {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    width: 300px;
+}
+
+.bar {
+    height: 20px;
+    background: var(--red);
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+    overflow: hidden;
+    position: relative;
+}
+
+.bar .fill {
+    height: 100%;
+    background: var(--green);
+    transition: width 0.1s;
+}
+
+.bar .label {
+    position: absolute;
+    inset: 0;
+    text-align: center;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    line-height: 16px;
+}
+
+/* The special attack bar under the hitpoints: blue, brighter once it's ready */
+.spec-bar {
+    margin-top: 3px;
+    height: 12px;
+    background: #23272e;
+}
+
+.spec-bar .fill {
+    background: #2f5f9e;
+}
+
+.spec-bar.ready .fill {
+    background: #4a8fe0;
+}
+
+.spec-bar .label {
+    font-size: 11px;
+    line-height: 8px;
+}
+
+/* The prayer bar: pale, gold while protection is on */
+.prayer-bar {
+    margin-top: 3px;
+    height: 12px;
+    background: #2a2824;
+}
+
+.prayer-bar .fill {
+    background: #8a8266;
+}
+
+.prayer-bar.on .fill {
+    background: #d9b34a;
+}
+
+.prayer-bar .label {
+    font-size: 11px;
+    line-height: 8px;
+}
+
+.boss-bar {
+    position: absolute;
+    left: 50%;
+    top: 16px;
+    transform: translateX(-50%);
+    width: 420px;
+}
+
+.boss-bar .fill {
+    background: #7a1010;
+}
+
+.boss-bar .bar {
+    background: #2b0d0d;
+}
+
+.hud .floor {
+    margin-top: 6px;
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--orange);
+}
+
+.hud .hint {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+/* How long until the way out closes; the last minute shouts */
+.hud .clock {
+    margin-top: 2px;
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+}
+
+.hud .clock.urgent {
+    font-family: "OSRS Bold", sans-serif;
+    color: #ff4040;
+}
+
+.messages {
+    position: absolute;
+    left: 16px;
+    bottom: 16px;
+    /* Left of the hotbar (half its width is about 140px a size), wrapping */
+    max-width: max(160px, calc(50vw - 140px * var(--hotbar, 1) - 32px));
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    pointer-events: none;
+}
+
+.messages div {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    color: var(--text);
+}
+
+.prompt {
+    position: absolute;
+    left: 50%;
+    /* Above the hotbar, however big it's set */
+    bottom: calc(110px + (var(--hotbar, 1) - 1) * 56px);
+    transform: translateX(-50%);
+    padding: 8px 16px;
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--yellow);
+}
+
+/* Food and potions at hand: F, 1, 2, 3 */
+.hotbar {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    /* Settings' Hotbar size (settings.ts sets --hotbar), grown from its
+       bottom middle so it stays put at the foot of the screen */
+    transform: translateX(-50%) scale(var(--hotbar, 1));
+    transform-origin: 50% 100%;
+    display: flex;
+    gap: 6px;
+}
+
+.hotslot {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    background-image: url(../ui/interface-bg.png);
+    border: 3px solid;
+    border-image: url(../ui/interface-border.png) 6 / 3px / 0 repeat;
+    cursor: pointer;
+}
+
+.hotslot .icon-sprite {
+    position: absolute;
+    left: 4px;
+    top: 6px;
+}
+
+.hotslot.empty .icon-sprite {
+    opacity: 0.3;
+}
+
+.hotslot.active {
+    box-shadow: 0 0 8px var(--green);
+}
+
+.hotslot .key,
+.hotslot .count,
+.hotslot .timer {
+    position: absolute;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 12px;
+    text-shadow: var(--shadow);
+    pointer-events: none;
+}
+
+.hotslot .key {
+    left: 3px;
+    top: 1px;
+    color: var(--orange);
+}
+
+.hotslot .count {
+    right: 3px;
+    bottom: 1px;
+    color: #ffff00;
+}
+
+.hotslot .timer {
+    right: 3px;
+    top: 1px;
+    color: var(--green);
+}
+
+/* The pause menu over a run, and its settings and stats pages */
+.pause {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+}
+
+/* display: flex above would win over the hidden attribute's display: none */
+.pause[hidden] {
+    display: none;
+}
+
+.pause-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(360px, 92vw);
+    padding: 14px 16px;
+}
+
+.pause-box h2 {
+    font-family: "OSRS Bold", sans-serif;
+    font-weight: normal;
+    font-size: 24px;
+    margin: 0 0 4px;
+    color: var(--orange);
+    text-align: center;
+}
+
+.pause-box .hint {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+    text-align: center;
+}
+
+.pause .panel {
+    max-height: 88vh;
+    overflow: auto;
+    scrollbar-color: var(--edge-light) var(--edge);
+}
+
+.panel.stats,
+.panel.trade {
+    width: min(600px, 92vw);
+}
+
+.panel.trade h3 {
+    margin: 10px 0 4px;
+}
+
+.stat-row .value {
+    min-width: 80px;
+    text-align: right;
+    color: var(--yellow);
+}
+
+.stat-row .stats {
+    flex: 2;
+}
+
+/* The minimap, top right, with the pack under it */
+.minimap {
+    position: absolute;
+    right: 16px;
+    top: 16px;
+    width: 176px;
+    height: 176px;
+    border-radius: 50%;
+    border: 4px solid var(--edge);
+    box-shadow:
+        0 0 0 2px var(--edge-light),
+        0 4px 16px rgba(0, 0, 0, 0.6);
+    background: #000;
+    /* It opens the full map (version 91) */
+    cursor: zoom-in;
+}
+
+/* The full map over the run: the map fills the screen, with a bar of
+   buttons along the top and the key to its marks in a corner */
+.full-map {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    z-index: 30;
+}
+
+.full-map[hidden] {
+    display: none;
+}
+
+.full-map-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+    cursor: grab;
+}
+
+.full-map-canvas:active {
+    cursor: grabbing;
+}
+
+.full-map-bar {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.full-map-title {
+    flex: 1;
+    min-width: 160px;
+    padding: 6px 10px;
+    color: #ff981f;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+}
+
+.full-map-bar button {
+    min-width: 44px;
+    min-height: 36px;
+}
+
+.full-map-legend {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    background: rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+    pointer-events: none;
+}
+
+.full-map-legend .swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-right: 6px;
+    border-radius: 50%;
+    border: 1px solid #000;
+}
+
+.full-map-legend .note {
+    color: var(--dim);
+}
+
+/* A phone sideways has little height: the key goes, the bar stays */
+@media (max-height: 500px) {
+    .full-map-legend {
+        display: none;
+    }
+}
+
+.inventory {
+    position: absolute;
+    right: 16px;
+    top: 216px;
+    padding: 12px;
+}
+
+.inventory h3 {
+    margin: 0 0 6px;
+    font-family: "OSRS Bold", sans-serif;
+    font-weight: normal;
+    font-size: 16px;
+    color: var(--orange);
+}
+
+/* Map select */
+
+.panel.maps {
+    width: 95vw;
+    max-width: 900px;
+    max-height: 70vh;
+    overflow: auto;
+    scrollbar-color: var(--edge-light) var(--edge);
+}
+
+.map-row {
+    padding: 8px 10px;
+}
+
+.map-row .name {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.map-row .map-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 18px;
+}
+
+.map-row .stats {
+    color: var(--muted);
+}
+
+/* Your gravestone on the map */
+.map-row .grave {
+    color: #c3b8ff;
+}
+
+/* A map not yet opened, and a boss already beaten */
+.map-row.locked .map-name,
+.map-row.locked .stats {
+    opacity: 0.55;
+}
+
+.map-row .lock {
+    color: var(--yellow);
+    font-family: "OSRS Small", sans-serif;
+}
+
+.map-row .beaten {
+    color: var(--green);
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+}
+
+.map-row button.primary {
+    font-size: 18px;
+    padding: 8px 20px;
+}
+
+/* The character screen */
+
+.swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    max-width: 330px;
+}
+
+.swatch {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 2px solid var(--edge);
+    box-shadow: none;
+}
+
+.swatch.selected {
+    border-color: var(--yellow);
+}
+
+.field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+}
+
+.field label {
+    width: 70px;
+    color: var(--orange);
+}
+
+.summary-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    max-width: 500px;
+    justify-content: center;
+    padding: 6px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--edge);
+}
+
+/* The run's recap: the map as it was seen, and the numbers beside it */
+.recap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 560px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--edge);
+}
+
+.recap-map canvas {
+    display: block;
+    width: 180px;
+    height: 180px;
+    border: 2px solid var(--edge);
+    box-shadow: inset 0 0 0 1px var(--edge-light);
+}
+
+.recap-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.recap-lines .stats {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+}
+
+.tasks-done {
+    width: min(560px, 92vw);
+}
+
+/* The save code box over the menu (version 101), with its Copy button */
+.code-dialog {
+    z-index: 20;
+}
+
+.save-code-panel {
+    width: min(520px, 92vw);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.save-code {
+    width: 100%;
+    box-sizing: border-box;
+    resize: none;
+    padding: 6px;
+    font-family: monospace;
+    font-size: 12px;
+    word-break: break-all;
+    color: var(--text);
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--edge);
+    /* A phone's #ui takes no selection; the code can be */
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.code-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* After a run: everything in one darker box, centred but scrolling from
+   its top when it's taller than the screen (margin: auto, not the
+   screen's centring, which would cut its top off) */
+.summary-screen {
+    justify-content: flex-start;
+}
+
+.summary-box {
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 26px;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.6);
+}
+
+.summary-box .subtitle {
+    color: var(--text);
+    margin-bottom: 0;
+}
+
+/* Bigger on a big screen (version 97): the text and the icons were too
+   small to read at 1440p and 4K */
+@media (min-height: 900px) and (min-width: 1200px) {
+    .summary-box {
+        zoom: 1.4;
+    }
+}
+
+@media (min-height: 1250px) and (min-width: 1700px) {
+    .summary-box {
+        zoom: 1.75;
+    }
+}
+
+@media (min-height: 1600px) and (min-width: 2300px) {
+    .summary-box {
+        zoom: 2.2;
+    }
+}
+
+.item-row.done .name {
+    color: var(--green);
+}
+
+.loading {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+}
+
+/* Phones and tablets. Everything here is behind (pointer: coarse), so a
+   mouse never sees it: the touch controls (ui/touch.ts), and the HUD and
+   screens laid out for a small screen. */
+
+.touch-zone,
+.touch-corner,
+.touch-cluster,
+.rotate {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    /* The browser's bars come and go, which 100vh doesn't follow; and no
+       double tap zooms the page (an iPhone honours this, not the viewport's
+       no-scaling rule) */
+    html,
+    body {
+        height: 100dvh;
+        overscroll-behavior: none;
+        touch-action: manipulation;
+    }
+
+    /* The page itself never scrolls, so what's drawn is what's touched */
+    body {
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    /* No pinch, double tap or swipe does anything to the page; only the
+       guild's screens and the pack scroll, up and down */
+    #game,
+    #ui {
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+    }
+
+    .screen,
+    .inventory,
+    .columns > .panel,
+    .panel.maps {
+        touch-action: pan-y;
+    }
+
+    /* Words on the HUD don't take touches: the stick starts under them and
+       a tap on the world through them swings */
+    .hud .top,
+    .boss-bar,
+    .messages,
+    .prompt {
+        pointer-events: none;
+    }
+
+    /* The sizes of the touch controls: the big button, the arc's buttons
+       and how far out they sit, the fan's options and their reach, the
+       square buttons by the minimap, and the minimap. A tall screen (a
+       tablet) gets bigger ones below. */
+    .hud {
+        --tb-main: 76px;
+        --tb: 54px;
+        --arc: 92px;
+        --opt: 58px;
+        --fan: 86px;
+        --sq: 42px;
+        --mini: 110px;
+    }
+
+    /* The stick appears under the thumb anywhere on the left, or stays in
+       the ring at the bottom left (the setting) */
+    .touch-zone {
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 55%;
+        height: 100%;
+    }
+
+    .touch-rest {
+        position: absolute;
+        left: 30px;
+        bottom: calc(30px + var(--safe-bottom));
+        width: 112px;
+        height: 112px;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 2px dashed rgba(255, 255, 255, 0.35);
+        pointer-events: none;
+    }
+
+    .touch-rest.fixed {
+        border-style: solid;
+        border-color: rgba(255, 255, 255, 0.5);
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .touch-rest[hidden] {
+        display: none;
+    }
+
+    .touch-rest-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 48px;
+        height: 48px;
+        margin: -24px 0 0 -24px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.22);
+    }
+
+    .touch-stick {
+        position: absolute;
+        width: 112px;
+        height: 112px;
+        margin: -56px 0 0 -56px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        background: rgba(0, 0, 0, 0.25);
+        pointer-events: none;
+    }
+
+    .touch-stick[hidden] {
+        display: none;
+    }
+
+    .touch-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 48px;
+        height: 48px;
+        margin: -24px 0 0 -24px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.65);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    /* The buttons: round, labelled, pressed on the way down */
+    .touch-button {
+        position: absolute;
+        width: var(--tb);
+        height: var(--tb);
+        padding: 0;
+        border-radius: 50%;
+        border: 3px solid var(--edge);
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 2px 8px rgba(0, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        z-index: 1;
+    }
+
+    .touch-button:active {
+        background: var(--card-hover);
+        color: var(--yellow);
+    }
+
+    .touch-label {
+        font-size: 14px;
+    }
+
+    .touch-sub {
+        font-family: "OSRS Small", sans-serif;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+    }
+
+    .touch-sub:empty {
+        display: none;
+    }
+
+    /* Pack and Pause under the minimap, square, out of the fight */
+    .touch-corner {
+        display: flex;
+        gap: 8px;
+        position: absolute;
+        right: 10px;
+        top: calc(18px + var(--safe-top) + var(--mini));
+    }
+
+    .touch-corner .touch-button {
+        position: static;
+        width: var(--sq);
+        height: var(--sq);
+        border-radius: 8px;
+    }
+
+    .touch-corner .touch-label {
+        font-size: 11px;
+    }
+
+    /* The right thumb's cluster: the big button where the thumb rests,
+       Eat to its left, Pray up and left of it, Spec above it */
+    .touch-cluster {
+        display: block;
+        position: absolute;
+        right: 12px;
+        bottom: calc(12px + var(--safe-bottom));
+        width: calc(var(--tb-main) / 2 + var(--arc) + var(--tb) / 2);
+        height: calc(var(--tb-main) / 2 + var(--arc) + var(--tb) / 2);
+        z-index: 2;
+    }
+
+    .touch-main {
+        right: 0;
+        bottom: 0;
+        width: var(--tb-main);
+        height: var(--tb-main);
+        color: var(--yellow);
+        border-width: 4px;
+    }
+
+    .touch-main .touch-label {
+        font-size: 18px;
+    }
+
+    .touch-main:not(.lit) {
+        opacity: 0.6;
+        color: var(--text);
+    }
+
+    .touch-eat {
+        right: calc(var(--tb-main) / 2 + var(--arc) - var(--tb) / 2);
+        bottom: calc(var(--tb-main) / 2 - var(--tb) / 2);
+    }
+
+    .touch-pray {
+        right: calc(var(--tb-main) / 2 + var(--arc) * 0.707 - var(--tb) / 2);
+        bottom: calc(var(--tb-main) / 2 + var(--arc) * 0.707 - var(--tb) / 2);
+    }
+
+    .touch-spec {
+        right: calc(var(--tb-main) / 2 - var(--tb) / 2);
+        bottom: calc(var(--tb-main) / 2 + var(--arc) - var(--tb) / 2);
+    }
+
+    .touch-eat.none {
+        opacity: 0.5;
+    }
+
+    .touch-badge {
+        position: absolute;
+        right: -6px;
+        top: -6px;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 5px;
+        box-sizing: border-box;
+        border-radius: 11px;
+        border: 2px solid var(--edge);
+        background: var(--green);
+        color: #fff;
+        font-family: "OSRS Small", sans-serif;
+        font-size: 13px;
+        line-height: 18px;
+        text-align: center;
+    }
+
+    .touch-badge:empty {
+        display: none;
+    }
+
+    .touch-pray.on {
+        color: var(--yellow);
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 0 12px 3px rgba(255, 220, 80, 0.55);
+    }
+
+    .touch-pray.none {
+        opacity: 0.5;
+    }
+
+    .touch-spec.ready {
+        color: #8ec0ff;
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 0 12px 3px rgba(74, 143, 224, 0.6);
+    }
+
+    /* Pray held: the world dims, the other buttons fade, and four options
+       fan out up and left of the thumb */
+    .touch-dim {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 0;
+    }
+
+    .fan-open .touch-dim {
+        display: block;
+    }
+
+    .fan-open .touch-main,
+    .fan-open .touch-eat,
+    .fan-open .touch-spec {
+        opacity: 0.35;
+    }
+
+    .fan-open .touch-pray {
+        z-index: 3;
+        border-color: var(--yellow);
+    }
+
+    .touch-fan {
+        position: absolute;
+        right: calc(var(--tb-main) / 2 + var(--arc) * 0.707);
+        bottom: calc(var(--tb-main) / 2 + var(--arc) * 0.707);
+        width: 0;
+        height: 0;
+        z-index: 3;
+    }
+
+    .touch-fan[hidden] {
+        display: none;
+    }
+
+    .touch-option {
+        position: absolute;
+        width: var(--opt);
+        height: var(--opt);
+        margin: 0 calc(var(--opt) / -2) calc(var(--opt) / -2) 0;
+        box-sizing: border-box;
+        border-radius: 50%;
+        border: 3px solid var(--edge);
+        background-image: url(../ui/interface-bg.png);
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 2px 8px rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: "OSRS Bold", sans-serif;
+        font-size: 14px;
+        color: var(--orange);
+        text-shadow: var(--shadow);
+        pointer-events: auto;
+    }
+
+    .touch-option.melee {
+        right: 0;
+        bottom: var(--fan);
+    }
+
+    .touch-option.ranged {
+        right: calc(var(--fan) * 0.707);
+        bottom: calc(var(--fan) * 0.707);
+    }
+
+    .touch-option.magic {
+        right: var(--fan);
+        bottom: 0;
+    }
+
+    .touch-option.none {
+        right: calc(var(--fan) * 0.707);
+        bottom: calc(var(--fan) * -0.707);
+        color: var(--muted);
+    }
+
+    .touch-option.on {
+        color: var(--yellow);
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 0 12px 3px rgba(255, 220, 80, 0.55);
+    }
+
+    .touch-option.under {
+        border-color: var(--yellow);
+        color: var(--yellow);
+        transform: scale(1.15);
+    }
+
+    /* Low on hitpoints: the edges go red, the health bar pulses, Eat gets
+       a ring */
+    .hud.hurt::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        box-shadow: inset 0 0 70px 20px rgba(190, 0, 0, 0.55);
+        animation: hurt-pulse 0.9s ease-in-out infinite alternate;
+    }
+
+    .hud.hurt .top > .bar:first-child {
+        animation: hurt-bar 0.9s ease-in-out infinite alternate;
+    }
+
+    .touch-eat.urgent {
+        color: var(--yellow);
+        border-color: var(--yellow);
+        animation: hurt-ring 0.9s ease-in-out infinite alternate;
+    }
+
+    /* Eat has the food slot's job, so the hotbar is the potions */
+    .hotslot.food {
+        display: none;
+    }
+
+    .hud .top {
+        left: 10px;
+        top: calc(10px + var(--safe-top));
+        width: min(300px, 50vw);
+    }
+
+    .boss-bar {
+        top: calc(96px + var(--safe-top));
+        width: min(420px, 60vw);
+    }
+
+    .minimap {
+        width: var(--mini);
+        height: var(--mini);
+        right: 10px;
+        top: calc(10px + var(--safe-top));
+    }
+
+    /* The pack over the middle, above the hotbar, where a thumb reaches; a
+       phone on its side is too short for all of it, so it scrolls */
+    .inventory {
+        top: auto;
+        bottom: calc(70px + var(--safe-bottom));
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        padding: 8px;
+        max-height: calc(100dvh - 90px - var(--safe-bottom));
+        overflow: auto;
+        scrollbar-color: var(--edge-light) var(--edge);
+    }
+
+    /* What the run says goes under the bars, small, out of the way of the
+       stick and the view; and the HUD's own lines are smaller too */
+    .messages {
+        top: calc(150px + var(--safe-top));
+        bottom: auto;
+        left: 10px;
+        max-width: 58vw;
+    }
+
+    .messages div {
+        font-size: 12px;
+        line-height: 14px;
+    }
+
+    .hud .floor {
+        font-size: 14px;
+        margin-top: 3px;
+    }
+
+    .hud .clock {
+        font-size: 11px;
+    }
+
+    .prompt {
+        font-size: 14px;
+        padding: 5px 10px;
+    }
+
+    .hotbar {
+        bottom: calc(12px + var(--safe-bottom));
+        /* No bigger than 1.4 on a phone, or it runs under Eat */
+        transform: translateX(-50%) scale(min(var(--hotbar, 1), 1.4));
+    }
+
+    .prompt {
+        bottom: calc(130px + (var(--hotbar, 1) - 1) * 56px + var(--safe-bottom));
+    }
+
+    /* The guild's screens: one column, the whole screen scrolling, and
+       nothing in it scrolling on its own (a panel that's a scroll box of
+       its own takes the finger's drag and gives the screen none of it, so
+       the screen only moved from a touch on the gaps between things) */
+    .columns {
+        flex-direction: column;
+        align-items: stretch;
+        width: 96vw;
+    }
+
+    .columns > .panel,
+    .panel.maps {
+        max-height: none;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    /* The character screen's sheet and the pause pages do scroll on their
+       own, so a drag on anything in them is theirs */
+    .screen.side .panel,
+    .pause .panel {
+        touch-action: pan-y;
+    }
+
+    /* A pause page taller than the screen: the overlay scrolls, with the
+       page centred while it fits and its top reachable when it doesn't */
+    .pause {
+        overflow: auto;
+        touch-action: pan-y;
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+
+    .pause > * {
+        margin: auto;
+    }
+
+    .pause .panel {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .screen {
+        justify-content: flex-start;
+        padding: calc(12px + var(--safe-top)) 0 calc(12px + var(--safe-bottom));
+    }
+
+    /* The title screen on a phone: the rail under the right thumb, the way
+       in under the left, the record two lines under the name */
+    .screen.title h1 {
+        font-size: 30px;
+    }
+
+    .screen.title .subtitle,
+    .title-foot .hint {
+        display: none;
+    }
+
+    .title-left {
+        left: 16px;
+        top: 12px;
+        gap: 6px;
+    }
+
+    .record {
+        width: 270px;
+        padding: 5px 10px;
+        gap: 2px;
+        background: none;
+        border: none;
+        box-shadow: none;
+    }
+
+    .record-name {
+        font-size: 15px;
+    }
+
+    .record-line {
+        font-size: 12px;
+    }
+
+    .rail {
+        right: 14px;
+        top: 12px;
+        width: 250px;
+        gap: 6px;
+    }
+
+    .room {
+        height: 46px;
+        padding: 4px 12px;
+        gap: 10px;
+        font-size: 16px;
+    }
+
+    .rail .room.primary {
+        position: fixed;
+        left: 16px;
+        bottom: calc(14px + var(--safe-bottom));
+        width: 250px;
+        height: 60px;
+        font-size: 21px;
+    }
+
+    .room-icon {
+        width: 28px;
+        height: 25px;
+    }
+
+    .room.primary .room-icon {
+        width: 34px;
+        height: 30px;
+    }
+
+    .room-sub {
+        font-size: 11px;
+    }
+
+    .title-foot {
+        left: 286px;
+        right: 280px;
+        bottom: calc(22px + var(--safe-bottom));
+    }
+
+    .row.small button {
+        font-size: 11px;
+        padding: 5px 8px;
+    }
+
+    /* The character screen: a sheet across the bottom half, the character
+       above it (ui.ts lifts them) */
+    .screen.side {
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0;
+    }
+
+    .screen.side .panel {
+        width: 100vw;
+        max-height: calc(50dvh - var(--safe-bottom));
+        padding-bottom: calc(10px + var(--safe-bottom));
+    }
+
+    .recap {
+        flex-direction: column;
+    }
+
+}
+
+/* A phone on its side: the character screen's panel down the right, the
+   character on the left as on a desktop */
+@media (pointer: coarse) and (orientation: landscape) {
+    .screen.side {
+        justify-content: center;
+        align-items: flex-end;
+        padding: 8px 8px 8px 0;
+    }
+
+    .screen.side .panel {
+        width: 56vw;
+        max-height: calc(100dvh - 16px);
+        padding-bottom: 10px;
+    }
+}
+
+/* A phone on its side is short: a smaller minimap, so the buttons under it
+   clear the cluster */
+@media (pointer: coarse) and (max-height: 450px) {
+    .hud {
+        --mini: 90px;
+    }
+
+    /* Pack, Map and Pause in a row beside the minimap, not under it: under
+       it they ran into Spec and Pray on a phone with its browser's bars
+       showing (version 98) */
+    .touch-corner {
+        top: calc(10px + var(--safe-top));
+        right: calc(18px + var(--mini));
+    }
+}
+
+/* Shorter still (a small phone with its bars): the cluster smaller, so it
+   clears the minimap */
+@media (pointer: coarse) and (max-height: 330px) {
+    .hud {
+        --tb-main: 64px;
+        --tb: 46px;
+        --arc: 76px;
+        --opt: 50px;
+        --fan: 72px;
+        --sq: 38px;
+        --mini: 80px;
+    }
+
+    .touch-label {
+        font-size: 12px;
+    }
+
+    .touch-main .touch-label {
+        font-size: 15px;
+    }
+}
+
+/* A tablet has room: bigger buttons, further apart */
+@media (pointer: coarse) and (min-height: 600px) and (min-width: 900px) {
+    .hud {
+        --tb-main: 100px;
+        --tb: 68px;
+        --arc: 118px;
+        --opt: 70px;
+        --fan: 108px;
+        --sq: 52px;
+        --mini: 140px;
+    }
+
+    .touch-label {
+        font-size: 17px;
+    }
+
+    .touch-main .touch-label {
+        font-size: 22px;
+    }
+}
+
+@keyframes hurt-pulse {
+    from {
+        box-shadow: inset 0 0 70px 20px rgba(190, 0, 0, 0.4);
+    }
+    to {
+        box-shadow: inset 0 0 90px 30px rgba(190, 0, 0, 0.7);
+    }
+}
+
+@keyframes hurt-bar {
+    from {
+        box-shadow: inset 0 0 0 1px var(--edge-light);
+    }
+    to {
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 0 0 3px rgba(229, 57, 53, 0.8);
+    }
+}
+
+@keyframes hurt-ring {
+    from {
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 0 8px 2px rgba(255, 220, 80, 0.5);
+    }
+    to {
+        box-shadow:
+            inset 0 0 0 1px var(--edge-light),
+            0 0 18px 6px rgba(255, 220, 80, 0.9);
+    }
+}
+
+/* Phones play sideways only: held upright, this covers the game (and
+   main.ts pauses a run) until it's turned */
+.rotate-block {
+    display: none;
+}
+
+@media (pointer: coarse) and (orientation: portrait) {
+    .rotate-block {
+        display: flex;
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        text-align: center;
+        font-family: "OSRS Bold", sans-serif;
+        font-size: 24px;
+        color: var(--orange);
+        text-shadow: 2px 2px 0 #000;
+        background: #000 url(../ui/interface-bg.png);
+        background-blend-mode: multiply;
+        background-color: #5a5a5a;
+        touch-action: none;
+    }
+}
+
+/* Co-op: the party room */
+.panel.coop {
+    width: min(620px, 92vw);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.panel.coop h3 {
+    margin: 10px 0 2px;
+    color: var(--orange);
+}
+
+.panel.coop input {
+    width: 150px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.party-code {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.party-code .code {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 30px;
+    letter-spacing: 5px;
+    color: var(--yellow);
+    text-shadow: 2px 2px 0 #000;
+}
+
+.panel.coop .server-name {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 20px;
+    color: var(--yellow);
+    text-shadow: 1px 1px 0 #000;
+}
+
+.panel.coop .privacy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.panel.coop .privacy .stats {
+    flex: 1;
+}
+
+.server .stats {
+    flex: 2;
+}
+
+.member .ready {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--muted);
+    min-width: 72px;
+    text-align: right;
+}
+
+.member .ready.on {
+    color: #6cf06c;
+}
+
+.member.mine .name {
+    color: var(--yellow);
+}
+
+/* The moderator's crown, by a name in the party and on the title screen */
+.member .name .crown,
+.record-name .crown {
+    width: 19px;
+    height: 18px;
+    vertical-align: -3px;
+    margin-right: 5px;
+    image-rendering: pixelated;
+}
+
+.card-record .record-name .crown {
+    width: 25px;
+    height: 24px;
+    vertical-align: -4px;
+}
+
+/* The party in a run: a name and a bar each, under the clock */
+.hud .party {
+    margin-top: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    pointer-events: none;
+}
+
+.hud .party .mate {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    text-shadow: 1px 1px 0 #000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hud .party .mate .bar {
+    width: 70px;
+    height: 7px;
+    background: #7a0000;
+    border: 1px solid #000;
+}
+
+.hud .party .mate .bar .fill {
+    height: 100%;
+    background: #10c010;
+}
+
+.hud .party .mate.gone {
+    color: var(--muted);
+}
+
+/* The pack's Drop switch, and the pack while it's on */
+.pack-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.pack-head h3 {
+    margin: 0;
+}
+
+.pack-head button.on {
+    color: var(--yellow);
+    border-color: var(--yellow);
+}
+
+.slot.dropping {
+    outline: 1px dashed rgba(255, 220, 80, 0.6);
+    outline-offset: -1px;
+}

@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# Copied from ../full-assets by npm run assets
+public/assets/
