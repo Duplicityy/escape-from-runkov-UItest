@@ -258,6 +258,13 @@ browsers.
   the shadow spells and Blood Barrage; tier 3 and up maps also drop chaos runes, and tier 4 and
   up death and soul runes, beside their own catalyst. In co-op a guest's spell effects go up
   with the hit (`frz`, `wk`, `psn`).
+- **Casting as OSRS casts** (version 108): every spell has OSRS's own cast animation and sounds
+  (`clip`, `castSound`, `hitSound` in `spells.ts`). Strikes, bolts and blasts are cast with the
+  staff cast (seq 1162), waves with the wave cast (1167), surges with the surge cast (7855),
+  rushes and blitzes with Ancient Magicks' single cast (1978), and bursts and barrages with the
+  area cast (1979). The cast sound plays as the spell leaves and the hit sound where it lands
+  (Fire Strike 160 and 161, Ice Barrage 171 and 168, the wiki's sound ids). In co-op a shot
+  carries its spell (`s`), so mates are seen and heard casting it too.
 - Every hit shows its number as a hitsplat, the client's red square, floating up off whoever
   took it. An enemy shows a health bar over its head, the client's way, while it's fighting and
   for six seconds after it's hurt. The boss has the bar at the top of the screen instead.

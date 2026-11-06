@@ -1,5 +1,12 @@
 # Pending for the next push
 
+Version 108 (built 6 November 2026, not deployed): spells cast as OSRS casts them (README's
+"Casting as OSRS casts"). Five new player clips in Run Escape's PLAYER_CLIPS (cast_staff 1162,
+cast_wave 1167, cast_surge 7855, cast_ancient 1978, cast_ancient_area 1979), so every player
+piece was re-exported (and the gilded, Guthix sunfire and other special exports re-run after);
+public/assets/player is now 1284 MB. 59 spell sounds added to assets.json and sounds.pack.
+The co-op `shot`/`pshot` messages carry the spell's id (`s`). `GAME_BUILD` 108.
+
 Version 107 (built 5 November 2026, not deployed): Ancient Magicks (README's "Ancient
 Magicks"): the sixteen combat spells on the spellbook's Ancient page, OSRS's costs, effects
 (smoke poison, shadow weaken, blood heal, ice freeze; bursts and barrages hit a 3x3), OSRS's

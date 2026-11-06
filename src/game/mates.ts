@@ -89,6 +89,10 @@ export class Mate implements Hero {
     private readonly character: Loadout["character"];
     private readonly crownKeyOf?: string;
     private attackClip: string;
+    // Whether they hold a staff, and the animation of the last spell they
+    // cast (version 108)
+    private staff = false;
+    private spellClip?: string;
     // Counts the looks asked for, so a slow one never replaces a newer one
     private lookGeneration = 0;
     private pet?: MatePet;
@@ -148,7 +152,10 @@ export class Mate implements Hero {
                 this.scene.remove(old.root);
             }
             this.look = look;
-            this.attackClip = stats.weapon?.attackClip ?? "attack";
+            // A staff casts as their last spell was cast, the staff cast
+            // until one has been (version 108)
+            this.staff = stats.weapon?.uses === "runes";
+            this.attackClip = this.staff ? (this.spellClip ?? "cast_staff") : (stats.weapon?.attackClip ?? "attack");
             look.stance = stats.weapon?.stance;
             look.root.scale.setScalar(this.size);
             look.root.position.set(this.x, this.groundY(this.x, this.z), this.z);
@@ -206,6 +213,14 @@ export class Mate implements Hero {
             this.label = nameSprite(this.name, color);
             this.label.position.copy(old.position);
             this.scene.add(this.label);
+        }
+    }
+
+    // A spell they cast (its shot's word): its own animation from now on
+    castWith(clip: string): void {
+        this.spellClip = clip;
+        if (this.staff) {
+            this.attackClip = clip;
         }
     }
 

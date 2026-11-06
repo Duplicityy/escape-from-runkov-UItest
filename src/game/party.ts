@@ -110,7 +110,8 @@ export type DownMessage =
     | { k: "hazard"; x: number; z: number; r: number; l: number }
     // An enemy's shot at a hero, from here, and a hero's at an enemy
     | { k: "shot"; x: number; z: number; y: number; to: string; p: number; i?: number; c?: number }
-    | { k: "pshot"; from: string; u: number; p?: number; i?: number }
+    // s: the spell's id, for its cast animation and sounds (version 108)
+    | { k: "pshot"; from: string; u: number; p?: number; i?: number; s?: string }
     // A hit on a guest, as the host rolled it (the guest halves it with its
     // own protection)
     | { k: "hurt"; to: string; hit: number; style: ProtectStyle; pierce?: 1; fixed?: 1; by: string; venom?: 1 }
@@ -155,7 +156,7 @@ export type UpMessage =
     // psn an Ancient spell's freeze seconds, weaken share and poison per hit
     // (version 107)
     | { k: "hit"; u: number; d: number; slow?: 1; stall?: 1; frz?: number; wk?: number; psn?: number }
-    | { k: "shot"; u: number; p?: number; i?: number }
+    | { k: "shot"; u: number; p?: number; i?: number; s?: string }
     // n: as many as the guest has room for, when that's not all of it
     | { k: "take"; u: number; n?: number }
     // Something put down from the pack, here, for anyone to take

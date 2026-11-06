@@ -393,9 +393,11 @@ type Projectile = {
     spell?: SpellDef;
     maxHit?: number;
     scale?: number;
+    // A spell's sound where it lands (version 108), anyone's
+    hitSound?: number;
 };
 
-type Effect = { actor: Actor; left: number };
+type Effect ={ actor: Actor; left: number };
 
 // A chest: now and then a mimic (an enemy, once opened), or watched (opening
 // it rouses what's about)
@@ -2986,14 +2988,18 @@ export class Run {
         if (target) {
             this.facing = Math.atan2(target.x - this.px, target.z - this.pz);
         }
-        const clip = stats.weapon?.attackClip ?? "attack";
+        // A spell is cast with its own animation and sound, OSRS's (version
+        // 108); anything else swings as the weapon does
+        const spell = casting?.spell;
+        const clip = spell?.clip ?? stats.weapon?.attackClip ?? "attack";
         const length = this.player.play(clip, { once: true, speed: Math.max(1, 0.7 / stats.speed) });
         this.swingIn = Math.min(0.3, length * 0.5);
         this.swingTarget = target;
         this.attackCooldown = stats.speed;
         this.attacks++;
-        if (stats.sound) {
-            playSound(`sounds/${stats.sound}`, 0.4);
+        const sound = spell?.castSound ?? stats.sound;
+        if (sound) {
+            playSound(`sounds/${sound}`, 0.4);
         }
         // A spell's own light on the caster as it's cast
         if (casting?.spell?.cast !== undefined && target) {
@@ -3202,12 +3208,22 @@ export class Run {
     private shoot(target: Enemy, damage: number, look: Look): Promise<void> {
         const weapon = this.stats.weapon;
         const y = this.groundY(this.px, this.pz) + 1.0;
+        // The party hears of the spell too, to cast it and hear it as it was
+        const s = look.spell?.id;
         if (this.coop?.role === "host") {
-            this.coop.send({ k: "pshot", from: this.coop.me, u: target.uid, p: look.projectile, i: look.impact } satisfies DownMessage);
+            this.coop.send({ k: "pshot", from: this.coop.me, u: target.uid, p: look.projectile, i: look.impact, s } satisfies DownMessage);
         } else if (this.coop?.role === "guest") {
-            this.coop.send({ k: "shot", u: target.uid, p: look.projectile, i: look.impact } satisfies UpMessage);
+            this.coop.send({ k: "shot", u: target.uid, p: look.projectile, i: look.impact, s } satisfies UpMessage);
         }
-        return this.launch(this.px, this.pz, y, look.projectile, { target, damage, impact: look.impact, splash: weapon?.splash, spell: look.spell, maxHit: look.maxHit });
+        return this.launch(this.px, this.pz, y, look.projectile, {
+            target,
+            damage,
+            impact: look.impact,
+            splash: weapon?.splash,
+            spell: look.spell,
+            maxHit: look.maxHit,
+            hitSound: look.spell?.hitSound,
+        });
     }
 
     private ballProjectile(): THREE.Object3D {
@@ -3237,6 +3253,17 @@ export class Run {
         await this.launch(e.x, e.z, y, projectile, { hero: t, from: e.def, style, impact, cast: castAnim, scale: this.weakScale(e) });
     }
 
+    // A mate's spell, from its shot's word (version 108): they cast it with
+    // its own animation, and its sound is heard where they are
+    private mateSpell(mate: Mate, id: unknown): SpellDef | undefined {
+        const spell = typeof id === "string" ? SPELL_BY_ID.get(id) : undefined;
+        if (spell) {
+            mate.castWith(spell.clip);
+            this.hear(`sounds/${spell.castSound}`, mate.x, mate.z, 0.4);
+        }
+        return spell;
+    }
+
     // What a shadow spell leaves of an enemy's hits (version 107)
     private weakScale(e: Enemy): number {
         return e.weakLeft > 0 ? 1 - e.weak : 1;
@@ -3262,6 +3289,7 @@ export class Run {
             spell?: SpellDef;
             maxHit?: number;
             scale?: number;
+            hitSound?: number;
         },
     ): Promise<void> {
         if (at.cast !== undefined) {
@@ -3303,6 +3331,7 @@ export class Run {
             spell: at.spell,
             maxHit: at.maxHit,
             scale: at.scale,
+            hitSound: at.hitSound,
         });
     }
 
@@ -4354,6 +4383,9 @@ export class Run {
                     }
                     if (p.impact !== undefined) {
                         void this.burst(p.impact, tx, tz);
+                    }
+                    if (p.hitSound !== undefined) {
+                        this.hear(`sounds/${p.hitSound}`, tx, tz, 0.4);
                     }
                 }
                 this.scene.remove(p.root);
@@ -5439,7 +5471,8 @@ export class Run {
                 const mate = this.mates.get(message.from);
                 const e = this.ghosts.get(message.u);
                 if (mate && e && message.from !== me) {
-                    void this.launch(mate.x, mate.z, this.groundY(mate.x, mate.z) + 1.0, message.p, { target: e, visual: true, impact: message.i });
+                    const spell = this.mateSpell(mate, message.s);
+                    void this.launch(mate.x, mate.z, this.groundY(mate.x, mate.z) + 1.0, message.p, { target: e, visual: true, impact: message.i, hitSound: spell?.hitSound });
                 }
                 break;
             }
@@ -5558,8 +5591,9 @@ export class Run {
             case "shot": {
                 const e = this.enemies.find((x) => x.uid === message.u);
                 if (e) {
-                    coop.send({ k: "pshot", from, u: message.u, p: message.p, i: message.i } satisfies DownMessage);
-                    void this.launch(mate.x, mate.z, this.groundY(mate.x, mate.z) + 1.0, message.p, { target: e, visual: true, impact: message.i });
+                    const spell = this.mateSpell(mate, message.s);
+                    coop.send({ k: "pshot", from, u: message.u, p: message.p, i: message.i, s: spell?.id } satisfies DownMessage);
+                    void this.launch(mate.x, mate.z, this.groundY(mate.x, mate.z) + 1.0, message.p, { target: e, visual: true, impact: message.i, hitSound: spell?.hitSound });
                 }
                 break;
             }

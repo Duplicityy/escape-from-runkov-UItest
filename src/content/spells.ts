@@ -77,6 +77,44 @@ export type SpellDef = {
     effect?: SpellEffect;
     // The spellbook's icon (public/ui/spells/<id>.png, the cache's sprite)
     icon: string;
+    // The caster's animation and the spell's sounds as it's cast and where
+    // it lands, OSRS's own (version 108)
+    clip: CastClip;
+    castSound: number;
+    hitSound: number;
+};
+
+// The player's cast animations (Run Escape's PLAYER_CLIPS): OSRS's staff
+// casts for strikes, bolts and blasts (1162) and waves (1167), the surge
+// (7855), and Ancient Magicks' single (1978) and area (1979) casts
+export type CastClip = "cast_staff" | "cast_wave" | "cast_surge" | "cast_ancient" | "cast_ancient_area";
+const FAMILY_CLIP: Record<SpellFamily | AncientFamily, CastClip> = {
+    strike: "cast_staff",
+    bolt: "cast_staff",
+    blast: "cast_staff",
+    wave: "cast_wave",
+    surge: "cast_surge",
+    rush: "cast_ancient",
+    blitz: "cast_ancient",
+    burst: "cast_ancient_area",
+    barrage: "cast_ancient_area",
+};
+
+// OSRS's sound ids (the wiki's list of sound ids): [cast, hit]
+const STANDARD_SOUNDS: Record<SpellFamily, Record<Element, [number, number]>> = {
+    strike: { wind: [220, 221], water: [211, 212], earth: [132, 133], fire: [160, 161] },
+    bolt: { wind: [218, 219], water: [209, 210], earth: [130, 131], fire: [157, 158] },
+    blast: { wind: [216, 217], water: [207, 208], earth: [128, 129], fire: [155, 156] },
+    wave: { wind: [222, 223], water: [213, 214], earth: [134, 135], fire: [162, 163] },
+    surge: { wind: [4028, 4027], water: [4030, 4029], earth: [4025, 4026], fire: [4032, 4031] },
+};
+// Ancient Magicks: one cast sound an element, a hit sound a spell
+const ANCIENT_CAST_SOUND: Record<AncientElement, number> = { smoke: 183, shadow: 178, blood: 106, ice: 171 };
+const ANCIENT_HIT_SOUND: Record<AncientFamily, Record<AncientElement, number>> = {
+    rush: { smoke: 185, shadow: 179, blood: 110, ice: 173 },
+    burst: { smoke: 182, shadow: 177, blood: 105, ice: 170 },
+    blitz: { smoke: 181, shadow: 176, blood: 104, ice: 169 },
+    barrage: { smoke: 180, shadow: 175, blood: 102, ice: 168 },
 };
 
 // What each element's spell of a family has, against the family's fire spell
@@ -133,6 +171,9 @@ const STANDARD: SpellDef[] = FAMILIES.flatMap((family) =>
             projectile,
             impact,
             icon: id,
+            clip: FAMILY_CLIP[family],
+            castSound: STANDARD_SOUNDS[family][element][0],
+            hitSound: STANDARD_SOUNDS[family][element][1],
         };
     }),
 );
@@ -228,6 +269,9 @@ const ANCIENT_SPELLS: SpellDef[] = ANCIENT_FAMILIES.flatMap((family) =>
             area: family === "burst" || family === "barrage",
             effect: ancientEffect(family, element),
             icon: id,
+            clip: FAMILY_CLIP[family],
+            castSound: ANCIENT_CAST_SOUND[element],
+            hitSound: ANCIENT_HIT_SOUND[family][element],
         };
     }),
 );
