@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 117 (built 6 November 2026, playtest only): Log out to switch accounts or make another
+(README's "Accounts"): on the title screen and in Settings; what's changed is sent first, then
+the device starts clean. Checked locally: Fish One made with 4,242 coins, logged out, Fish Two
+made fresh (50 coins, its own friend code), logged out, Fish One logged in again with its 4,242.
+`GAME_BUILD` 117.
+
 Version 116 (built 6 November 2026, playtest only): accounts (README's "Accounts"). Create
 account or Log in before the guild; names unique across players; the save kept with the account
 in Cloudflare D1 and synced to every device logged in to it; the friend code given on the welcome

@@ -97,6 +97,7 @@ import {
     UPGRADES,
     Upgrades,
     loadedSlot,
+    newSave,
     packSize,
     parseSave,
     parseSaveCode,
@@ -771,6 +772,11 @@ export class UI {
             status.className = "account-status muted";
             status.textContent = create ? "Making your account..." : "Logging in...";
             if (create) {
+                // A copy of another account's save (this device was logged
+                // out of it) is that account's: a new one starts from nothing
+                if (account.previous && this.save.character.name === account.previous) {
+                    this.replaceSave(newSave());
+                }
                 // This browser's progress goes up as the account's, named for it
                 const before = this.save.character.name;
                 this.save.character.name = name;
@@ -782,6 +788,7 @@ export class UI {
                 }
                 this.save.character.name = result.data.name;
                 writeSave(this.save, true);
+                this.accountChanged();
                 this.accountTyped = "";
                 await this.showWelcome();
                 return;
@@ -819,7 +826,10 @@ export class UI {
             nameState,
             password,
             again,
-            create && this.save.stats.runs > 0 ? h("div", { class: "muted small-text" }, `The progress in this browser (${this.save.stats.runs} runs) becomes your account's.`) : null,
+            create && this.save.stats.runs > 0 && this.save.character.name !== account.previous
+                ? h("div", { class: "muted small-text" }, `The progress in this browser (${this.save.stats.runs} runs) becomes your account's.`)
+                : null,
+            create && account.previous ? h("div", { class: "muted small-text" }, `A new account starts fresh: ${account.previous}'s progress stays with ${account.previous}.`) : null,
             !create && this.save.stats.runs > 0 ? h("div", { class: "muted small-text" }, "The progress in this browser is replaced by the account's.") : null,
             button,
             status,
@@ -887,16 +897,60 @@ export class UI {
     adoptAccountSave(raw: unknown, name: string): void {
         const parsed = raw ? parseSave(JSON.stringify(raw)) : undefined;
         if (parsed) {
-            const target = this.save as unknown as Record<string, unknown>;
-            for (const key of Object.keys(target)) {
-                if (!(key in parsed)) {
-                    delete target[key];
-                }
-            }
-            Object.assign(this.save, parsed);
+            this.replaceSave(parsed);
         }
         this.save.character.name = name;
         writeSave(this.save, true);
+        this.accountChanged();
+    }
+
+    // Another save in this one's place, every field (none of the old one's
+    // left over), kept on this device only
+    private replaceSave(next: SaveData): void {
+        const target = this.save as unknown as Record<string, unknown>;
+        for (const key of Object.keys(target)) {
+            if (!(key in next)) {
+                delete target[key];
+            }
+        }
+        Object.assign(this.save, next);
+        writeSave(this.save, true);
+    }
+
+    // A different account here (or none): the relay hears the new
+    // character's friend key, so friends see the right one
+    private accountChanged(): void {
+        this.codeFor = undefined;
+        if (this.coopEnabled && this.save.friendKey) {
+            this.session.keepOnline(this.save.friendKey, this.presence());
+        }
+    }
+
+    // Log out (version 117), to swap accounts or make another: what's
+    // changed goes to the account first, then this device starts clean, so
+    // a new account made here starts from nothing and one logged in to
+    // brings only its own progress
+    private async logOut(): Promise<void> {
+        const account = this.account;
+        if (!account?.name) {
+            return;
+        }
+        if (this.session.room) {
+            alert("Leave the party first.");
+            return;
+        }
+        if (!confirm(`Log out of ${account.name}? Its progress stays with the account for when you log in again.`)) {
+            return;
+        }
+        const sent = await account.flush(this.save);
+        if (!sent && !confirm("Couldn't reach the account server, so the latest changes here aren't saved to the account yet. Log out anyway and lose them?")) {
+            return;
+        }
+        await account.logOut();
+        this.replaceSave(newSave());
+        this.notice = undefined;
+        this.accountChanged();
+        this.showAccount("login", "");
     }
 
     // What this player tells the relay about themselves for their friends
@@ -1099,6 +1153,10 @@ export class UI {
     // Progress lives in this browser; a code carries it to another
     private utilityButtons(): HTMLElement[] {
         return [
+            // To switch accounts or make another (version 117)
+            this.account?.name && loadedSlot() === 0
+                ? h("button", { title: `Logged in as ${this.account.name}: log out to switch accounts or make another`, onclick: () => void this.logOut() }, "Log out")
+                : null,
             h(
                 "button",
                 {
@@ -2222,21 +2280,10 @@ export class UI {
                       "Account",
                       h(
                           "button",
-                          {
-                              onclick: async () => {
-                                  if (this.session.room) {
-                                      alert("Leave the party first.");
-                                      return;
-                                  }
-                                  if (confirm(`Log out of ${this.account?.name}? Your progress is kept with the account.`)) {
-                                      await this.account?.logOut();
-                                      this.showAccount("login");
-                                  }
-                              },
-                          },
+                          { onclick: () => void this.logOut() },
                           "Log out",
                       ),
-                      `${this.account.name}: your progress is saved with it, on every device you log in on`,
+                      `${this.account.name}: your progress is saved with it, on every device you log in on. Log out to switch accounts or make another`,
                   )
                 : null,
             row(

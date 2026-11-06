@@ -456,8 +456,12 @@ name is the account's (the Character screen doesn't change it). Every write of t
 2.5 s after the last (`account.ts`, through `save.ts`'s `setOnWrite`), and at once as the page
 goes; each write carries the revision it came from, so a device that's behind is turned down and
 gets the newer save instead ("played on another device since", never mid-run). If the server
-can't be reached the game plays from this device's copy and sends it later. Log out is in
-Settings. A crowned browser's test character stays this browser's alone. The account's welcome
+can't be reached the game plays from this device's copy and sends it later. **Log out** (version
+117) is on the title screen's bottom row and in Settings, to switch accounts or make another: it
+sends what's changed first (asking before losing anything the server can't be reached for), then
+starts this device clean, so a new account made here starts from nothing and one logged in to
+brings only its own; a device logged out by the server (a token gone stale) keeps that account's
+copy, and a new account made on it starts fresh too. A crowned browser's test character stays this browser's alone. The account's welcome
 screen gives its **friend code**, made in the game from the save's key (`friendcode.ts`, the
 relay's sum), so every character has one from the start, shown on the title card too.
 

@@ -8,6 +8,7 @@
 import { SaveData } from "./save";
 
 const STORAGE = "dungeon-extraction-account";
+const PREVIOUS = "dungeon-extraction-account-before";
 // A save is sent this long after the last change to it, so a run of clicks
 // in the vault is one write
 const PUSH_DELAY_MS = 2500;
@@ -81,6 +82,8 @@ export class Account {
     private timer?: number;
     private sending = false;
     private again = false;
+    // A change the server hasn't had yet
+    private dirty = false;
     onNewer?: (save: SaveData) => void;
     onLoggedOut?: () => void;
 
@@ -131,6 +134,7 @@ export class Account {
         if (!this.state) {
             return;
         }
+        this.dirty = true;
         window.clearTimeout(this.timer);
         if (soon) {
             this.timer = window.setTimeout(() => void this.send(save), PUSH_DELAY_MS);
@@ -139,20 +143,24 @@ export class Account {
         }
     }
 
-    private async send(save: SaveData): Promise<void> {
+    // Whether the server has it now
+    private async send(save: SaveData): Promise<boolean> {
         if (!this.state) {
-            return;
+            return false;
         }
         if (this.sending) {
             this.again = true;
-            return;
+            return false;
         }
         this.sending = true;
+        this.dirty = false;
         const result = await call<{ rev: number; save?: SaveData | null }>("PUT", "save", { save, rev: this.state.rev }, this.state.token);
         this.sending = false;
+        let sent = false;
         if (result.ok && this.state) {
             this.state = { ...this.state, rev: result.data.rev };
             keep(this.state);
+            sent = true;
         } else if (!result.ok && result.status === 409 && result.data) {
             // Played on another device since: that's the save now
             if (this.state) {
@@ -162,33 +170,69 @@ export class Account {
             if (result.data.save) {
                 this.onNewer?.(result.data.save);
             }
-            return;
+            return true;
         } else if (!result.ok && result.status === 401) {
             this.forget();
-            return;
+            return false;
         } else if (!result.ok) {
             // Offline or the server's down: tried again with the next change,
             // or in a while
+            this.dirty = true;
             this.timer = window.setTimeout(() => void this.send(save), 30_000);
         }
         if (this.again) {
             this.again = false;
-            void this.send(save);
+            return this.send(save);
         }
+        return sent;
     }
 
+    // Everything changed sent now, waiting for it (version 117: before
+    // logging out); false when the server couldn't be reached
+    async flush(save: SaveData): Promise<boolean> {
+        if (!this.state) {
+            return true;
+        }
+        window.clearTimeout(this.timer);
+        while (this.sending) {
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        return this.dirty ? this.send(save) : true;
+    }
+
+    // Logged out on purpose: nobody's told this device was logged out
     async logOut(): Promise<void> {
         const token = this.state?.token;
         window.clearTimeout(this.timer);
-        this.forget();
+        this.dirty = false;
+        this.forget(false);
         if (token) {
             await call("POST", "logout", {}, token);
         }
     }
 
-    private forget(): void {
+    // The account this device was last logged in to, if it isn't now: its
+    // copy of the save is that account's, not for a new one to start from
+    get previous(): string | undefined {
+        try {
+            return localStorage.getItem(PREVIOUS) ?? undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
+    private forget(tell = true): void {
+        try {
+            if (this.state) {
+                localStorage.setItem(PREVIOUS, this.state.name);
+            }
+        } catch {
+            // No storage
+        }
         this.state = undefined;
         keep(undefined);
-        this.onLoggedOut?.();
+        if (tell) {
+            this.onLoggedOut?.();
+        }
     }
 }
