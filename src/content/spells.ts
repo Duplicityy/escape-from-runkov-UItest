@@ -12,7 +12,9 @@
 // their element's runes for nothing, as in OSRS.
 import { ItemDef, MATCH_POWER } from "./items";
 
-export type Book = "standard" | "ancient";
+// "staff": a staff's own spells (version 110), the god spells, Iban Blast and
+// Magic Dart, and a powered staff's built-in spell; no book of their own
+export type Book = "standard" | "ancient" | "staff";
 export const BOOKS: Book[] = ["standard", "ancient"];
 
 export type Element = "wind" | "water" | "earth" | "fire";
@@ -37,6 +39,8 @@ export const DEATH = 560;
 export const BLOOD = 565;
 export const SOUL = 566;
 export const WRATH = 21880;
+// The lithic sceptre's (version 110)
+export const BODY = 559;
 
 export type RuneCost = { id: number; n: number };
 
@@ -45,11 +49,14 @@ export type RuneCost = { id: number; n: number };
 // POISON_HITS times), shadow takes a share off the target's hits for
 // WEAKEN_SECONDS, blood heals the caster a share of what it dealt, and ice
 // freezes the target in place (bosses shrug it off)
-export type SpellEffect =
+// (version 110) chance: on that share of hits only (the swamp trident's
+// venom, the Sanguinesti staff's heal)
+export type SpellEffect = (
     | { kind: "poison"; share: number }
     | { kind: "weaken"; share: number }
     | { kind: "heal"; share: number }
-    | { kind: "freeze"; seconds: number };
+    | { kind: "freeze"; seconds: number }
+) & { chance?: number };
 export const POISON_EVERY = 3;
 export const POISON_HITS = 5;
 export const WEAKEN_SECONDS = 30;
@@ -58,12 +65,17 @@ export type SpellDef = {
     id: string;
     name: string;
     book: Book;
-    family: SpellFamily | AncientFamily;
-    element: Element | AncientElement;
+    family: SpellFamily | AncientFamily | "staff";
+    element: Element | AncientElement | "staff";
     // The staff tier that casts it (a family's tier)
     tier: number;
-    // Its share of the staff's max hit against MATCH_POWER (spellScale)
+    // Its share of the staff's max hit against MATCH_POWER (spellScale); a
+    // powered staff's own spell has none: it hits the staff's max hit
     power: number;
+    // A powered staff's own spell: the staff that casts it (version 110)
+    poweredBy?: number;
+    // Whose heal it is to show on the caster (the Sanguinesti staff's)
+    healLook?: number;
     runes: RuneCost[];
     // Spot animations: on the caster, flying, and where it lands. A spell
     // with no flight (a burst, a barrage but ice's) lands on the target as
@@ -80,14 +92,31 @@ export type SpellDef = {
     // The caster's animation and the spell's sounds as it's cast and where
     // it lands, OSRS's own (version 108)
     clip: CastClip;
-    castSound: number;
+    // None for a spell OSRS sounds only where it lands (the god spells)
+    castSound?: number;
     hitSound: number;
 };
 
 // The player's cast animations (Run Escape's PLAYER_CLIPS): OSRS's staff
 // casts for strikes, bolts and blasts (1162) and waves (1167), the surge
 // (7855), and Ancient Magicks' single (1978) and area (1979) casts
-export type CastClip = "cast_staff" | "cast_wave" | "cast_surge" | "cast_ancient" | "cast_ancient_area";
+export type CastClip =
+    | "cast_staff"
+    | "cast_wave"
+    | "cast_surge"
+    | "cast_ancient"
+    | "cast_ancient_area"
+    // The staves' own (version 110): the god spells (811), Iban Blast (708),
+    // Magic Dart (1576), the tridents and the Sanguinesti staff (11430),
+    // Tumeken's shadow (9493), the warped sceptre (10501), the Eye of Ayak
+    // (12397)
+    | "cast_god"
+    | "cast_iban"
+    | "cast_dart"
+    | "cast_trident"
+    | "cast_shadow"
+    | "cast_warped"
+    | "cast_ayak";
 const FAMILY_CLIP: Record<SpellFamily | AncientFamily, CastClip> = {
     strike: "cast_staff",
     bolt: "cast_staff",
@@ -276,14 +305,172 @@ const ANCIENT_SPELLS: SpellDef[] = ANCIENT_FAMILIES.flatMap((family) =>
     }),
 );
 
-export const SPELLS: SpellDef[] = [...STANDARD, ...ANCIENT_SPELLS];
-export const SPELL_BY_ID = new Map(SPELLS.map((s) => [s.id, s]));
+// A staff's own spells (version 110), OSRS's: the god spells, Iban Blast and
+// Magic Dart, each cast only by the staves OSRS lets cast it (STAFF_MAGIC),
+// with its OSRS max hit, runes, animation, graphics and sounds. All of them
+// at tier 3, the god staves' and Iban's and the Slayer's staff's.
+type StaffSpellDef = {
+    id: string;
+    name: string;
+    max: number;
+    runes: [number, number][];
+    cast?: number;
+    projectile?: number;
+    impact: number;
+    clip: CastClip;
+    castSound?: number;
+    hitSound: number;
+};
+const STAFF_SPELL_DEFS: StaffSpellDef[] = [
+    // The god spells strike from above: nothing flies, and OSRS sounds them
+    // where they land
+    { id: "saradomin_strike", name: "Saradomin Strike", max: 20, runes: [[AIR, 4], [FIRE, 2], [BLOOD, 2]], impact: 76, clip: "cast_god", hitSound: 1659 },
+    { id: "claws_of_guthix", name: "Claws of Guthix", max: 20, runes: [[AIR, 4], [FIRE, 1], [BLOOD, 2]], impact: 77, clip: "cast_god", hitSound: 1653 },
+    { id: "flames_of_zamorak", name: "Flames of Zamorak", max: 20, runes: [[AIR, 1], [FIRE, 4], [BLOOD, 2]], impact: 78, clip: "cast_god", hitSound: 1655 },
+    { id: "iban_blast", name: "Iban Blast", max: 25, runes: [[FIRE, 5], [DEATH, 1]], cast: 87, projectile: 88, impact: 89, clip: "cast_iban", castSound: 1341, hitSound: 163 },
+    // At 99 Magic: 99 / 10 + 10
+    { id: "magic_dart", name: "Magic Dart", max: 19, runes: [[MIND, 4], [DEATH, 1]], projectile: 328, impact: 329, clip: "cast_dart", castSound: 1718, hitSound: 174 },
+];
+const STAFF_SPELLS: SpellDef[] = STAFF_SPELL_DEFS.map((d) => ({
+    id: d.id,
+    name: d.name,
+    book: "staff",
+    family: "staff",
+    element: "staff",
+    tier: 3,
+    power: powerOfMaxHit(d.max),
+    runes: d.runes.map(([id, n]) => ({ id, n })),
+    cast: d.cast,
+    projectile: d.projectile,
+    impact: d.impact,
+    icon: d.id,
+    clip: d.clip,
+    castSound: d.castSound,
+    hitSound: d.hitSound,
+}));
 
-// The staves that cast Ancient Magicks, OSRS's list: the ancient staff and
-// sceptres, the master, Kodai and dragon hunter wands, the nightmare staves,
-// Thammaron's and the accursed sceptre; Ahrim's staff with Ahrim's whole set
-export const ANCIENT_STAVES = new Set([4675, 27624, 25489, 25490, 25491, 25492, 6914, 21006, 30070, 24422, 24424, 24425, 22555, 27665]);
+// The powered staves (version 110): OSRS's tridents, the Sanguinesti staff,
+// Tumeken's shadow, the warped sceptre, the bone staff, the Eye of Ayak and
+// the lithic sceptre cast their own spell and nothing else, for what one of
+// their charges costs in runes (the trident's coins and scales left out). It
+// hits the staff's max hit. The swamp trident envenoms a hit in four, and the
+// Sanguinesti staff heals half a hit's damage one hit in five. Sounds OSRS's
+// lists name where they do (Tumeken's shadow, the swamp trident's and the
+// eye's cast); otherwise the nearest OSRS spell's.
+type PoweredDef = {
+    staff: number;
+    id: string;
+    name: string;
+    runes: [number, number][];
+    cast?: number;
+    projectile: number;
+    impact: number;
+    clip: CastClip;
+    castSound: number;
+    hitSound: number;
+    effect?: SpellEffect;
+    healLook?: number;
+};
+const POWERED_DEFS: PoweredDef[] = [
+    { staff: 11905, id: "trident_seas", name: "Trident of the seas", runes: [[DEATH, 1], [CHAOS, 1], [FIRE, 5]], cast: 1251, projectile: 1252, impact: 1253, clip: "cast_trident", castSound: 213, hitSound: 214 },
+    {
+        staff: 12899,
+        id: "trident_swamp",
+        name: "Trident of the swamp",
+        runes: [[DEATH, 1], [CHAOS, 1], [FIRE, 5]],
+        cast: 665,
+        projectile: 1040,
+        impact: 1042,
+        clip: "cast_trident",
+        castSound: 178,
+        hitSound: 179,
+        effect: { kind: "poison", share: 0.2, chance: 0.25 },
+    },
+    {
+        staff: 22323,
+        id: "sanguinesti",
+        name: "Sanguinesti staff",
+        runes: [[BLOOD, 2]],
+        cast: 1540,
+        projectile: 1539,
+        impact: 1541,
+        clip: "cast_trident",
+        castSound: 106,
+        hitSound: 102,
+        effect: { kind: "heal", share: 0.5, chance: 0.2 },
+        healLook: 1542,
+    },
+    { staff: 27275, id: "tumekens_shadow", name: "Tumeken's shadow", runes: [[SOUL, 2], [CHAOS, 5]], cast: 2125, projectile: 2126, impact: 2127, clip: "cast_shadow", castSound: 6410, hitSound: 1460 },
+    { staff: 28585, id: "warped_sceptre", name: "Warped sceptre", runes: [[CHAOS, 2], [EARTH, 5]], cast: 2567, projectile: 2569, impact: 2568, clip: "cast_warped", castSound: 134, hitSound: 135 },
+    { staff: 28796, id: "bone_staff", name: "Bone staff", runes: [[CHAOS, 1]], cast: 2645, projectile: 2647, impact: 2646, clip: "cast_staff", castSound: 7647, hitSound: 7620 },
+    { staff: 31113, id: "eye_of_ayak", name: "Eye of Ayak", runes: [[DEATH, 2], [CHAOS, 1]], cast: 3366, projectile: 3367, impact: 3368, clip: "cast_ayak", castSound: 178, hitSound: 5595 },
+    { staff: 33255, id: "lithic_sceptre", name: "Lithic sceptre", runes: [[BODY, 1], [EARTH, 3]], projectile: 3751, impact: 3752, clip: "cast_staff", castSound: 134, hitSound: 135 },
+];
+const POWERED_SPELLS: SpellDef[] = POWERED_DEFS.map((d) => ({
+    id: d.id,
+    name: d.name,
+    book: "staff",
+    family: "staff",
+    element: "staff",
+    tier: 1,
+    power: 0,
+    poweredBy: d.staff,
+    runes: d.runes.map(([id, n]) => ({ id, n })),
+    cast: d.cast,
+    projectile: d.projectile,
+    impact: d.impact,
+    effect: d.effect,
+    healLook: d.healLook,
+    // The staff's own item icon
+    icon: `item_${d.staff}`,
+    clip: d.clip,
+    castSound: d.castSound,
+    hitSound: d.hitSound,
+}));
+
+export const SPELLS: SpellDef[] = [...STANDARD, ...ANCIENT_SPELLS, ...STAFF_SPELLS, ...POWERED_SPELLS];
+export const SPELL_BY_ID = new Map(SPELLS.map((s) => [s.id, s]));
+const POWERED_BY_STAFF = new Map(POWERED_SPELLS.map((s) => [s.poweredBy!, s]));
+
+// What each staff casts, OSRS's rules (the wiki's autocast tables and item
+// pages, version 110). Any staff, wand or sceptre not listed casts the
+// standard spellbook's combat spells and nothing more.
+// - ancient: Ancient Magicks too: the ancient staff and sceptres, the
+//   master, Kodai and dragon hunter wands, the nightmare staves but the
+//   harmonised, Zuriel's staff, and Thammaron's and the accursed sceptre
+//   (OSRS's attuned ones, which the game's are); Ahrim's staff only with all
+//   of Ahrim's set and the amulet of the damned ("ahrim")
+// - families: only these of the standard spells (the Slayer's staff's waves
+//   and surges)
+// - own: the staff's own spells. OSRS lets the god staves cast their god
+//   spell but not autocast it; the game only autocasts, so they do.
+type StaffMagic = { ancient?: boolean | "ahrim"; families?: SpellFamily[]; own?: string[] };
+const STAFF_MAGIC = new Map<number, StaffMagic>([
+    ...[4675, 27624, 25489, 25490, 25491, 25492, 6914, 21006, 30070, 24422, 24424, 24425, 22647].map((id): [number, StaffMagic] => [id, { ancient: true }]),
+    [22555, { ancient: true, own: ["flames_of_zamorak"] }],
+    [27665, { ancient: true, own: ["flames_of_zamorak"] }],
+    [4710, { ancient: "ahrim" }],
+    [2415, { own: ["saradomin_strike"] }],
+    [2416, { own: ["claws_of_guthix"] }],
+    [2417, { own: ["flames_of_zamorak"] }],
+    [22296, { own: ["saradomin_strike", "magic_dart"] }],
+    [11791, { own: ["flames_of_zamorak", "magic_dart"] }],
+    [12904, { own: ["flames_of_zamorak", "magic_dart"] }],
+    [4170, { families: ["wave", "surge"], own: ["magic_dart"] }],
+    [1409, { own: ["iban_blast"] }],
+]);
 export const AHRIMS_STAFF = 4710;
+export const AMULET_OF_THE_DAMNED = 12853;
+
+// A powered staff's own spell, if the weapon is one
+export function poweredSpell(weapon: ItemDef | undefined): SpellDef | undefined {
+    return weapon ? POWERED_BY_STAFF.get(weapon.id) : undefined;
+}
+
+// The staff's own spells, the god spells and the like (not a powered staff's)
+export function ownSpells(weapon: ItemDef | undefined): SpellDef[] {
+    return (STAFF_MAGIC.get(weapon?.id ?? -1)?.own ?? []).map((id) => SPELL_BY_ID.get(id)!);
+}
 
 // Staves (and the tomes, held in the shield hand) that give runes, by the
 // runes they give: OSRS's elemental staves, battlestaves and mystic staves,
@@ -317,20 +504,46 @@ export function spellCost(spell: SpellDef, given: Set<number>): RuneCost[] {
     return spell.runes.filter((r) => !given.has(r.id));
 }
 
-// Whether a staff casts Ancient Magicks at all (Ahrim's only with its set)
+// Whether a staff casts Ancient Magicks at all (Ahrim's only with all of its
+// set and the amulet of the damned: ahrimSet)
 export function castsAncients(weapon: ItemDef | undefined, ahrimSet = false): boolean {
-    return !!weapon && (ANCIENT_STAVES.has(weapon.id) || (weapon.id === AHRIMS_STAFF && ahrimSet));
+    const ancient = STAFF_MAGIC.get(weapon?.id ?? -1)?.ancient;
+    return ancient === true || (ancient === "ahrim" && ahrimSet);
 }
 
-// Whether a staff can cast a spell at all: its tier is enough, and for an
-// Ancient spell it's a staff that casts them
+// Whether a staff can cast a spell at all, OSRS's rules (STAFF_MAGIC): a
+// powered staff only its own; a standard spell of a family the staff casts,
+// an Ancient one if it casts them, one of its own spells; and its tier is
+// enough
 export function staffCasts(weapon: ItemDef | undefined, spell: SpellDef, ahrimSet = false): boolean {
-    return weapon?.uses === "runes" && weapon.tier >= spell.tier && (spell.book === "standard" || castsAncients(weapon, ahrimSet));
+    if (weapon?.uses !== "runes") {
+        return false;
+    }
+    const powered = poweredSpell(weapon);
+    if (powered || spell.poweredBy !== undefined) {
+        return powered === spell;
+    }
+    if (weapon.tier < spell.tier) {
+        return false;
+    }
+    const magic = STAFF_MAGIC.get(weapon.id);
+    switch (spell.book) {
+        case "standard":
+            return !magic?.families || magic.families.includes(spell.family as SpellFamily);
+        case "ancient":
+            return castsAncients(weapon, ahrimSet);
+        case "staff":
+            return magic?.own?.includes(spell.id) ?? false;
+    }
 }
 
 // A spell's share of the staff's max hit: its power against the staff's own
-// tier's best (MATCH_POWER, as ammoScale has it for arrows)
+// tier's best (MATCH_POWER, as ammoScale has it for arrows); a powered
+// staff's own spell hits the staff's max hit
 export function spellScale(weapon: ItemDef | undefined, spell: SpellDef): number {
+    if (spell.poweredBy !== undefined) {
+        return 1;
+    }
     return spell.power / (MATCH_POWER[weapon?.tier ?? 1] ?? 1);
 }
 
@@ -343,12 +556,18 @@ export function castsLeft(spell: SpellDef, given: Set<number>, count: (id: numbe
     return casts;
 }
 
-// The spell a staff casts on its own (autocast unset): the strongest of the
-// book open it can cast, with the runes for it
+// The spell a staff casts on its own (autocast unset): a powered staff's own;
+// else the strongest it can cast of the book open, or of its own spells
+// (version 110: a god staff's god spell, with the runes, beats its blasts),
+// with the runes for it
 export function bestSpell(weapon: ItemDef | undefined, given: Set<number>, count: (id: number) => number, book: Book = "standard", ahrimSet = false): SpellDef | undefined {
+    const powered = poweredSpell(weapon);
+    if (powered) {
+        return castsLeft(powered, given, count) > 0 ? powered : undefined;
+    }
     let best: SpellDef | undefined;
     for (const spell of SPELLS) {
-        if (spell.book === book && staffCasts(weapon, spell, ahrimSet) && castsLeft(spell, given, count) > 0 && (!best || spell.power > best.power)) {
+        if ((spell.book === book || spell.book === "staff") && staffCasts(weapon, spell, ahrimSet) && castsLeft(spell, given, count) > 0 && (!best || spell.power > best.power)) {
             best = spell;
         }
     }

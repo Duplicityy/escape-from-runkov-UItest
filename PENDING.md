@@ -1,5 +1,17 @@
 # Pending for the next push
 
+Version 110 (built 6 November 2026, not deployed): what each staff casts by OSRS's rules, and
+the staves' own spells (README's "What each staff casts"). Seven more player clips in Run
+Escape's PLAYER_CLIPS (cast_god 811, cast_iban 708, cast_dart 1576, cast_trident 11430,
+cast_shadow 9493, cast_warped 10501, cast_ayak 12397 at 16 frames): every player piece
+re-exported again (public/assets/player now 1898 MB; largest file 4.6 MB). 32 spot animations,
+12 sounds and the body rune (559) added to assets.json and copied in; the spell icons are the
+cache's sprites 61, 60, 59, 53 and 324. Sound ids the OSRS lists give: the god spells' 1659,
+1653, 1655, Magic Dart 1718 and 174, Tumeken's shadow 6410, the swamp trident's and the eye's
+cast 178. The rest are the nearest OSRS spell's (trident of the seas water wave's, the
+Sanguinesti blood spells', the warped and lithic sceptres earth wave's, the bone staff
+Scurrius' magic). The bone staff hits anything, not only rats as in OSRS. `GAME_BUILD` 110.
+
 Version 109 (built 6 November 2026, not deployed): hills and objects (README's "Hills and
 objects"). The twelve maps' region.json re-exported with Run Escape's new `collision` command
 (object boxes, blocked-ground and object bits) and copied to public/assets/maps; region.ts

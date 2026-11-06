@@ -276,6 +276,26 @@ browsers.
   area cast (1979). The cast sound plays as the spell leaves and the hit sound where it lands
   (Fire Strike 160 and 161, Ice Barrage 171 and 168, the wiki's sound ids). In co-op a shot
   carries its spell (`s`), so mates are seen and heard casting it too.
+- **What each staff casts, and the staves' own spells** (version 110; `STAFF_MAGIC`,
+  `STAFF_SPELL_DEFS` and `POWERED_DEFS` in `spells.ts`): OSRS's rules, from the wiki's autocast
+  tables and item pages. A staff, wand or sceptre casts the standard spells unless listed.
+  Ancient Magicks: the ancient staff and sceptres, the master, Kodai and dragon hunter wands,
+  the nightmare staves but the harmonised, Zuriel's staff, Thammaron's and the accursed
+  sceptre, and Ahrim's staff only with all of Ahrim's set and the amulet of the damned. The
+  Slayer's staff casts only waves and surges of the standard spells. The staves' own spells,
+  shown under the book as "Your staff's own", with OSRS's runes, max hits, cast animations,
+  graphics and sounds: Saradomin Strike (Saradomin staff, staff of light), Claws of Guthix
+  (Guthix staff), Flames of Zamorak (Zamorak staff, staff of the dead and its toxic one,
+  Thammaron's and the accursed sceptre), Iban Blast (Iban's staff) and Magic Dart (Slayer's
+  staff, staff of light, staff of the dead and its toxic one). OSRS doesn't let a god staff
+  autocast its god spell; the game only autocasts, so it does, and the strongest a staff
+  casts (with no spell picked) counts its own spells too. Powered staves cast their built-in
+  spell and nothing else, for the runes a charge costs, at the staff's own max hit: the
+  tridents of the seas and the swamp (venom one hit in four), the Sanguinesti staff (heals
+  half a hit one in five), Tumeken's shadow, the warped sceptre, the bone staff, the Eye of
+  Ayak and the lithic sceptre (body runes, new, and earth). Six weapons that aren't magic
+  weapons in OSRS are swung now: the mjolnirs, Pharaoh's sceptre, the Dramen staff, the
+  Merfolk trident, the skull sceptre and the demonic sceptre.
 - Every hit shows its number as a hitsplat, the client's red square, floating up off whoever
   took it. An enemy shows a health bar over its head, the client's way, while it's fighting and
   for six seconds after it's hurt. The boss has the bar at the top of the screen instead.

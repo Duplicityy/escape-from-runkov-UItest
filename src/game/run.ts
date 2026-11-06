@@ -27,6 +27,8 @@ import {
     specialOf,
 } from "../content/items";
 import {
+    AHRIMS_STAFF,
+    AMULET_OF_THE_DAMNED,
     Book,
     POISON_EVERY,
     POISON_HITS,
@@ -36,6 +38,7 @@ import {
     bestSpell,
     castsAncients,
     castsLeft,
+    poweredSpell,
     runeDrop,
     runesGiven,
     spellCost,
@@ -2119,6 +2122,12 @@ export class Run {
         return runesGiven(this.equipment.weapon, this.equipment.shield);
     }
 
+    // Whether Ahrim's staff casts Ancient Magicks: with all of Ahrim's set and
+    // the amulet of the damned, as in OSRS (version 110)
+    ahrimCasts(): boolean {
+        return this.stats.set === "ahrim" && this.equipment.neck === AMULET_OF_THE_DAMNED;
+    }
+
     // The spell a staff casts now (version 106): the one picked to
     // autocast, or, none picked, the strongest it can with the runes packed;
     // or why it can't cast
@@ -2128,9 +2137,17 @@ export class Run {
             return {};
         }
         const given = this.runesGiven();
-        const ahrim = this.stats.set === "ahrim";
+        const ahrim = this.ahrimCasts();
+        // A powered staff casts its own spell, whatever's picked (version 110)
+        const powered = poweredSpell(weapon);
+        if (powered) {
+            return castsLeft(powered, given, this.count) > 0 ? { spell: powered } : { why: `You don't have the runes to charge your ${weapon.name.toLowerCase()}.` };
+        }
         const picked = this.autocast ? SPELL_BY_ID.get(this.autocast) : undefined;
-        const ancientsBarred = `Your ${weapon.name.toLowerCase()} can't cast Ancient Magicks${weapon.id === 4710 ? " without the rest of Ahrim's set" : ""}.`;
+        const ancientsBarred = `Your ${weapon.name.toLowerCase()} can't cast Ancient Magicks${weapon.id === AHRIMS_STAFF ? " without the rest of Ahrim's set and the amulet of the damned" : ""}.`;
+        if (picked?.book === "staff" && !staffCasts(weapon, picked, ahrim)) {
+            return { why: `Only certain staves cast ${picked.name}: not your ${weapon.name.toLowerCase()}.` };
+        }
         if (picked) {
             if (picked.book === "ancient" && !castsAncients(weapon, ahrim)) {
                 return { why: ancientsBarred };
@@ -2999,7 +3016,8 @@ export class Run {
         this.swingTarget = target;
         this.attackCooldown = stats.speed;
         this.attacks++;
-        const sound = spell?.castSound ?? stats.sound;
+        // A god spell sounds only where it lands
+        const sound = spell ? spell.castSound : stats.sound;
         if (sound) {
             playSound(`sounds/${sound}`, 0.4);
         }
@@ -3261,7 +3279,9 @@ export class Run {
         const spell = typeof id === "string" ? SPELL_BY_ID.get(id) : undefined;
         if (spell) {
             mate.castWith(spell.clip);
-            this.hear(`sounds/${spell.castSound}`, mate.x, mate.z, 0.4);
+            if (spell.castSound !== undefined) {
+                this.hear(`sounds/${spell.castSound}`, mate.x, mate.z, 0.4);
+            }
         }
         return spell;
     }
@@ -4317,7 +4337,9 @@ export class Run {
     // of what it dealt in all
     private landSpell(p: Projectile, target: Enemy, slow: boolean): void {
         const spell = p.spell!;
-        const effect = spell.effect;
+        // An effect with a chance (version 110: the swamp trident's venom,
+        // the Sanguinesti staff's heal) comes on that share of hits
+        const effect = spell.effect && (spell.effect.chance === undefined || this.rng() < spell.effect.chance) ? spell.effect : undefined;
         const effects: HitEffects = { slow };
         if (effect?.kind === "freeze") {
             effects.freeze = effect.seconds;
@@ -4345,6 +4367,10 @@ export class Run {
         }
         if (effect?.kind === "heal" && dealt > 0) {
             this.hp = Math.min(this.maxHp, this.hp + Math.round(dealt * effect.share));
+            // The Sanguinesti staff's heal shows on its caster
+            if (spell.healLook !== undefined) {
+                void this.burst(spell.healLook, this.px, this.pz);
+            }
         }
     }
 

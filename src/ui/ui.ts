@@ -45,6 +45,8 @@ import {
     WEAKEN_SECONDS,
     castsAncients,
     castsLeft,
+    ownSpells,
+    poweredSpell,
     catalystOfTier,
     spellScale,
     staffCasts,
@@ -2883,8 +2885,11 @@ export class UI {
         const hud = this.hud!;
         const weapon = run.stats.weapon;
         const staff = weapon?.uses === "runes";
-        const ahrim = run.stats.set === "ahrim";
+        const ahrim = run.ahrimCasts();
         const book = run.spellbook;
+        // A powered staff's own spell, and a staff's own spells (version 110)
+        const powered = poweredSpell(weapon);
+        const own = ownSpells(weapon);
         const ancients = castsAncients(weapon, ahrim);
         const given = run.runesGiven();
         const casting = run.castingSpell();
@@ -2896,57 +2901,88 @@ export class UI {
             if (!e) {
                 return area;
             }
+            const often = e.chance !== undefined ? `One hit in ${Math.round(1 / e.chance)}: ` : "";
             switch (e.kind) {
                 case "poison":
-                    return area + `Poisons: ${POISON_HITS} hits of ${Math.round(e.share * 100)}% of its max hit, every ${POISON_EVERY}s. `;
+                    return area + often + `poisons: ${POISON_HITS} hits of ${Math.round(e.share * 100)}% of its max hit, every ${POISON_EVERY}s. `;
                 case "weaken":
-                    return area + `Its target hits ${Math.round(e.share * 100)}% less for ${WEAKEN_SECONDS}s. `;
+                    return area + often + `its target hits ${Math.round(e.share * 100)}% less for ${WEAKEN_SECONDS}s. `;
                 case "heal":
-                    return area + `Heals you ${Math.round(e.share * 100)}% of what it deals. `;
+                    return area + often + `heals you ${Math.round(e.share * 100)}% of what it deals. `;
                 case "freeze":
-                    return area + `Freezes its target for ${e.seconds}s (not a boss). `;
+                    return area + often + `freezes its target for ${e.seconds}s (not a boss). `;
             }
         };
         const status = (spell: SpellDef): string => {
             if (!staff) {
                 return "Wield a staff to cast it.";
             }
+            if (powered && spell !== powered) {
+                return `Your ${weapon!.name.toLowerCase()} casts only its own spell.`;
+            }
             if (spell.book === "ancient" && !ancients) {
                 return "Your staff can't cast Ancient Magicks.";
             }
+            if (spell.book === "staff" && !staffCasts(weapon, spell, ahrim)) {
+                return "Only certain staves cast it.";
+            }
             if (!staffCasts(weapon, spell, ahrim)) {
-                return `It takes a tier ${spell.tier} staff; yours is tier ${weapon!.tier}.`;
+                return weapon!.tier < spell.tier ? `It takes a tier ${spell.tier} staff; yours is tier ${weapon!.tier}.` : `Your ${weapon!.name.toLowerCase()} doesn't cast it.`;
             }
             const casts = castsLeft(spell, given, run.count);
             return casts <= 0 ? "Not enough runes packed." : `Max hit ${maxHit(spell)}, ${casts === Infinity ? "no runes needed" : `${casts} cast${casts === 1 ? "" : "s"} packed`}.`;
         };
         const rows: string[] = book === "ancient" ? ANCIENT_FAMILIES : FAMILIES;
         const columns: string[] = book === "ancient" ? ANCIENT_ELEMENTS : ELEMENTS;
+        // A spell's cell: its icon (a powered staff's is the staff's own),
+        // greyed when it can't be cast, a click to autocast it
+        const cell = (spell: SpellDef) => {
+            const usable = staff && staffCasts(weapon, spell, ahrim) && castsLeft(spell, given, run.count) > 0;
+            const picked = run.autocast === spell.id;
+            const cost = spell.runes.map((r) => `${r.n} ${runeName(r.id)}${given.has(r.id) ? " (your staff gives these)" : ""}`).join(", ");
+            let img: HTMLElement;
+            if (spell.poweredBy !== undefined) {
+                img = iconElement(spell.poweredBy, spell.name);
+            } else {
+                const pic = document.createElement("img");
+                pic.src = assetUrl(`ui/spells/${spell.icon}.png`);
+                pic.alt = spell.name;
+                pic.draggable = false;
+                img = pic;
+            }
+            const tierText = spell.poweredBy !== undefined ? "its staff's own" : `tier ${spell.tier}`;
+            return h(
+                "div",
+                {
+                    class: "spell" + (usable ? "" : " off") + (picked ? " on" : "") + (casting.spell?.id === spell.id ? " now" : ""),
+                    title:
+                        `${spell.name} (${tierText}): ${cost}. ${effectText(spell)}${status(spell)} ` +
+                        (spell.poweredBy !== undefined ? "" : picked ? "Click again to cast the strongest you can." : "Click to autocast it."),
+                    onclick: () => {
+                        if (spell.poweredBy === undefined) {
+                            this.pickSpell(run, picked ? undefined : spell.id);
+                        }
+                    },
+                },
+                img,
+            );
+        };
         const grid = h(
             "div",
-            { class: "spellbook" },
-            ...rows.flatMap((family) =>
-                columns.map((element) => {
-                    const spell = SPELL_BY_ID.get(`${element}_${family}`)!;
-                    const usable = staff && staffCasts(weapon, spell, ahrim) && castsLeft(spell, given, run.count) > 0;
-                    const picked = run.autocast === spell.id;
-                    const cost = spell.runes.map((r) => `${r.n} ${runeName(r.id)}${given.has(r.id) ? " (your staff gives these)" : ""}`).join(", ");
-                    const img = document.createElement("img");
-                    img.src = assetUrl(`ui/spells/${spell.icon}.png`);
-                    img.alt = spell.name;
-                    img.draggable = false;
-                    return h(
-                        "div",
-                        {
-                            class: "spell" + (usable ? "" : " off") + (picked ? " on" : "") + (casting.spell?.id === spell.id ? " now" : ""),
-                            title: `${spell.name} (tier ${spell.tier}): ${cost}. ${effectText(spell)}${status(spell)} ${picked ? "Click again to cast the strongest you can." : "Click to autocast it."}`,
-                            onclick: () => this.pickSpell(run, picked ? undefined : spell.id),
-                        },
-                        img,
-                    );
-                }),
-            ),
+            { class: "spellbook" + (powered ? " dim" : "") },
+            ...rows.flatMap((family) => columns.map((element) => cell(SPELL_BY_ID.get(`${element}_${family}`)!))),
         );
+        // The staff's own: a powered staff's one spell, or the god spells and
+        // the like it casts besides the books
+        const ownRow =
+            powered || own.length > 0
+                ? h(
+                      "div",
+                      { class: "spell-own" },
+                      h("div", { class: "spell-own-head" }, powered ? "Your staff's own spell: the only one it casts" : "Your staff's own"),
+                      h("div", { class: "spellbook" }, ...(powered ? [powered] : own).map(cell)),
+                  )
+                : null;
         // What's cast now, and what it takes from the pack
         const shown = casting.spell ?? (run.autocast ? SPELL_BY_ID.get(run.autocast) : undefined);
         const detail = shown
@@ -2988,9 +3024,11 @@ export class UI {
             "div",
             { class: "hint" },
             !staff ? "Wield a staff, wand or sceptre to cast these. " : casting.why ? casting.why + " " : "",
-            book === "ancient"
-                ? "Needs an ancient staff or sceptre, a master, Kodai or dragon hunter wand, a nightmare staff, or Ahrim's with its set. Rushes at tier 3, bursts and blitzes 4, barrages 5."
-                : `Your staff's tier is how high it casts: strikes at 1 up to surges at 5. Elemental staffs and tomes give their runes. Enemies here drop elemental and ${getItem(catalystOfTier(run.world.tier)).name.toLowerCase()}.`,
+            powered
+                ? "A powered staff casts its own spell and nothing else, as in OSRS, for the runes a charge of it costs. It hits the staff's own max hit."
+                : book === "ancient"
+                  ? "Needs an ancient staff or sceptre, a master, Kodai or dragon hunter wand, a nightmare staff but the harmonised, Zuriel's staff, Thammaron's or the accursed sceptre, or Ahrim's with its set and the amulet of the damned. Rushes at tier 3, bursts and blitzes 4, barrages 5."
+                  : `Your staff's tier is how high it casts: strikes at 1 up to surges at 5. Elemental staffs and tomes give their runes. Enemies here drop elemental and ${getItem(catalystOfTier(run.world.tier)).name.toLowerCase()}.`,
         );
         // Which book is open: the standard spellbook or Ancient Magicks
         const books = h(
@@ -3009,7 +3047,17 @@ export class UI {
             ),
         );
         // One page the pack's width, so the words wrap
-        hud.inventory.replaceChildren(h("div", { class: "spell-page" }, this.packTabs(), books, head, grid, ...(detail ? [detail] : []), hint));
+        // A powered staff's page is its own spell: the books are no use to it
+        hud.inventory.replaceChildren(
+            h(
+                "div",
+                { class: "spell-page" },
+                this.packTabs(),
+                ...(powered ? [ownRow!] : [books, head, grid, ...(ownRow ? [ownRow] : [])]),
+                ...(detail ? [detail] : []),
+                hint,
+            ),
+        );
     }
 
     // -----------------------------------------------------------------------

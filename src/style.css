@@ -2673,6 +2673,26 @@ body.chat-shown .screen {
     margin-top: 8px;
 }
 
+/* A staff's own spells under the book (version 110): the god spells, Iban
+   Blast, Magic Dart; or a powered staff's one spell */
+.spell-own {
+    margin-top: 8px;
+}
+
+.spell-own-head {
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--orange);
+    text-align: center;
+}
+
+.spell-own .spellbook {
+    margin-top: 4px;
+}
+
+.spell .icon-sprite {
+    pointer-events: none;
+}
+
 .spell-name {
     font-family: "OSRS Bold", sans-serif;
     color: var(--orange);
