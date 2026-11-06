@@ -1,6 +1,10 @@
 # Pending for the next push
 
-Version 124 (built 6 November 2026): the touch camera as OSRS mobile has it, one finger dragged
+Version 125 (built 6 November 2026): a finger on the world swings as it lands again, as the user
+asked, not as it lifts (124's change taken back); dragging still turns the camera. `GAME_BUILD`
+125.
+
+Version 124 (built 6 November 2026; on the main site as 105.7, the playtest with 117.2): the touch camera as OSRS mobile has it, one finger dragged
 on the world turning and tilting it and two pinching it, in place of 123's two-finger twist; a
 tap on the world swings as the finger lifts. The middle-button drag tilts too. `GAME_BUILD` 124.
 

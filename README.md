@@ -348,8 +348,8 @@ browsers.
   on the world turns the camera round you (across) and tilts it (up and down), and on a touch
   screen so does **one finger dragged on the world**, OSRS mobile's way, with **two fingers
   pinching** it in and out (version 123; version 124 replaced its two-finger twist). A finger
-  that lifts without having dragged is a tap, and swings; the stick's own finger only steers,
-  so walking and turning go together. The keys and the stick turn with the camera, so up is
+  on the world swings as it lands, as it always has (version 125 took back 124's swing on
+  lifting); the stick's own finger only steers, so walking and turning go together. The keys and the stick turn with the camera, so up is
   always away from it; the minimap stays north up. Each run starts looking north again.
 - The **full map** (version 91; `src/ui/fullmap.ts`, `drawFullMap` in `run.ts`): **M**, a click on
   the minimap or a phone's Map button (between Pack and Pause) puts the whole map over the

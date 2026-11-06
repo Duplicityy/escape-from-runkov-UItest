@@ -640,7 +640,7 @@ const TURN_PER_PIXEL = 0.008;
 const BASE_PITCH = Math.atan2(CAMERA_OFFSET.y, CAMERA_OFFSET.z);
 const PITCH_MIN = 0.6;
 const PITCH_MAX = 1.4;
-// How far a finger can wander and still be a tap (a swing), in pixels
+// How far a finger can wander before it starts turning the camera, in pixels
 const TAP_SLOP = 10;
 const PROJECTILE_SPEED = 14;
 // The minimap shows this many tiles across its circle
@@ -855,7 +855,7 @@ export class Run {
     private turnX = 0;
     private turnY = 0;
     // The fingers on the world (not the stick or a button): where each is
-    // and came down, and whether it's dragged (so it won't swing on lifting)
+    // and came down, and whether it's gone far enough to be turning the camera
     private readonly fingers = new Map<number, { x: number; y: number; fromX: number; fromY: number; dragged: boolean }>();
     // How far apart two fingers were at the pinch's last move
     private pinchFrom?: number;
@@ -2432,19 +2432,16 @@ export class Run {
 
     private onMouseDown = (e: PointerEvent): void => {
         const onWorld = (e.target as HTMLElement).tagName === "CANVAS";
-        if (e.pointerType === "touch") {
-            // A finger on the world swings when it lifts, if it hasn't
-            // dragged the camera round; a second makes it a pinch
-            if (onWorld) {
-                this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, fromX: e.clientX, fromY: e.clientY, dragged: false });
-                if (this.fingers.size > 1) {
-                    for (const f of this.fingers.values()) {
-                        f.dragged = true;
-                    }
-                    this.pinchFrom = this.fingerSpread();
+        // A finger on the world swings as it lands, as a click does, and can
+        // go on to drag the camera round; a second makes it a pinch
+        if (e.pointerType === "touch" && onWorld) {
+            this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, fromX: e.clientX, fromY: e.clientY, dragged: false });
+            if (this.fingers.size > 1) {
+                for (const f of this.fingers.values()) {
+                    f.dragged = true;
                 }
+                this.pinchFrom = this.fingerSpread();
             }
-            return;
         }
         if (e.button === 1 && onWorld) {
             e.preventDefault();
@@ -2510,15 +2507,7 @@ export class Run {
         if (e.pointerId === this.turnPointer) {
             this.turnPointer = undefined;
         }
-        const finger = this.fingers.get(e.pointerId);
-        if (!finger) {
-            return;
-        }
-        this.fingers.delete(e.pointerId);
-        if (e.type === "pointerup" && !finger.dragged && !this.paused && !this.menuOpen) {
-            this.wantAttack = true;
-        }
-        if (this.pinchFrom !== undefined && this.fingers.size < 2) {
+        if (this.fingers.delete(e.pointerId) && this.pinchFrom !== undefined && this.fingers.size < 2) {
             // The pinch's distance is kept for the next run, like the wheel's
             this.pinchFrom = undefined;
             settings.zoom = this.zoom;
