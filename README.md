@@ -539,7 +539,9 @@ shop shows it as kept, the trader turns it down; that goes for copies found in a
 none of it goes into a gravestone, so coming back never makes two. The owner's own first
 character (not the test one) keeps the **Ankou outfit** the same way (version 120, `ANKOU` in
 `items.ts`, `OWNER_MAIN_KIT` in `kit.ts`, as the user asked): the mask, top, gloves, leggings and
-socks (OSRS ids 20095 to 20107, the cache's own looks, exported with `player items` and `item`;
+socks (OSRS ids 20095 to 20107, the cache's own looks with the ghostly robe's bright red, 960,
+made a deeper red, 937, and kept see-through: every face of the outfit has the cache's alpha 150,
+which the exporter and game keep, exported with `player items` and `item` `--recolor 960:937`;
 OSRS's are cosmetic, so each has the Infinity robe piece's numbers for its slot), `exclusive:
 "owner"`. The owner's test character has
 the gilded pieces as well (version 83, `GILDED` in `items.ts`), at the head of its stash under the
