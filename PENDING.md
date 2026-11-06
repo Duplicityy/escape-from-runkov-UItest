@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 122 (built 6 November 2026; on the main site as 105.5): a red Staff of the dead and a red
+Spirit shield (magic armour) for the owner's own first character, beside the red ghostly robes
+(README's two characters section): the cache's spare copies 23613 and 23599, packed to
+public/assets/player/items, their icons in the sheet, added to assets.json. `GAME_BUILD` 122.
+
 Version 121 (built 6 November 2026; on the main site with 105.4): the red ghostly robes for the
 owner's own first character beside the Ankou outfit (README's two characters section): six
 pieces under the cache's spare ids 27166-27172 with every player clip, packed to

@@ -1670,22 +1670,27 @@ export const ANKOU: number[] = [];
 // own grey everyone else keeps). The ids are the cache's spare copies: its
 // second Ghostly hood and robes, and three more spares exported with the
 // gloves', boots' and cloak's looks (Run Escape's --like and --recolor).
+// With them (version 122) a Staff of the dead and a Spirit shield in the same
+// red, under the cache's spare copies of each; the shield magic armour, as
+// the user asked (the plain Spirit shield's numbers, but a mage's).
 export const RED_GHOSTLY: number[] = [];
 {
-    const twins: [number, string, number][] = [
+    const twins: [number, string, number, Partial<ItemDef>?][] = [
         [27166, "Red ghostly hood", 6109],
         [27167, "Red ghostly robe top", 6107],
         [27168, "Red ghostly robe bottom", 6108],
         [27170, "Red ghostly gloves", 6110],
         [27171, "Red ghostly boots", 6106],
         [27172, "Red ghostly cloak", 6111],
+        [23613, "Red staff of the dead", 11791],
+        [23599, "Red spirit shield", 12829, { style: "magic" }],
     ];
-    for (const [id, name, twin] of twins) {
+    for (const [id, name, twin, changes] of twins) {
         const base = ITEMS.find((i) => i.id === twin);
         if (!base) {
             throw new Error(`No ${twin} for ${name} to be the twin of`);
         }
-        ITEMS.push({ ...base, id, name, exclusive: "owner" });
+        ITEMS.push({ ...base, ...changes, id, name, exclusive: "owner" });
         RED_GHOSTLY.push(id);
     }
 }

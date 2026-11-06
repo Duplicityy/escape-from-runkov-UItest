@@ -549,7 +549,10 @@ lighter red, 955), each with its Ghostly piece's numbers. The regular Ghostly ro
 everyone. Their ids are spares in the cache: 27166 to 27168 are its second Ghostly hood, top and
 bottom, and 27170 to 27172 (unused copies of other items) carry the gloves', boots' and cloak's
 looks, exported with `player items` and `item` `27166 27167 27168 27170 27171 27172 --like
-27170:6110,27171:6106,27172:6111 --recolor 10266:937,17467:955`. The owner's test character has
+27170:6110,27171:6106,27172:6111 --recolor 10266:937,17467:955`. With them (version 122) a
+**red staff of the dead** and **red spirit shield**, the cache's spare copies 23613 and 23599 in
+the same red (`--recolor 16582:937,16578:930,18626:956,82:937`), with the Staff of the dead's and
+the plain Spirit shield's numbers, the shield made magic armour as the user asked. The owner's test character has
 the gilded pieces as well (version 83, `GILDED` in `items.ts`), at the head of its stash under the
 coins: the full and med helms, platebody, chainbody, platelegs, plateskirt, kiteshield, square
 shield and boots (rune's numbers), the coif and d'hide body, chaps and vambraces (green d'hide's;
