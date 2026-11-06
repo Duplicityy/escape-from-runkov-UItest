@@ -8,7 +8,7 @@
 // opening, a run ending), unworn, so a death, a drop or a meal costs nothing
 // of it; it can't be sold, and it stays out of gravestones so coming back
 // doesn't make two.
-import { AMMO_LIMITS, COINS, FOOD_LIMIT, GILDED, GUTHIX_SUNFIRE, ITEMS, ItemDef } from "../content/items";
+import { AMMO_LIMITS, ANKOU, COINS, FOOD_LIMIT, GILDED, GUTHIX_SUNFIRE, ITEMS, ItemDef } from "../content/items";
 import { CROWN_PETS } from "../content/crownpets";
 import { crownKey, crownKnown, crownVerified } from "./crown";
 import { addItem, countOf } from "./inventory";
@@ -44,13 +44,17 @@ const KIT: { id: number; count: number }[] = ITEMS.filter((item) => !item.exclus
 const OWNER_KIT = [...KIT, ...GILDED.map((id) => ({ id, count: 1 }))];
 // The playtester's, which has their Guthix sunfire set (version 89)
 const PLAYTESTER_KIT = [...KIT, ...GUTHIX_SUNFIRE.map((id) => ({ id, count: 1 }))];
+// The owner's own character, the first (version 120, as the user asked): the
+// Ankou outfit, kept the same way, and nothing else
+const OWNER_MAIN_KIT = ANKOU.map((id) => ({ id, count: 1 }));
 
-// The kit this page's character keeps: none but on a test character
+// The kit this page's character keeps: a test character's, or the owner's
+// first character's Ankou outfit
 function kitHere(): { id: number; count: number }[] {
-    if (loadedSlot() !== TEST_SLOT) {
-        return [];
-    }
     const crown = crownVerified(crownKey());
+    if (loadedSlot() !== TEST_SLOT) {
+        return crown?.alt === "owner" ? OWNER_MAIN_KIT : [];
+    }
     return !crown ? [] : crown.alt === "owner" ? OWNER_KIT : crown.alt === "developer" ? PLAYTESTER_KIT : KIT;
 }
 

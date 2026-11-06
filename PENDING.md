@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 120 (built 6 November 2026; on the main site as 105.4): the Ankou outfit for the owner's
+own first character (README's two characters section): five pieces from the cache with every
+player clip, packed to public/assets/player/items, their icons in the sheet, added to assets.json.
+Each has the Infinity piece's numbers. `GAME_BUILD` 120.
+
 Version 119 (built 6 November 2026; on the main site as 105.3): Vorki, Salmon Dev's crown's own
 pet (README's "pet"). NPC 8025 exported with every animation its definition has (idle 7948, 16
 frames; walk 7959, 22 frames) into full-assets/npcs/8025-vorki, packed to

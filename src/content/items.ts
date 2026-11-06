@@ -1641,6 +1641,29 @@ export const GUTHIX_SUNFIRE: number[] = [];
     }
 }
 
+// The Ankou outfit (version 120), for the owner's own first character alone
+// (kit.ts keeps it), as the user asked: OSRS's is cosmetic, with no stats, so each piece is the
+// twin of the Infinity robes' in its slot (four star magic). The cache's
+// own ids and looks.
+export const ANKOU: number[] = [];
+{
+    const twins: [number, string, number][] = [
+        [20095, "Ankou mask", 6918],
+        [20098, "Ankou top", 6916],
+        [20104, "Ankou's leggings", 6924],
+        [20101, "Ankou gloves", 6922],
+        [20107, "Ankou socks", 6920],
+    ];
+    for (const [id, name, twin] of twins) {
+        const base = ITEMS.find((i) => i.id === twin);
+        if (!base) {
+            throw new Error(`No ${twin} for ${name} to be the twin of`);
+        }
+        ITEMS.push({ ...base, id, name, exclusive: "owner" });
+        ANKOU.push(id);
+    }
+}
+
 export const ITEM_BY_ID: Map<number, ItemDef> = new Map(ITEMS.map((i) => [i.id, i]));
 
 export function getItem(id: number): ItemDef {
