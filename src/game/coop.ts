@@ -11,7 +11,7 @@ import { Character, Equipment } from "./save";
 
 // The build a game is: a room only takes players on the host's (the relay
 // compares them). Raised with every push to itch.
-export const GAME_BUILD = "114";
+export const GAME_BUILD = "115";
 
 // Where the relay is: the build's VITE_COOP_URL, a saved override (for
 // trying one), the local relay beside a dev server, or the one on Fly.io
@@ -57,6 +57,11 @@ export type Loadout = {
     pet?: string;
     // The moderator's crown key, for the lobby to check (crown.ts)
     crown?: string;
+    // For the war room (version 115): what they're doing between runs, and
+    // their pack in a few numbers (gear.ts's PackSummary, and the shots or
+    // casts packed for the weapon they hold)
+    activity?: FriendStatus;
+    pack?: { food: number; foodId?: number; heal: number; prayerPots: number; risk: number; ammo?: number };
 };
 
 export type MemberView = {
@@ -81,8 +86,39 @@ export type RoomView = {
     hostId: string;
     mapId: string;
     started: boolean;
+    // How the coins found are shared (version 115; a relay from before says
+    // nothing, and it's keep)
+    loot?: LootRule;
     members: MemberView[];
 };
+
+// Each keeps the coins they grab, or every coin picked up is split between
+// everyone still in the run (each keeps their share only by getting out)
+export type LootRule = "keep" | "split";
+
+// What a player is doing, for their friends (version 115)
+export type FriendStatus = "menu" | "vault" | "shop" | "lobby" | "run";
+
+// A friend who's online, as the relay sees them: only someone who has this
+// player's code as well (both have added each other)
+export type FriendView = {
+    code: string;
+    name: string;
+    // Which crown their game says they wear (crown.ts's alt), unchecked
+    crown?: string;
+    color?: string;
+    status: FriendStatus;
+    map?: string;
+    // The party they're in, when it hasn't started and has a seat
+    party?: { code: string; players: number; max: number; mapId: string };
+};
+
+// What this player tells their friends about themselves
+export type Presence = { name: string; crown?: string; color?: string; status: FriendStatus; map?: string; watch: string[] };
+
+// The relay's counts, for the title screen: everyone connected, those in a
+// run, and the public servers waiting (on each map too)
+export type LiveStats = { players: number; raiders: number; servers: number; maps: Record<string, number> };
 
 // A public server as the list shows it (the relay's listing)
 export type RoomListing = {
@@ -106,6 +142,8 @@ export type GameStart = {
     endless: false;
     hard: false;
     heroes: { id: string; name: string; characterId: string; loadout: Loadout }[];
+    // The room's loot rule as the host started it (version 115)
+    loot?: LootRule;
 };
 
 export type GoneReason = "left" | "kicked" | "disbanded" | "hostLeft" | "idle";
@@ -130,7 +168,10 @@ type ServerMessage =
     | { t: "left"; id: string }
     | { t: "up"; from: string; d: unknown }
     | { t: "down"; d: unknown }
-    | { t: "chat"; from: string; name: string; text: string; system?: boolean };
+    | { t: "chat"; from: string; name: string; text: string; system?: boolean }
+    | { t: "friendCode"; code: string }
+    | { t: "friends"; online: FriendView[] }
+    | ({ t: "stats" } & LiveStats);
 
 // A line of chat from the room (version 105): who said it (the relay's id
 // and their character's name, both set by the relay), or a word from the
@@ -152,16 +193,34 @@ export type SessionView = {
     full?: boolean;
     // The relay lets players join a map they haven't unlocked
     anyMap?: boolean;
+    // Friends (version 115): this player's code as the relay made it, the
+    // friends online (undefined until it's said), and its counts
+    friendCode?: string;
+    friends?: FriendView[];
+    live?: LiveStats;
 };
 
 const PING_INTERVAL_MS = 15_000;
+// The relay's counts are asked for this often while connected
+const STATS_EVERY_MS = 20_000;
+// After a lost connection, tried again this long after, doubling to the most
+const RECONNECT_MS = 5_000;
+const RECONNECT_MAX_MS = 60_000;
 const AVAILABLE_TIMEOUT_MS = 4000;
 
 export class Session {
     private socket?: WebSocket;
     private pingTimer?: number;
     private listTimer?: number;
+    private statsTimer?: number;
     private me: Partial<MemberView> = {};
+    // Friends (version 115): this browser's key for its friend code, and what
+    // it says of itself, sent on every connect and when it changes. With a
+    // key the connection is kept up: tried again when it drops.
+    private friendKey?: string;
+    private presence?: Presence;
+    private reconnectIn = RECONNECT_MS;
+    private reconnectTimer?: number;
     view: SessionView = { status: "offline", name: "" };
 
     // The UI redraws on these; the run takes the rest
@@ -235,19 +294,23 @@ export class Session {
                     return;
                 }
                 const wasOnline = this.view.status === "online";
+                const inRoom = this.view.room !== undefined;
                 this.socket = undefined;
                 window.clearInterval(this.pingTimer);
+                window.clearInterval(this.statsTimer);
                 this.update({
                     status: "offline",
                     room: undefined,
                     you: undefined,
                     name: "",
                     servers: undefined,
+                    friends: undefined,
                     error: wasOnline ? "Lost the connection to the co-op server." : "Couldn't reach the co-op server.",
                 });
-                if (wasOnline) {
+                if (wasOnline && inRoom) {
                     this.onGone?.("hostLeft");
                 }
+                this.scheduleReconnect();
                 resolve(false);
             };
         });
@@ -257,9 +320,56 @@ export class Session {
         const socket = this.socket;
         this.socket = undefined;
         window.clearInterval(this.pingTimer);
+        window.clearInterval(this.statsTimer);
+        window.clearTimeout(this.reconnectTimer);
+        this.friendKey = undefined;
         socket?.close();
         this.browse(false);
-        this.update({ status: "offline", room: undefined, you: undefined, name: "", servers: undefined });
+        this.update({ status: "offline", room: undefined, you: undefined, name: "", servers: undefined, friends: undefined });
+    }
+
+    // Friends (version 115): connected from the page's start with this key,
+    // and kept connected, so friends see this player and this player them
+    keepOnline(key: string, presence: Presence): void {
+        this.friendKey = key;
+        this.presence = presence;
+        if (this.view.status === "offline") {
+            void this.connect();
+        } else {
+            this.sendHello();
+        }
+    }
+
+    // What this player's doing, or whose codes they watch, changed
+    setPresence(changes: Partial<Presence>): void {
+        if (!this.presence) {
+            return;
+        }
+        const next = { ...this.presence, ...changes };
+        if (JSON.stringify(next) === JSON.stringify(this.presence)) {
+            return;
+        }
+        this.presence = next;
+        this.sendHello();
+    }
+
+    private sendHello(): void {
+        if (this.friendKey && this.presence) {
+            this.send({ t: "hello", key: this.friendKey, ...this.presence, crown: this.presence.crown ?? null, color: this.presence.color ?? null });
+        }
+    }
+
+    private scheduleReconnect(): void {
+        if (!this.friendKey) {
+            return;
+        }
+        window.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = window.setTimeout(() => {
+            if (this.friendKey && this.view.status === "offline") {
+                void this.connect();
+            }
+        }, this.reconnectIn);
+        this.reconnectIn = Math.min(RECONNECT_MAX_MS, this.reconnectIn * 2);
     }
 
     // Whether the list of public servers is wanted: on, it's asked for now
@@ -276,8 +386,9 @@ export class Session {
         }
     }
 
+    // In a party too (version 115): its screen says how many others wait
     private list(): void {
-        if (this.view.status === "online" && !this.view.room) {
+        if (this.view.status === "online") {
             this.send({ t: "list", size: LIST_PAGE });
         }
     }
@@ -293,10 +404,37 @@ export class Session {
             case "welcome":
                 this.update({ status: "online", you: message.id, name: message.name, error: undefined, anyMap: message.anyMap === true });
                 this.pingTimer = window.setInterval(() => this.send({ t: "ping" }), PING_INTERVAL_MS);
+                this.reconnectIn = RECONNECT_MS;
                 if (this.listTimer !== undefined) {
                     this.list();
                 }
+                this.sendHello();
+                this.send({ t: "stats" });
+                window.clearInterval(this.statsTimer);
+                this.statsTimer = window.setInterval(() => this.send({ t: "stats" }), STATS_EVERY_MS);
                 break;
+            case "friendCode":
+                if (typeof message.code === "string") {
+                    this.update({ friendCode: message.code });
+                }
+                break;
+            case "friends":
+                if (Array.isArray(message.online) && JSON.stringify(message.online) !== JSON.stringify(this.view.friends)) {
+                    this.update({ friends: message.online });
+                }
+                break;
+            case "stats": {
+                const live: LiveStats = {
+                    players: Number(message.players) || 0,
+                    raiders: Number(message.raiders) || 0,
+                    servers: Number(message.servers) || 0,
+                    maps: message.maps && typeof message.maps === "object" ? message.maps : {},
+                };
+                if (JSON.stringify(live) !== JSON.stringify(this.view.live)) {
+                    this.update({ live });
+                }
+                break;
+            }
             case "rooms":
                 // Only a change redraws the screen (it's asked every few
                 // seconds, and someone may be typing a code on it)
@@ -373,14 +511,19 @@ export class Session {
 
     // A server of this player's own: public (in the list for anyone) or
     // private (by its code only)
-    create(mapId: string, open: boolean): void {
+    create(mapId: string, open: boolean, loot: LootRule = "keep"): void {
         this.update({ error: undefined });
-        this.send({ t: "create", open, mapId, endless: false, hard: false, me: this.joinAs() });
+        this.send({ t: "create", open, mapId, endless: false, hard: false, loot, me: this.joinAs() });
     }
 
     // The host's: public or private from here on
     setOpen(open: boolean): void {
         this.send({ t: "settings", open });
+    }
+
+    // The host's: how the coins found are shared
+    setLoot(loot: LootRule): void {
+        this.send({ t: "settings", loot });
     }
 
     join(code: string): void {

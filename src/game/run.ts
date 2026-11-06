@@ -47,7 +47,7 @@ import {
     staffCasts,
 } from "../content/spells";
 import { WorldDef } from "../content/worlds";
-import { GameStart } from "./coop";
+import { GameStart, LootRule } from "./coop";
 import { Hero, Mate } from "./mates";
 import {
     CLIP_ATTACK,
@@ -199,6 +199,8 @@ export type RunReport = {
     // paid for the way out, how many seconds the ways out had left at the
     // end, and how many were in the party
     hitsTaken: number;
+    // Hitpoints lost to them (version 115)
+    damageTaken: number;
     chestsOpened: number;
     goldenOpened: boolean;
     drank: number;
@@ -229,6 +231,8 @@ export type CoopSetup = {
     me: string;
     heroes: GameStart["heroes"];
     send: (message: unknown) => void;
+    // How the coins found are shared (version 115; the host's to apply)
+    loot?: LootRule;
 };
 
 // What the HUD shows of the party
@@ -528,7 +532,7 @@ const SPEC_REGEN = 5;
 const FOG_RADIUS = 12;
 // The prayer bar: what protection drains a second, what comes back a second
 // with none on
-const PRAYER_DRAIN = 4;
+export const PRAYER_DRAIN = 4;
 const PRAYER_REGEN = 1.5;
 // The client's sound for each protection as it's switched on (the OSRS
 // wiki's sound effect ids: protect_from_melee, _missiles, _magic)
@@ -770,6 +774,9 @@ export class Run {
     killer?: string;
     petFound?: string;
     private hitsTaken = 0;
+    // Hitpoints the hits took, all told (version 115: the vault's word on
+    // how long food lasts)
+    private damageTaken = 0;
     private chestsOpened = 0;
     private goldenOpened = false;
     private drank = 0;
@@ -1984,6 +1991,12 @@ export class Run {
         if (this.night) {
             this.hooks.onMessage("Night has fallen. You see less, and so do they.");
         }
+        // A clue scroll brought in (the daily contract pays one, version 115)
+        // names its spot as one picked up here would
+        const scrolls = this.inventory.reduce((n, s) => n + (s.id === CLUE_SCROLL ? s.count : 0), 0);
+        for (let i = 0; i < scrolls; i++) {
+            this.setClue();
+        }
         const loop = () => {
             this.frame = requestAnimationFrame(loop);
             const dt = Math.min(0.05, this.clock.getDelta());
@@ -2448,6 +2461,48 @@ export class Run {
         return false;
     }
 
+    // Whether this party splits the coins found (version 115)
+    private splitsLoot(): boolean {
+        return this.coop?.role === "host" && this.coop.loot === "split";
+    }
+
+    // Coins picked up in a party that splits its loot: shared between
+    // everyone still in the map (a hero who's down too, who may yet be
+    // revived), the odd coins the taker's. Each share is in its owner's
+    // purse, theirs to keep only by getting out.
+    private shareCoins(takerId: string, count: number): void {
+        const coop = this.coop;
+        if (!coop) {
+            return;
+        }
+        const ids = [...(this.done ? [] : [coop.me]), ...[...this.mates.values()].filter((m) => !m.done).map((m) => m.id)];
+        if (!ids.includes(takerId)) {
+            ids.push(takerId);
+        }
+        const each = Math.floor(count / ids.length);
+        const odd = count - each * ids.length;
+        const shares: [string, number][] = ids.map((id) => [id, each + (id === takerId ? odd : 0)]);
+        const by = coop.heroes.find((h) => h.id === takerId)?.name ?? "Someone";
+        coop.send({ k: "share", by, n: count, s: shares } satisfies DownMessage);
+        this.takeShare(by, count, shares);
+    }
+
+    // This player's share of coins someone found
+    private takeShare(by: string, count: number, shares: [string, number][]): void {
+        const mine = shares.find(([id]) => id === this.self.id)?.[1] ?? 0;
+        if (mine <= 0 || this.done) {
+            return;
+        }
+        this.coins += mine;
+        this.coinsFound += mine;
+        this.hooks.onMessage(
+            by === this.coop?.heroes.find((h) => h.id === this.self.id)?.name
+                ? `You find ${count.toLocaleString()} coins: ${mine.toLocaleString()} of them are your share.`
+                : `${by} finds ${count.toLocaleString()} coins: your share is ${mine.toLocaleString()}.`,
+        );
+        this.hooks.onChanged();
+    }
+
     // A mate's gone or fallen: if this player's only watching, and there's
     // nobody left to watch, that's the run
     private checkPartyDone(): void {
@@ -2495,6 +2550,7 @@ export class Run {
                 petFound: this.petFound,
                 night: this.night,
                 hitsTaken: this.hitsTaken,
+                damageTaken: this.damageTaken,
                 chestsOpened: this.chestsOpened,
                 goldenOpened: this.goldenOpened,
                 drank: this.drank,
@@ -4240,6 +4296,7 @@ export class Run {
         if (!fixed) {
             this.wearArmour();
         }
+        this.damageTaken += Math.min(hit, Math.max(0, this.hp));
         this.hp -= hit;
         this.hitsTaken++;
         this.lastHurt = this.time;
@@ -4649,6 +4706,13 @@ export class Run {
                     } else if (room === 0) {
                         this.noRoom(p.id);
                     }
+                    continue;
+                }
+                // A party that splits its loot shares the coins out
+                if (p.id === COINS && this.coop && this.splitsLoot()) {
+                    this.shareCoins(this.coop.me, p.count);
+                    this.coop.send({ k: "taken", u: p.uid } satisfies DownMessage);
+                    this.removePickup(p);
                     continue;
                 }
                 // What fits, and the rest left where it lies
@@ -5502,6 +5566,11 @@ export class Run {
             case "drop":
                 this.dropPickup(message.i, message.n, message.x, message.z, 0, message.u);
                 break;
+            case "share":
+                if (Array.isArray(message.s)) {
+                    this.takeShare(String(message.by), Number(message.n) || 0, message.s);
+                }
+                break;
             case "taken": {
                 const p = this.pickups.find((x) => x.uid === message.u);
                 this.requested.delete(message.u);
@@ -5671,6 +5740,12 @@ export class Run {
             }
             case "take": {
                 const p = this.pickups.find((x) => x.uid === message.u);
+                if (p && p.id === COINS && this.splitsLoot()) {
+                    this.shareCoins(from, p.count);
+                    coop.send({ k: "taken", u: p.uid } satisfies DownMessage);
+                    this.removePickup(p);
+                    break;
+                }
                 if (p) {
                     // Part of it, when that's all the guest has room for
                     const n = Math.floor(message.n ?? p.count);

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { COINS, ITEMS, PRIZES, SLOTS, rollGear, rollShopStock } from "./content/items";
 import { TASKS } from "./content/tasks";
 import { WORLD_BY_ID, WorldDef, getWorld, mapUnlocked } from "./content/worlds";
+import { recordAttempt } from "./game/contract";
 import { GameStart, Session } from "./game/coop";
 import { crownKey, crownVerified, takeCrownFromUrl } from "./game/crown";
 import { addItem, countOf } from "./game/inventory";
@@ -123,6 +124,7 @@ function startParty(game: GameStart): void {
         me,
         heroes: game.heroes,
         send: role === "host" ? (message) => session.sendDown(message) : (message) => session.sendUp(message),
+        loot: game.loot,
     };
     launching = { ups: [], downs: [] };
     void launchWorld(world, packUp(world.id), game.seed, coop).then(() => {
@@ -162,10 +164,25 @@ session.onGone = (reason) => {
             : "The party's over. You're out with what you carry.",
     );
 };
-// The Co-op room is only on the title screen when there's a relay to reach
+// The Co-op room is only on the title screen when there's a relay to reach.
+// With one, the game stays connected from the start (version 115): friends
+// see this player online, and the title screen the relay's counts.
 void session.available().then((available) => {
     ui.coopEnabled = available;
+    if (available && save.friendKey) {
+        session.keepOnline(save.friendKey, ui.presence());
+    }
     ui.onSessionChange();
+    // An invite link (the war room's): into that party once connected, the
+    // address cleaned so a reload doesn't join again
+    const params = new URLSearchParams(location.search);
+    const join = params.get("join");
+    if (available && join) {
+        params.delete("join");
+        const rest = params.toString();
+        history.replaceState(null, "", location.pathname + (rest ? `?${rest}` : "") + location.hash);
+        ui.joinFromLink(join);
+    }
 });
 
 async function launchWorld(world: WorldDef, carry: RunCarry, seed: number, coop?: CoopSetup): Promise<void> {
@@ -335,8 +352,19 @@ async function onRunEnd(result: RunResult): Promise<void> {
         save.tasks.push(task.id);
         save.coins += task.reward;
     }
+    // Version 115: how it ended, for the title screen; the pace hits come
+    // at, for the vault's word on food; and the day's contract, paid in
+    // coins and a clue scroll the run it's done
+    save.lastRun = { at: Date.now(), map: result.world.id, kind: result.kind };
+    stats.damageTaken += report.damageTaken;
+    stats.secondsPlayed += report.seconds;
+    const contract = recordAttempt(save, result, result.kind === "extracted" ? result.carry.coins - broughtCoins : 0);
+    if (contract) {
+        save.coins += contract.reward;
+        addItem(save.stash, contract.rewardItem, 1);
+    }
     writeSave(save);
-    ui.showSummary(result, kept, { tasks: done, insured, grave: graveMade, graveHalved, pet });
+    ui.showSummary(result, kept, { tasks: done, insured, grave: graveMade, graveHalved, pet, contract });
 }
 
 // Every item icon in one sheet, fetched once (icons drawn before it comes

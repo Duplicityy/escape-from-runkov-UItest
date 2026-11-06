@@ -58,7 +58,29 @@ export type SaveData = {
     // standard spellbook or Ancient Magicks (version 107)
     autocast?: string;
     spellbook?: Book;
+    // Friends (version 115): this character's key for its friend code (the
+    // relay makes the code from it; the key itself is shown nowhere), and
+    // the friends added, by code with the name they had when added
+    friendKey?: string;
+    friends?: Friend[];
+    // Sets of gear and pack saved in the vault, worn and packed in one click
+    loadouts?: Loadout[];
+    // The bank as it's been arranged (dragged about), and its own tabs
+    bankOrder?: number[];
+    bankTabs?: BankTab[];
+    // How the last run ended, and when (a timestamp), for the title screen
+    lastRun?: { at: number; map: string; kind: "extracted" | "died" | "left" };
+    // Today's contract (contract.ts): which day it's for, the best a run
+    // has done towards it, and whether it's been paid
+    contract?: { day: number; map: string; best: number; done: boolean };
 };
+
+export type Friend = { code: string; name: string };
+export type Loadout = { name: string; equipment: Equipment; backpack: ItemStack[] };
+export type BankTab = { name: string; ids: number[] };
+export const MAX_FRIENDS = 50;
+export const MAX_LOADOUTS = 6;
+export const MAX_BANK_TABS = 8;
 
 export type Grave = { map: string; x: number; z: number; items: ItemStack[]; runsLeft: number };
 export const GRAVE_RUNS = 2;
@@ -99,6 +121,10 @@ export type Stats = {
     clues: number;
     graves: number;
     vaults: number;
+    // Hitpoints lost to hits and seconds spent in runs, all told (version
+    // 115): how fast a run eats food, for the vault's word on the pack
+    damageTaken: number;
+    secondsPlayed: number;
 };
 
 const KEY = "dungeon-extraction-save";
@@ -173,6 +199,8 @@ export function newSave(): SaveData {
             clues: 0,
             graves: 0,
             vaults: 0,
+            damageTaken: 0,
+            secondsPlayed: 0,
         },
         tasks: [],
         upgrades: { pack: 0, shop: 0, insurance: 0, spec: 0 },
@@ -180,7 +208,20 @@ export function newSave(): SaveData {
         pets: [],
         wear: {},
         recentMaps: [],
+        friendKey: newFriendKey(),
+        friends: [],
+        loadouts: [],
+        bankOrder: [],
+        bankTabs: [],
     };
+}
+
+// A character's friend key (version 115): random, kept in the save; the
+// relay hashes it into the friend code everyone sees
+function newFriendKey(): string {
+    const bytes = new Uint8Array(18);
+    crypto.getRandomValues(bytes);
+    return [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 // A save from its JSON, brought up to date; undefined if it isn't one
@@ -249,6 +290,37 @@ export function parseSave(raw: string): SaveData | undefined {
         if (!Array.isArray(save.shop)) {
             save.shop = rollShopStock(Math.random, Math.max(1, save.stats?.deepest ?? 1));
         }
+        // Version 115's: anything that isn't what it should be goes
+        if (typeof save.friendKey !== "string" || save.friendKey.length < 16) {
+            delete save.friendKey;
+        }
+        save.friends = Array.isArray(save.friends)
+            ? save.friends.filter((f) => f && typeof f.code === "string" && typeof f.name === "string").slice(0, MAX_FRIENDS)
+            : [];
+        save.loadouts = Array.isArray(save.loadouts)
+            ? save.loadouts
+                  .filter((l) => l && typeof l.name === "string" && l.equipment && typeof l.equipment === "object" && Array.isArray(l.backpack))
+                  .map((l) => ({
+                      name: l.name.slice(0, 16),
+                      equipment: Object.fromEntries(Object.entries(l.equipment).filter(([, id]) => typeof id === "number" && ITEM_BY_ID.has(id))),
+                      backpack: whole(l.backpack),
+                  }))
+                  .slice(0, MAX_LOADOUTS)
+            : [];
+        save.bankOrder = Array.isArray(save.bankOrder) ? save.bankOrder.filter((id) => typeof id === "number" && ITEM_BY_ID.has(id)) : [];
+        save.bankTabs = Array.isArray(save.bankTabs)
+            ? save.bankTabs
+                  .filter((t) => t && typeof t.name === "string" && Array.isArray(t.ids))
+                  .map((t) => ({ name: t.name.slice(0, 16), ids: t.ids.filter((id) => typeof id === "number" && ITEM_BY_ID.has(id)) }))
+                  .slice(0, MAX_BANK_TABS)
+            : [];
+        if (!save.lastRun || typeof save.lastRun.at !== "number" || typeof save.lastRun.map !== "string") {
+            delete save.lastRun;
+        }
+        if (!save.contract || typeof save.contract.day !== "number" || typeof save.contract.map !== "string") {
+            delete save.contract;
+        }
+        save.friendKey ??= newFriendKey();
         return save;
     } catch {
         return undefined;

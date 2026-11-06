@@ -801,3 +801,1052 @@
         display: none;
     }
 }
+
+/* ----------------------------------------------------------------------
+   Version 115: the rest of the mockups. Words in the client's colours, a
+   two-or-three-way switch, the title's daily contract and Solo/Party, the
+   war room and the vault. */
+
+.screen .green,
+.summary-box .green {
+    color: #00ff00;
+}
+
+.screen .red {
+    color: #ff4040;
+}
+
+.screen .yellow {
+    color: var(--yellow);
+}
+
+.screen .orange {
+    color: var(--orange);
+}
+
+.screen .muted {
+    color: var(--muted);
+}
+
+.screen .bold {
+    font-family: "OSRS Bold", sans-serif;
+}
+
+.screen .plain {
+    font-family: "OSRS Small", sans-serif;
+    color: var(--text);
+}
+
+.screen .center {
+    text-align: center;
+}
+
+.screen .small-text {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+}
+
+/* A switch: buttons side by side, the one on lit gold */
+.seg {
+    display: inline-flex;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow:
+        0 0 0 1px #120d08,
+        0 4px 8px rgba(0, 0, 0, 0.4);
+    flex: none;
+}
+
+.screen .seg button {
+    border-radius: 0;
+    padding: 5px 11px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    color: var(--muted);
+    background: linear-gradient(#4c4033, #2e261d);
+    box-shadow:
+        inset -1px 0 0 #120d08,
+        inset 0 1px 0 rgba(255, 228, 170, 0.15);
+    white-space: nowrap;
+}
+
+.screen .seg button.on {
+    color: var(--yellow);
+    background: linear-gradient(#7a6545, #4c3f2c);
+    box-shadow: inset 0 0 0 1px #d8b060;
+}
+
+.screen .seg.fixed button:disabled {
+    filter: none;
+    opacity: 0.6;
+}
+
+.screen button.small {
+    padding: 4px 10px;
+    font-size: 15px;
+}
+
+.screen button.wide {
+    width: 100%;
+}
+
+.screen button.on {
+    color: var(--yellow);
+    box-shadow:
+        0 0 0 1px #120d08,
+        inset 0 0 0 1px #d8b060,
+        0 0 10px rgba(255, 200, 90, 0.3);
+}
+
+/* A room's right end: the way in's arrow, a friend's Join */
+.room {
+    position: relative;
+}
+
+.room-end {
+    margin-left: auto;
+    padding-left: 8px;
+    display: flex;
+    align-items: center;
+    flex: none;
+}
+
+.room-arrow {
+    color: var(--yellow);
+    font-size: 14px;
+}
+
+.join-pill {
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 15px;
+    color: #00ff00;
+    background: linear-gradient(#2f5a1c, #1c3a10);
+    box-shadow:
+        0 0 0 1px #0d1a06,
+        inset 0 0 0 1px #4aa02a,
+        0 0 8px rgba(80, 220, 60, 0.35);
+    cursor: pointer;
+}
+
+.join-pill:hover {
+    color: #fff;
+}
+
+.room-sub .crown,
+.friend-name .crown {
+    margin-right: 3px;
+    vertical-align: -2px;
+}
+
+/* The card's portrait holds the crown, drawn bigger */
+.card-portrait .crown {
+    width: 38px;
+    height: auto;
+    image-rendering: pixelated;
+}
+
+.screen button.card-switch {
+    padding: 5px 8px;
+    font-size: 14px;
+}
+
+.worn-slot {
+    position: relative;
+}
+
+.worn-slot .count,
+.equip-slot .count {
+    position: absolute;
+    left: 3px;
+    top: 0;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--yellow);
+    text-shadow: 1px 1px 0 #000;
+    pointer-events: none;
+}
+
+/* The daily contract above the way in */
+.osrs-play {
+    width: min(620px, 34vw);
+}
+
+.osrs-go {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.osrs-go .seg {
+    align-self: center;
+}
+
+.osrs-go .go {
+    flex: 1;
+}
+
+.osrs-go .seg button {
+    padding: 8px 14px;
+}
+
+.contract {
+    padding: 12px 16px 10px;
+    border-radius: 12px;
+    background:
+        radial-gradient(ellipse at 50% -20%, rgba(255, 196, 110, 0.16), transparent 55%),
+        url(../ui/interface-bg.png) #3e3529;
+    box-shadow:
+        var(--panel-ring),
+        0 12px 28px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 228, 170, 0.22);
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    text-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.contract-head,
+.contract-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.contract-title {
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--orange);
+}
+
+.contract-resets,
+.contract-foot {
+    color: var(--muted);
+}
+
+.contract .yellow {
+    color: var(--yellow);
+}
+
+.gold-bar {
+    position: relative;
+    height: 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow:
+        0 0 0 1px #000,
+        inset 0 2px 3px rgba(0, 0, 0, 0.6);
+    overflow: hidden;
+}
+
+.gold-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(#fff1a8, #e0a83a 50%, #a8701c);
+    box-shadow: 0 0 8px rgba(255, 200, 80, 0.6);
+}
+
+.contract.done .gold-fill {
+    background: linear-gradient(#b8ff9a, #4fb82a 50%, #2c7a14);
+}
+
+/* On a phone, under the record: smaller */
+.contract.compact {
+    margin-top: 8px;
+    padding: 8px 12px;
+    font-size: 14px;
+    gap: 4px;
+    max-width: 330px;
+}
+
+.contract.compact .gold-bar {
+    height: 8px;
+}
+
+.osrs-build .green {
+    color: #00ff00;
+}
+
+/* ---- The war room ---- */
+
+/* The client's small font has next to no line height of its own */
+.screen.war-room,
+.screen.vault,
+.contract {
+    line-height: 18px;
+}
+
+.screen.war-room {
+    justify-content: flex-start;
+    padding: 16px 24px 16px;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.war-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.war-title {
+    font-size: 36px;
+}
+
+.war-code {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "OSRS Small", sans-serif;
+}
+
+.war-code .code {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 32px;
+    color: var(--yellow);
+    letter-spacing: 6px;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.war-columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    width: min(1300px, 100%);
+}
+
+.war-main {
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.war-side {
+    flex: 1;
+    min-width: 300px;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.war-side > .panel,
+.war-main > .panel {
+    min-width: 0;
+}
+
+.screen h2.left {
+    justify-content: flex-start;
+}
+
+.screen h2.left::before {
+    display: none;
+}
+
+.screen h2.left::after {
+    max-width: none;
+}
+
+.seats {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.seat {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 84px;
+    padding: 8px 16px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow:
+        inset 3px 0 0 #c03030,
+        inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+}
+
+.seat.ready {
+    box-shadow:
+        inset 3px 0 0 #00c000,
+        inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.seat.open {
+    min-height: 62px;
+    background: rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.seat-open {
+    flex: 1;
+}
+
+.seat-portrait {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        0 1px 0 rgba(255, 224, 160, 0.08);
+}
+
+.seat-portrait.empty {
+    background: none;
+    box-shadow: inset 0 0 0 2px rgba(201, 180, 140, 0.25);
+}
+
+.seat-portrait .crown {
+    width: 28px;
+    height: auto;
+    image-rendering: pixelated;
+}
+
+.seat-who {
+    width: 150px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.seat-who .name {
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--yellow);
+}
+
+.seat-gear {
+    display: flex;
+    gap: 6px;
+}
+
+.seat-pack {
+    width: 190px;
+    flex: none;
+    margin-left: 8px;
+}
+
+.seat-pack .value.red {
+    color: #ff4040;
+}
+
+.seat-pack .value.yellow {
+    color: var(--yellow);
+}
+
+.seat-ready {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.check {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    flex: none;
+    background: linear-gradient(#2a221a, #15100b);
+    box-shadow:
+        0 0 0 1px #000,
+        0 0 0 2px rgba(130, 106, 70, 0.9);
+}
+
+.check.on::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 10px;
+    height: 5px;
+    border-left: 3px solid #00ff00;
+    border-bottom: 3px solid #00ff00;
+    transform: rotate(-45deg);
+    filter: drop-shadow(0 0 3px rgba(0, 255, 0, 0.8));
+}
+
+.check.no::before,
+.check.no::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 8px;
+    width: 12px;
+    height: 3px;
+    background: #ff4040;
+    transform: rotate(45deg);
+    box-shadow: 0 0 4px rgba(255, 64, 64, 0.8);
+}
+
+.check.no::after {
+    transform: rotate(-45deg);
+}
+
+.heads-up {
+    padding: 8px 14px;
+    border-radius: 9px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    background: linear-gradient(90deg, rgba(255, 80, 40, 0.16), rgba(0, 0, 0, 0.2));
+    box-shadow: inset 3px 0 0 #ff981f;
+}
+
+.heads-up .name {
+    font-family: "OSRS Small", sans-serif;
+}
+
+.war-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+}
+
+.war-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.war-bar .go {
+    margin-left: auto;
+    height: 46px;
+    padding: 0 20px;
+    font-size: 18px;
+}
+
+.war-select {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    color: var(--yellow);
+    background: rgba(0, 0, 0, 0.45);
+    border: 0;
+    border-radius: 7px;
+    padding: 4px 8px;
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(130, 106, 70, 0.7);
+}
+
+.war-note {
+    margin-top: -2px;
+}
+
+.war-find,
+.war-friends,
+.war-host {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+}
+
+.war-join {
+    display: flex;
+    gap: 8px;
+}
+
+.war-join input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    color: var(--text);
+    padding: 5px 10px;
+}
+
+.war-list {
+    max-height: 260px;
+    overflow: auto;
+}
+
+.friend-mine {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.friend-mine .code {
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--yellow);
+    letter-spacing: 2px;
+    flex: 1;
+}
+
+.friend-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 220px;
+    overflow: auto;
+}
+
+.friend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.friend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+    background: #5a4c3a;
+}
+
+.friend-dot.on {
+    background: #00ff00;
+    box-shadow: 0 0 6px rgba(0, 255, 0, 0.7);
+}
+
+.friend-who {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.friend-name {
+    font-family: "OSRS Bold", sans-serif;
+    color: var(--yellow);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.war-chat {
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+}
+
+.war-chat-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* The chat box (chat.ts) sitting in the war room's panel */
+.chat.docked {
+    position: static;
+    transform: none;
+    width: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    z-index: auto;
+}
+
+.chat.docked .chat-bar,
+.chat.docked .chat-ticker {
+    display: none;
+}
+
+.chat.docked .chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: none;
+    border: 0;
+}
+
+.chat.docked .chat-log {
+    flex: 1;
+    height: auto;
+    min-height: 160px;
+    max-height: 360px;
+    padding: 4px 2px;
+}
+
+.chat.docked .chat-form {
+    border-top: 0;
+    padding: 8px 0 0;
+}
+
+.war-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: min(1300px, 100%);
+}
+
+.war-foot .spacer {
+    flex: 1;
+}
+
+/* ---- The vault ---- */
+
+.screen.vault {
+    justify-content: flex-start;
+    padding: 14px 20px;
+    gap: 12px;
+    box-sizing: border-box;
+}
+
+.vault-head {
+    position: relative;
+    width: min(1500px, 100%);
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 14px;
+}
+
+.vault-head h1 {
+    font-size: 36px;
+}
+
+.vault-of {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    color: var(--muted);
+}
+
+.vault-name {
+    color: var(--yellow);
+}
+
+.vault-name .crown {
+    margin-right: 3px;
+    vertical-align: -2px;
+}
+
+.screen button.vault-close {
+    position: absolute;
+    right: 0;
+    top: 2px;
+    width: 40px;
+    height: 36px;
+    padding: 0;
+    font-size: 18px;
+}
+
+.vault-columns {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    width: min(1500px, 100%);
+}
+
+.vault-columns > .panel {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+}
+
+.vault-worn {
+    width: 300px;
+    flex: none;
+}
+
+.vault-bank {
+    flex: 1;
+}
+
+.vault-pack {
+    width: 310px;
+    flex: none;
+}
+
+.equip-cross {
+    display: grid;
+    grid-template-columns: repeat(3, 54px);
+    justify-content: center;
+    gap: 8px 18px;
+}
+
+.screen .equip-cross .equip-slot {
+    position: relative;
+    width: 54px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.screen .equip-cross .equip-slot.none {
+    visibility: hidden;
+}
+
+.screen .equip-cross .equip-slot.empty {
+    background: rgba(0, 0, 0, 0.12);
+    cursor: default;
+}
+
+.screen .equip-cross .equip-slot.worn {
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 120, 60, 0.85),
+        0 0 8px rgba(255, 110, 50, 0.45);
+}
+
+.slot-name {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 12px;
+    color: var(--dim);
+    opacity: 0.7;
+}
+
+.loadouts {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.loadouts button {
+    padding: 6px 14px;
+}
+
+.vault-more summary {
+    cursor: pointer;
+    color: var(--orange);
+    font-family: "OSRS Bold", sans-serif;
+    padding: 4px 0;
+}
+
+.vault-more .item-list {
+    margin-top: 6px;
+}
+
+.bank-top {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.bank-top .bank-tabs {
+    margin: 0;
+    flex: 1;
+}
+
+.bank-top .bank-search {
+    flex: 0 1 320px;
+}
+
+.screen .bank-tab.add {
+    min-width: 40px;
+    font-size: 20px;
+    color: var(--muted);
+}
+
+.screen .bank-tab.own {
+    box-shadow:
+        0 0 0 1px #120d08,
+        inset 0 0 0 1px rgba(200, 160, 90, 0.8);
+}
+
+.bank-grid-wrap {
+    position: relative;
+}
+
+.screen .vault-bank .bank-grid {
+    grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+    gap: 8px;
+    min-height: 420px;
+    max-height: calc(100vh - 380px);
+    overflow: auto;
+    align-content: start;
+}
+
+.screen .vault-bank .bank-slot {
+    height: 48px;
+}
+
+.bank-tip {
+    position: absolute;
+    z-index: 5;
+    width: 300px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    pointer-events: none;
+    display: none;
+    flex-direction: column;
+    gap: 3px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+    color: var(--text);
+    text-shadow: var(--shadow);
+    background: linear-gradient(rgba(58, 49, 37, 0.98), rgba(36, 30, 22, 0.98));
+    box-shadow:
+        0 0 0 1px #15100a,
+        0 0 0 2px rgba(130, 106, 70, 0.95),
+        0 0 0 3px #15100a,
+        0 10px 24px rgba(0, 0, 0, 0.6);
+}
+
+.bank-tip.shown {
+    display: flex;
+}
+
+.tip-head {
+    display: flex;
+    justify-content: space-between;
+}
+
+.bank-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.bank-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.bank-control > button {
+    padding: 6px 14px;
+}
+
+.own-tabs {
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.screen .vault-pack .slots {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.screen .vault-pack .slot {
+    width: auto;
+    height: 48px;
+}
+
+.screen .slot.selected {
+    box-shadow:
+        inset 0 0 0 2px #ffd36a,
+        0 0 12px rgba(255, 200, 90, 0.6);
+}
+
+.pack-note {
+    padding: 10px 14px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: var(--well);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.vault-pack .go {
+    height: 48px;
+    font-size: 18px;
+}
+
+/* A narrower computer screen: the side panels slimmer */
+@media (max-width: 1250px) {
+    .vault-worn,
+    .vault-pack {
+        width: 260px;
+    }
+
+    .seat-pack {
+        width: 160px;
+    }
+
+    .seat-who {
+        width: 120px;
+    }
+}
+
+/* A phone, or a narrow window: everything in one column, scrolled */
+@media (pointer: coarse), (max-width: 980px) {
+    .screen.war-room,
+    .screen.vault {
+        padding: calc(8px + var(--safe-top)) 10px 12px;
+    }
+
+    .war-columns,
+    .vault-columns {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .war-side,
+    .vault-worn,
+    .vault-pack {
+        width: auto;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .seat {
+        flex-wrap: wrap;
+        gap: 8px 12px;
+    }
+
+    .seat-pack {
+        margin-left: 0;
+    }
+
+    .war-title,
+    .vault-head h1 {
+        font-size: 28px;
+    }
+
+    .vault-head {
+        flex-wrap: wrap;
+        padding-right: 44px;
+    }
+
+    .screen .vault-bank .bank-grid {
+        min-height: 0;
+        max-height: 60vh;
+    }
+
+    /* The pack and the bank first on a short screen, what's worn after */
+    .vault-pack {
+        order: 1;
+    }
+
+    .screen .vault-pack .slots {
+        grid-template-columns: repeat(7, 1fr);
+    }
+
+    .vault-bank {
+        order: 2;
+    }
+
+    .vault-worn {
+        order: 3;
+    }
+
+    .war-bar .go {
+        margin-left: 0;
+        width: 100%;
+    }
+}

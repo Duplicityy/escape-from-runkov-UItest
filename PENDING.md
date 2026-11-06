@@ -1,5 +1,22 @@
 # Pending for the next push
 
+Version 115 (built 6 November 2026, not deployed to the main site): the rest of the menu mockups
+and a friends list (README's "Card and rooms", "The war room", "Friends", "Bank & gear"). The
+title screen's combat level, vault worth, last run, Loadouts, friend online with Join, servers
+and players, daily contract (`contract.ts`), Solo/Party and raiders count; the war room's seats
+(level, gear, food, prayer, risking, activity), heads up, loot rule with Split at the exit
+(`shareCoins`), who can join, invite links (`?join=`), find a party, friends and the docked party
+chat; the vault's bonuses, loadouts, hover cards, quantity, rearranging, own tabs, deposits,
+value shown, pack summary and Ready · Descend. The relay (`relay/coop-relay.mjs`) gained `hello`,
+`friends`, `friendCode`, `stats` and a room's `loot`, all new messages and fields, so build 105.1
+on the main site works with it as before. The save gained `friendKey`, `friends`, `loadouts`,
+`bankOrder`, `bankTabs`, `lastRun`, `contract` and `stats.damageTaken`/`secondsPlayed`
+(`SAVE_VERSION` unchanged). Not built: Withdraw as Note (nothing in a run uses a note), Discord
+(no link yet), a tasks "ready to claim" dot (tasks pay as a run ends). Checked: both layouts at
+1600 by 900 and a phone's 740 by 360; two players adding each other, the title screen's Join
+into a friend's party, chat both ways with the typing kept through redraws, "opened the vault",
+and a split-loot run (101 coins picked up by the host: 51 and 50). `GAME_BUILD` 115.
+
 Version 114 (built 6 November 2026, not deployed): the playtest's OSRS-styled menus and room
 icons (`src/skin.css`, the "Card and rooms" title screen, now the default on a computer) and the
 night torchlight (`src/game/torch.ts`) brought onto main from the playtest branch's 807a70a and

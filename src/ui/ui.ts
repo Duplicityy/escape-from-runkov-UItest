@@ -56,8 +56,10 @@ import { isKept } from "../game/kit";
 import { Chat } from "./chat";
 import { FullMap } from "./fullmap";
 import { REGEN_DELAY, soak } from "../game/combat";
-import { GAME_BUILD, GameStart, Loadout, MemberView, Session } from "../game/coop";
-import { DEFAULT_NAME_COLOR, NAME_COLORS, crownIcon, crownKey, crownVerified, nameColorOf } from "../game/crown";
+import { FriendStatus, FriendView, GAME_BUILD, GameStart, Loadout, LootRule, MemberView, Presence, RoomView, Session } from "../game/coop";
+import { DEFAULT_NAME_COLOR, NAME_COLORS, crownByAlt, crownIcon, crownKey, crownVerified, nameColorOf } from "../game/crown";
+import { Contract, contractProgress, contractResetsIn, todaysContract } from "../game/contract";
+import { combatLevel, foodMinutes, minutesText, packSummary, prayerSeconds, vaultWorth } from "../game/gear";
 import {
     BARROWS_SETS,
     BASE_HP,
@@ -83,7 +85,12 @@ import { BODY_PART_NAMES, COLOR_GROUP_NAMES, loadColorTables, loadKits } from ".
 import { Run, RunResult, TRADER_MARKUP } from "../game/run";
 import {
     CHARACTER_SLOTS,
+    Equipment,
     ItemStack,
+    Loadout as SaveLoadout,
+    MAX_BANK_TABS,
+    MAX_FRIENDS,
+    MAX_LOADOUTS,
     SaveData,
     UPGRADES,
     Upgrades,
@@ -260,6 +267,49 @@ function prayerNote(stats: GearStats): string {
     return ` · +${stats.prayer} prayer: the bar lasts ${Math.round((stats.prayer / PRAYER_BONUS_SCALE) * 100)}% longer and refills that much faster`;
 }
 
+// A map tier's word, as the war room puts it
+const DIFFICULTY = ["", "Easy", "Medium", "Hard", "Elite", "Master"];
+
+// A link that opens the game and joins this party (main.ts reads ?join=)
+function inviteLink(code: string): string {
+    return `${location.origin}${location.pathname}?join=${encodeURIComponent(code)}`;
+}
+
+// "12 sharks", "1 shark"
+function plural(n: number, word: string): string {
+    return `${n} ${word}${n === 1 || word.endsWith("s") ? "" : "s"}`;
+}
+
+function capitalize(word: string): string {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+// How long ago, in a word or two
+function timeAgo(at: number): string {
+    const minutes = Math.max(0, (Date.now() - at) / 60_000);
+    if (minutes < 2) {
+        return "just now";
+    }
+    if (minutes < 60) {
+        return `${Math.round(minutes)} minutes ago`;
+    }
+    const hours = Math.round(minutes / 60);
+    if (hours < 36) {
+        return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+    }
+    return `${Math.round(hours / 24)} days ago`;
+}
+
+// A contract's words, the number to reach in yellow
+function contractText(contract: Contract): Child[] {
+    const number = contract.kind === "haul" ? formatCoins(contract.target) : String(contract.target);
+    const at = contract.kind === "boss" ? -1 : contract.text.indexOf(number);
+    if (at < 0) {
+        return [contract.text];
+    }
+    return [contract.text.slice(0, at), h("span", { class: "yellow" }, number), contract.text.slice(at + number.length)];
+}
+
 function tierName(tier: number): string {
     return ["", "common", "uncommon", "rare", "epic", "legendary"][tier] ?? "";
 }
@@ -337,6 +387,17 @@ export class UI {
     // without which the title screen has no Co-op room
     private joinCode = "";
     coopEnabled = false;
+    // Version 115: a party to join or host once the relay's there (a
+    // friend's Join, an invite link, the title screen's Party), the title
+    // screen's Solo or Party, the friend code being typed, whether the war
+    // room's list of open parties is out, and what each party member was
+    // last doing (the chat says when one opens the vault)
+    private pendingCoop?: { join?: string; host?: string };
+    private playMode: "solo" | "party" = "solo";
+    private friendTyped = "";
+    private friendNote = "";
+    private browsing = false;
+    private activities = new Map<string, FriendStatus | undefined>();
     // The stash screen's coins: how many to move, as typed, and a word on
     // the last move
     private coinAmount = "";
@@ -350,6 +411,12 @@ export class UI {
     private bankTab = "all";
     private bankSearch = "";
     private bankSelected?: number;
+    // The vault's quantity for a move, as OSRS's bank has it (version 115),
+    // the X amount last asked for, and what dragging a cell onto another
+    // does: swap the two, or put it in before
+    private bankQty: 1 | 5 | 10 | "x" | "all" = "all";
+    private bankX = 25;
+    private bankRearrange: "swap" | "insert" = "swap";
 
     constructor(
         private readonly root: HTMLElement,
@@ -484,10 +551,14 @@ export class UI {
     private place(...children: Child[]): void {
         this.hud = undefined;
         this.loading = false;
-        // Only the co-op screen wants the list of servers (it asks again)
+        // Only the co-op screen wants the list of servers (it asks again),
+        // and only it holds the chat in a panel (it docks it again)
         this.session.browse(false);
+        this.chat.dock(undefined);
         this.root.replaceChildren(...children.filter((c): c is Node | string => !!c));
         this.updateChat();
+        // Once the screen's key is set (showKeyed sets it after this)
+        queueMicrotask(() => this.tellFriends());
     }
 
     // The chat box shows in a run, and in a co-op room's lobby
@@ -538,12 +609,13 @@ export class UI {
                 : "Twelve maps, one star to five",
             stash:
                 plural(pieces, "piece") +
-                (repairs > 0 ? ` · ${repairs} need${repairs === 1 ? "s" : ""} repair` : "") +
-                (save.insured !== undefined ? ` · ${getItem(save.insured).name.toLowerCase()} insured` : ""),
-            shop: `${save.shop.length} on the shelves · ${formatCoins(save.coins)} coins`,
+                ` · ${formatCoins(vaultWorth(save.stash, save.coins))}` +
+                (repairs > 0 ? ` · ${repairs} need${repairs === 1 ? "s" : ""} repair` : ""),
+            // The shelves fill again after every run (main.ts)
+            shop: `${save.shop.length} on the shelves · restocks after a run`,
             tasks: `${tasksDone} of ${TASKS.length} done` + (save.pets.length > 0 ? ` · ${plural(save.pets.length, "pet")}` : ""),
             character: save.character.name,
-            coop: this.session.room ? `On a server: ${this.session.room.name}` : "Up to four on one map together",
+            coop: this.coopLine(),
             record: `${plural(s.runs, "run")} · ${plural(s.extractions, "escape")} · ${plural(s.deaths, "death")} · hardest map ${s.deepest > 0 ? "★".repeat(s.deepest) : "none yet"}`,
             pet: save.pet ? `${petName(save.pet)} follows you: ${petBuff(save.pet)?.text ?? ""}` : undefined,
             grave:
@@ -581,8 +653,10 @@ export class UI {
         });
     }
 
-    // A room's button: an icon, its name, and a line under it
-    private roomButton(name: string, sub: string | undefined, icon: Node, open: () => void, primary = false): HTMLElement {
+    // A room's button: an icon, its name, and a line under it, with
+    // something at its right end when there's more to say (a friend's Join,
+    // the way in's arrow)
+    private roomButton(name: string, sub: string | Node | undefined, icon: Node, open: () => void, primary = false, end?: Node): HTMLElement {
         return h(
             "button",
             { class: "room" + (primary ? " primary" : ""), onclick: open },
@@ -590,7 +664,126 @@ export class UI {
             // would show its neighbours on the sheet
             h("span", { class: "room-well" }, icon),
             h("span", { class: "room-text" }, h("span", { class: "room-name" }, name), sub ? h("span", { class: "room-sub" }, sub) : null),
+            end ? h("span", { class: "room-end" }, end) : null,
         );
+    }
+
+    // -----------------------------------------------------------------------
+    // Friends (version 115): every character has a friend code; two who've
+    // added each other see each other online, what they're doing, and can
+    // join the other's party when it has a seat
+
+    // What this player tells the relay about themselves for their friends
+    presence(): Presence {
+        const crown = crownVerified(crownKey());
+        return {
+            name: this.save.character.name,
+            crown: crown?.alt,
+            color: nameColorOf(this.save.character, crownKey()),
+            status: this.status(),
+            map: this.hud ? this.save.recentMaps[0] : undefined,
+            watch: (this.save.friends ?? []).map((f) => f.code),
+        };
+    }
+
+    // What this player's doing, as friends and the party see it
+    private status(): FriendStatus {
+        if (this.hud || this.loading) {
+            return "run";
+        }
+        if (this.screenKey === "stash") {
+            return "vault";
+        }
+        if (this.screenKey === "shop") {
+            return "shop";
+        }
+        return this.session.room ? "lobby" : "menu";
+    }
+
+    // Friends and the party hear what's changed: called as each screen goes up
+    private tellFriends(): void {
+        this.session.setPresence(this.presence());
+        if (this.session.room) {
+            this.session.setMe({ loadout: this.myLoadout() });
+        }
+    }
+
+    // A friend's name as the friends list draws it: their crown (their
+    // word for it) and their name's colour
+    private friendName(friend: FriendView): HTMLElement {
+        const crown = crownByAlt(friend.crown);
+        const el = h("span", { class: "friend-name" }, crown ? crownIcon(crown) : null, friend.name);
+        if (friend.color && NAME_COLORS.some((c) => c.color === friend.color)) {
+            el.style.color = friend.color;
+        }
+        return el;
+    }
+
+    // What a friend's doing, in a few words
+    private friendDoing(friend: FriendView): string {
+        const map = friend.map ? WORLD_BY_ID.get(friend.map)?.name : undefined;
+        switch (friend.status) {
+            case "run":
+                return map ? `in a run on ${map}` : "in a run";
+            case "lobby":
+                return friend.party ? `in a party, ${friend.party.players} of ${friend.party.max}${map ? ` · ${map}` : ""}` : "in a party";
+            case "vault":
+                return "in the vault";
+            case "shop":
+                return "in the shop";
+            default:
+                return "on the title screen";
+        }
+    }
+
+    // Into a friend's party, from anywhere between runs
+    private joinFriend(friend: FriendView): void {
+        if (!friend.party) {
+            return;
+        }
+        this.pendingCoop = { join: friend.party.code };
+        this.showCoop();
+    }
+
+    // The online friends, the ones with a seat in their party first
+    private onlineFriends(): FriendView[] {
+        return [...(this.session.view.friends ?? [])].sort((a, b) => Number(!!b.party) - Number(!!a.party) || a.name.localeCompare(b.name));
+    }
+
+    // What the Co-op room says under its name: a friend online (with a Join
+    // when there's a seat for you), or else how many servers and players are
+    // about
+    private coopLine(): { sub: string | Node; end?: Node } {
+        if (this.session.room) {
+            return { sub: `On a server: ${this.session.room.name}` };
+        }
+        const friends = this.onlineFriends();
+        const first = friends[0];
+        if (first) {
+            const more = friends.length > 1 ? ` and ${friends.length - 1} more` : "";
+            const sub = h("span", {}, this.friendName(first), ` is online${more}`);
+            const join = first.party
+                ? h(
+                      "span",
+                      {
+                          class: "join-pill",
+                          title: `Join ${first.name}'s party`,
+                          onclick: (e: MouseEvent) => {
+                              e.stopPropagation();
+                              this.joinFriend(first);
+                          },
+                      },
+                      "Join",
+                  )
+                : undefined;
+            return { sub, end: join };
+        }
+        const live = this.session.view.live;
+        if (live) {
+            const servers = `${live.servers} server${live.servers === 1 ? "" : "s"} open`;
+            return { sub: `${servers} · ${live.players} online` };
+        }
+        return { sub: "Up to four on one map together" };
     }
 
     private itemIcon(id: number): HTMLElement {
@@ -764,12 +957,13 @@ export class UI {
                     f.grave ? h("div", { class: "record-line grave" }, f.grave) : null,
                     this.notice ? h("div", { class: "record-line notice" }, this.notice) : null,
                 ),
+                this.contractPanel(true),
             ),
             h(
                 "div",
                 { class: "rail" },
                 this.roomButton("Choose a map", f.play, this.itemIcon(2677), () => this.showMaps(), true),
-                this.coopEnabled ? this.roomButton("Co-op", f.coop, this.itemIcon(1019), () => this.showCoop()) : null,
+                this.coopEnabled ? this.roomButton("Co-op", f.coop.sub, this.itemIcon(1019), () => this.showCoop(), false, f.coop.end) : null,
                 this.roomButton("Bank & gear", f.stash, this.itemIcon(1127), () => this.showStash()),
                 this.roomButton("Shop", f.shop, this.itemIcon(995), () => this.showShop()),
                 this.roomButton("Tasks & pets", f.tasks, this.itemIcon(989), () => this.showTasks()),
@@ -870,7 +1064,10 @@ export class UI {
         const save = this.save;
         const s = save.stats;
         const f = this.menuFacts();
-        const worn = (slot: Slot | undefined) => {
+        const worn = (slot: Slot | "ammo" | undefined) => {
+            if (slot === "ammo") {
+                return this.ammoSlot("worn-slot");
+            }
             const id = slot ? save.equipment[slot] : undefined;
             if (!slot) {
                 return h("div", { class: "worn-slot none" });
@@ -887,7 +1084,7 @@ export class UI {
         };
         // The equipment tab's cross: head; cape, neck, (ammunition); weapon,
         // body, shield; legs; hands, feet, ring
-        const layout: (Slot | undefined)[] = [undefined, "head", undefined, "cape", "neck", undefined, "weapon", "body", "shield", undefined, "legs", undefined, "hands", "feet", "ring"];
+        const layout: (Slot | "ammo" | undefined)[] = [undefined, "head", undefined, "cape", "neck", "ammo", "weapon", "body", "shield", undefined, "legs", undefined, "hands", "feet", "ring"];
         const escapeRate = s.runs > 0 ? `${Math.round((s.extractions / s.runs) * 100)}%` : "–";
         const tile = (value: string, label: string, color: string) => h("div", { class: "big-stat" }, h("span", { class: "big-value " + color }, value), h("span", { class: "big-label" }, label));
         const line = (label: string, value: Node | string, cls = "") => h("div", { class: "card-line" }, h("span", { class: "label" }, label), h("span", { class: "value " + cls }, value));
@@ -896,23 +1093,46 @@ export class UI {
             .filter((id): id is number => id !== undefined)
             .map((id) => ({ id, wear: wearOf(save.wear, id) }))
             .sort((a, b) => b.wear - a.wear)[0];
+        // Under the name: the crown's word, when there's one, and the gear's
+        // combat level (gear.ts: the game has no skills)
+        const crown = crownVerified(crownKey(), () => this.onSessionChange());
+        const sub = h(
+            "div",
+            { class: "card-sub" },
+            crown ? `${crown.word} · ` : "",
+            "combat ",
+            h("span", { class: "green" }, String(combatLevel(save.equipment))),
+        );
+        const lastRun = save.lastRun;
+        const lastWord = lastRun
+            ? h(
+                  "span",
+                  {},
+                  `${timeAgo(lastRun.at)} · `,
+                  h(
+                      "span",
+                      { class: lastRun.kind === "extracted" ? "green" : "red" },
+                      lastRun.kind === "extracted" ? "escaped" : lastRun.kind === "died" ? "died" : "left",
+                  ),
+              )
+            : undefined;
         const card = h(
             "div",
             { class: "osrs-card" },
             h(
                 "div",
                 { class: "card-head" },
-                h("div", { class: "card-portrait" }, this.itemIcon(save.equipment.head ?? 1163)),
-                h("div", { class: "card-who" }, this.recordName(), h("div", { class: "card-sub" }, `${s.runs} runs · hardest map ${s.deepest > 0 ? "★".repeat(s.deepest) : "none yet"}`)),
+                h("div", { class: "card-portrait" }, crown ? crownIcon(crown) : this.itemIcon(save.equipment.head ?? 1163)),
+                h("div", { class: "card-who" }, this.recordName(), sub),
             ),
             h("div", { class: "rule-head" }, "Worn"),
             h("div", { class: "worn-grid" }, ...layout.map(worn)),
-            h("div", { class: "big-stats" }, tile(escapeRate, "escaped", "green"), tile(formatCoins(s.bestHaul), "best haul", "yellow"), tile(String(s.deaths), "deaths", "red")),
+            h("div", { class: "big-stats" }, tile(escapeRate, "escaped", "green"), tile(formatCoins(s.bestHaul), "best run", "yellow"), tile(String(s.deaths), "deaths", "red")),
             h(
                 "div",
                 { class: "card-lines" },
-                line("Banked", `${formatCoins(save.coins)} coins`, "yellow"),
-                line("Escapes", `${s.extractions} of ${s.runs}`),
+                line("Vault worth", formatCoins(vaultWorth(save.stash, save.coins)), "yellow"),
+                lastWord ? line("Last run", lastWord) : line("Escapes", `${s.extractions} of ${s.runs}`),
                 worst && worst.wear > 0 ? line(getItem(worst.id).name, `${Math.round(worst.wear * 100)}% worn`, "orange") : null,
                 save.insured !== undefined ? line("Insured", getItem(save.insured).name, "green") : null,
                 f.pet ? h("div", { class: "card-note" }, f.pet) : null,
@@ -923,34 +1143,50 @@ export class UI {
                 "div",
                 { class: "card-buttons" },
                 h("button", { onclick: () => this.showCharacter() }, "Character"),
-                crownVerified(crownKey()) ? (() => {
-                    const b = this.switchCharacterButton(false)!;
-                    b.className = "";
-                    b.replaceChildren("Switch character");
-                    return b;
-                })() : null,
+                h("button", { title: "Sets of gear and food, worn and packed in one click", onclick: () => this.showStash() }, "Loadouts"),
             ),
+            crownVerified(crownKey())
+                ? (() => {
+                      const b = this.switchCharacterButton(false)!;
+                      b.className = "quiet card-switch";
+                      b.replaceChildren("Switch character");
+                      return b;
+                  })()
+                : null,
         );
+        const coop = f.coop;
         const rooms = h(
             "div",
             { class: "osrs-rooms" },
-            this.roomButton("Choose a map", f.play, this.itemIcon(2677), () => this.showMaps(), true),
-            this.coopEnabled ? this.roomButton("Co-op", f.coop, this.itemIcon(1019), () => this.showCoop()) : null,
+            this.roomButton("Choose a map", f.play, this.itemIcon(2677), () => this.showMaps(), true, h("span", { class: "room-arrow" }, "▸")),
+            this.coopEnabled ? this.roomButton("Co-op", coop.sub, this.itemIcon(1019), () => this.showCoop(), false, coop.end) : null,
             this.roomButton("Bank & gear", f.stash, this.itemIcon(1127), () => this.showStash()),
             this.roomButton("Shop", f.shop, this.itemIcon(995), () => this.showShop()),
             this.roomButton("Tasks & pets", f.tasks, this.itemIcon(989), () => this.showTasks()),
-            this.roomButton("Settings", "Brightness, sound, camera", this.gearIcon(), () => this.showSettings()),
+            this.roomButton("Settings", "Interface, sound, camera", this.gearIcon(), () => this.showSettings()),
         );
-        const play = h(
-            "div",
-            { class: "osrs-play" },
-            this.session.room
-                ? h("button", { class: "go", onclick: () => this.showCoop() }, `Back to ${this.session.room.name}`)
-                : last
-                  ? h("button", { class: "go", onclick: () => this.hooks.startRun(last.id) }, `Descend into ${last.name}`)
-                  : h("button", { class: "go", onclick: () => this.showMaps() }, "Choose your first map"),
-            h("div", { class: "osrs-hint" }, this.controlsHint()),
-        );
+        // Solo, or with a party: a private server of this player's own on
+        // the map, its code to give friends (or a friend's Join from Co-op)
+        const party = this.playMode === "party" && this.coopEnabled;
+        const seg = this.coopEnabled
+            ? h(
+                  "div",
+                  { class: "seg" },
+                  h("button", { class: party ? "" : "on", onclick: () => this.setPlayMode("solo") }, "Solo"),
+                  h("button", { class: party ? "on" : "", onclick: () => this.setPlayMode("party") }, "Party"),
+              )
+            : null;
+        const go = this.session.room
+            ? h("button", { class: "go", onclick: () => this.showCoop() }, `Back to ${this.session.room.name}`)
+            : last
+              ? h(
+                    "button",
+                    { class: "go", onclick: () => (party ? this.hostParty(last.id) : this.hooks.startRun(last.id)) },
+                    party ? `Gather a party for ${last.name}` : `Descend into ${last.name}`,
+                )
+              : h("button", { class: "go", onclick: () => this.showMaps() }, "Choose your first map");
+        const play = h("div", { class: "osrs-play" }, this.contractPanel(false), h("div", { class: "osrs-go" }, this.session.room ? null : seg, go));
+        const live = this.session.view.live;
         return h(
             "div",
             { class: "screen title layout-osrs" },
@@ -958,8 +1194,96 @@ export class UI {
             card,
             rooms,
             play,
-            h("div", { class: "osrs-build" }, `Build ${GAME_BUILD}`),
+            h(
+                "div",
+                { class: "osrs-build" },
+                `Build ${GAME_BUILD}`,
+                live ? h("span", {}, " · ", h("span", { class: "green" }, String(live.raiders)), ` raider${live.raiders === 1 ? "" : "s"} below right now`) : null,
+            ),
             h("div", { class: "osrs-utility" }, ...this.utilityButtons()),
+        );
+    }
+
+    // The ammunition slot beside the neck (version 115): what's packed for
+    // the weapon held, the best kind with the count of them all
+    private ammoSlot(cls: string): HTMLElement {
+        const save = this.save;
+        const weapon = save.equipment.weapon !== undefined ? getItem(save.equipment.weapon) : undefined;
+        const uses = weapon?.uses;
+        if (!uses) {
+            return h("div", { class: `${cls} empty`, title: "ammunition" });
+        }
+        const packed = save.backpack.filter((s) => getItem(s.id).ammo === uses);
+        const best = packed.sort((a, b) => getItem(b.id).tier - getItem(a.id).tier)[0];
+        if (!best) {
+            return h("div", { class: `${cls} empty`, title: `No ${uses} packed for the ${weapon.name.toLowerCase()}` });
+        }
+        const count = packed.reduce((n, s) => n + s.count, 0);
+        return h("div", { class: cls, title: `${count} ${uses} packed` }, iconElement(best.id), h("span", { class: "count" }, String(count)));
+    }
+
+    private setPlayMode(mode: "solo" | "party"): void {
+        this.playMode = mode;
+        this.showMenu();
+    }
+
+    // A private party of this player's own on a map, gathered in the war
+    // room (once the relay's there)
+    private hostParty(mapId: string): void {
+        this.pendingCoop = { host: mapId };
+        this.showCoop();
+    }
+
+    // What waits to be done once the relay answers: a party to join or host
+    private runPendingCoop(): void {
+        const pending = this.pendingCoop;
+        const view = this.session.view;
+        if (!pending || view.status !== "online") {
+            return;
+        }
+        this.pendingCoop = undefined;
+        if (view.room) {
+            return;
+        }
+        if (pending.join) {
+            this.session.join(pending.join);
+        } else if (pending.host) {
+            this.session.create(pending.host, false);
+        }
+    }
+
+    // The day's contract (contract.ts): what it asks, how near the best run
+    // came, and what it pays. Compact on a phone's title, under the record.
+    private contractPanel(compact: boolean): HTMLElement {
+        const before = this.save.contract?.day;
+        const contract = todaysContract(this.save);
+        if (this.save.contract?.day !== before) {
+            this.persist();
+        }
+        const progress = contractProgress(this.save, contract);
+        const share = progress.done ? 1 : Math.min(1, progress.best / contract.target);
+        const fill = h("div", { class: "gold-fill" });
+        fill.style.width = `${Math.round(share * 100)}%`;
+        const left = contractResetsIn();
+        const resets = `resets in ${Math.floor(left / 3_600_000)}h ${Math.floor((left % 3_600_000) / 60_000)}m`;
+        const best =
+            contract.kind === "haul"
+                ? formatCoins(progress.best)
+                : contract.kind === "boss"
+                  ? "not yet"
+                  : `${progress.best} of ${contract.target}`;
+        return h(
+            "div",
+            { class: "contract" + (compact ? " compact" : "") + (progress.done ? " done" : "") },
+            h("div", { class: "contract-head" }, h("span", { class: "contract-title" }, "Daily contract"), h("span", { class: "contract-resets" }, resets)),
+            h("div", { class: "contract-text" }, ...contractText(contract)),
+            h("div", { class: "gold-bar" }, fill),
+            h(
+                "div",
+                { class: "contract-foot" },
+                h("span", {}, progress.done ? "Done today: paid" : `Best attempt ${best}`),
+                h("span", {}, "Reward: ", h("span", { class: "yellow" }, formatCoins(contract.reward)), " + clue scroll"),
+            ),
         );
     }
 
@@ -970,7 +1294,18 @@ export class UI {
     // What this player brings to a party, as the room shows it
     private myLoadout(): Loadout {
         const save = this.save;
-        return { character: save.character, equipment: { ...save.equipment }, pet: save.pet, crown: crownKey() };
+        const summary = packSummary(save.equipment, save.backpack, save.insured);
+        const weapon = save.equipment.weapon !== undefined ? getItem(save.equipment.weapon) : undefined;
+        const uses = weapon?.uses;
+        const ammo = uses ? save.backpack.reduce((n, s) => n + (getItem(s.id).ammo === uses ? s.count : 0), 0) : undefined;
+        return {
+            character: save.character,
+            equipment: { ...save.equipment },
+            pet: save.pet,
+            crown: crownKey(),
+            activity: this.status(),
+            pack: { ...summary, ammo },
+        };
     }
 
     // The character's name on the title screen: with a crown when this
@@ -1027,15 +1362,50 @@ export class UI {
     // draws itself again if it's up
     onSessionChange(): void {
         this.updateChat();
+        this.noteActivities();
         // Never over a run, or while one loads
         if (this.hud || this.loading) {
             return;
         }
+        this.runPendingCoop();
         if (this.screenKey === "coop") {
             this.showCoop();
         } else if (this.screenKey === "menu") {
             this.showMenu();
         }
+    }
+
+    // The chat says when someone in the party goes to the vault or the shop
+    // (version 115)
+    private noteActivities(): void {
+        const room = this.session.room;
+        if (!room) {
+            this.activities.clear();
+            return;
+        }
+        for (const m of room.members) {
+            // Someone just in isn't news: only a change from what was seen
+            const seen = this.activities.has(m.id);
+            const was = this.activities.get(m.id);
+            const now = m.loadout?.activity;
+            this.activities.set(m.id, now);
+            if (!seen || m.id === this.session.view.you || now === was) {
+                continue;
+            }
+            const name = this.heroName(m, room.members);
+            if (now === "vault") {
+                this.chat.game(`${name} opened the vault.`);
+            } else if (now === "shop") {
+                this.chat.game(`${name} went to the shop.`);
+            }
+        }
+    }
+
+    // A party's code from an invite link (main.ts): joined once the relay's
+    // there
+    joinFromLink(code: string): void {
+        this.pendingCoop = { join: code };
+        this.showCoop();
     }
 
     // Whether a run is loading behind the loading screen
@@ -1052,205 +1422,506 @@ export class UI {
         if (view.status === "offline" && !view.error) {
             void session.connect();
         }
+        this.runPendingCoop();
         const room = view.room;
-        const children: Child[] = [
-            h("h2", {}, "Co-op"),
-            h(
-                "div",
-                { class: "subtitle" },
-                "Up to four on one map together. One of you hosts: the map runs in their browser and the rest play through it, so the host wants the best connection. Everyone brings their own gear and keeps their own loot; whoever reaches a drop first takes it. The boss and its guards have more in them for a bigger party.",
-            ),
-        ];
+        const head: Child[] = [h("h1", { class: "war-title" }, "War Room")];
+        let body: HTMLElement;
+        let chatBody: HTMLElement | undefined;
         if (view.status !== "online") {
-            children.push(
-                h("div", { class: "panel coop" }, h("div", { class: "subtitle" }, view.error ?? "Connecting to the co-op server...")),
-                view.error ? h("button", { onclick: () => void session.connect().then(() => this.onSessionChange()) }, "Try again") : null,
-            );
-        } else if (!room) {
-            const input = h("input", {
-                type: "text",
-                class: "code",
-                placeholder: "Code",
-                value: this.joinCode,
-                maxLength: 8,
-                autocapitalize: "characters",
-                spellcheck: false,
-            });
-            input.addEventListener("input", () => (this.joinCode = input.value.toUpperCase()));
-            input.addEventListener("keydown", (e) => {
-                if (e.key === "Enter") {
-                    session.join(this.joinCode);
-                }
-            });
-            const startMap = this.save.recentMaps.find((id) => mapUnlocked(this.save.stats.mapsBeaten, id)) ?? WORLDS[0].id;
-            const servers = view.servers;
-            const serverRows = (servers ?? []).map((s) => {
-                const world = WORLD_BY_ID.get(s.mapId);
-                const locked = !view.anyMap && !mapUnlocked(this.save.stats.mapsBeaten, s.mapId);
-                const mapName = world ? `${world.name} ${"★".repeat(world.tier)}` : s.mapId;
-                return h(
-                    "div",
-                    { class: "item-row server" },
-                    h("span", { class: "name" }, s.name),
-                    h("span", { class: "stats" }, `${s.host} hosting · ${mapName}${locked ? " (not unlocked for you)" : ""} · ${s.players} of ${s.max}`),
-                    h("button", { disabled: locked, title: locked ? "Beat the map before it to play this one" : `Join ${s.name}`, onclick: () => session.join(s.code) }, "Join"),
-                );
-            });
-            children.push(
+            body = h(
+                "div",
+                { class: "war-columns" },
                 h(
                     "div",
-                    { class: "panel coop" },
-                    h("h3", {}, "Servers"),
-                    h("div", { class: "stats" }, "Every public server waiting for players. Join one and you're in its party."),
-                    servers === undefined
-                        ? h("div", { class: "record-line" }, "Looking for servers...")
-                        : serverRows.length > 0
-                          ? h("div", { class: "item-list" }, ...serverRows)
-                          : h("div", { class: "record-line" }, "No public servers right now. Host one, and it shows up here for everyone."),
-                    h("h3", {}, "Host a server"),
-                    h(
-                        "div",
-                        { class: "stats" },
-                        "A public server is in the list above for anyone to join. A private one is reachable by its code only: you get the code to give your friends. Either way you pick the map, from the ones you've unlocked, and you can switch public and private later.",
-                    ),
-                    h(
-                        "div",
-                        { class: "row" },
-                        h("button", { class: "primary", disabled: view.full, onclick: () => session.create(startMap, true) }, "Host a public server"),
-                        h("button", { disabled: view.full, onclick: () => session.create(startMap, false) }, "Host a private server"),
-                    ),
-                    view.full ? h("div", { class: "record-line notice" }, "The co-op server has no room for another one right now; try again in a bit.") : null,
-                    h("h3", {}, "Join a private server"),
-                    h("div", { class: "stats" }, "Got a code from a friend? Type it here."),
-                    h("div", { class: "row" }, input, h("button", { onclick: () => session.join(this.joinCode) }, "Join")),
-                    view.error ? h("div", { class: "record-line notice" }, view.error) : null,
+                    { class: "panel coop war-main" },
+                    h("div", { class: "subtitle" }, view.error ?? "Connecting to the co-op server..."),
+                    view.error ? h("button", { onclick: () => void session.connect().then(() => this.onSessionChange()) }, "Try again") : null,
                 ),
             );
+        } else if (!room) {
+            body = h(
+                "div",
+                { class: "war-columns" },
+                h("div", { class: "war-main" }, this.findPartyPanel(undefined, true), this.hostPartyPanel()),
+                h("div", { class: "war-side" }, this.friendsPanel(undefined)),
+            );
         } else {
-            const isHost = session.isHost;
-            const me = view.you;
-            const world = WORLD_BY_ID.get(room.mapId);
-            const guests = room.members.filter((m) => m.id !== room.hostId);
-            const allReady = guests.every((m) => m.ready);
-            const rows = room.members.map((m) => {
-                const host = m.id === room.hostId;
-                const mine = m.id === me;
-                return h(
-                    "div",
-                    { class: "item-row member" + (mine ? " mine" : "") },
-                    this.heroLabel(m, room.members, host ? " · host" : mine ? " · you" : ""),
-                    h("span", { class: "stats" }, this.gearLine(m.loadout)),
-                    h("span", { class: "ready" + (host || m.ready ? " on" : "") }, host ? "hosting" : m.ready ? "ready" : "not ready"),
-                    isHost && !host ? h("button", { class: "quiet", onclick: () => session.kick(m.id) }, "Kick") : null,
-                );
-            });
-            const mapRow = isHost
-                ? (() => {
-                      const select = h("select", {});
-                      for (const w of WORLDS) {
-                          if (mapUnlocked(this.save.stats.mapsBeaten, w.id)) {
-                              const option = h("option", { value: w.id }, `${w.name} ${"★".repeat(w.tier)}`);
-                              option.selected = w.id === room.mapId;
-                              select.append(option);
-                          }
-                      }
-                      select.addEventListener("change", () => session.setMap(select.value));
-                      return h("div", { class: "row" }, h("span", { class: "stats" }, "Map:"), select);
-                  })()
-                : h("div", { class: "record-line" }, `Map: ${world ? `${world.name} ${"★".repeat(world.tier)}` : room.mapId} (the host picks)`);
-            const mine = room.members.find((m) => m.id === me);
-            const actions: Child[] = [];
-            if (room.started) {
-                actions.push(h("div", { class: "subtitle" }, "The run is under way. The others are still in; wait here, or leave the party."));
-            } else if (isHost) {
-                actions.push(
-                    h(
-                        "button",
-                        {
-                            class: "primary",
-                            disabled: !allReady,
-                            title: allReady ? "Start the run for everyone here" : "Everyone has to be ready first",
-                            onclick: () => this.startParty(),
-                        },
-                        room.members.length === 1 ? "Start alone" : allReady ? "Start the run" : "Waiting for everyone to be ready",
-                    ),
-                    h("button", { class: "quiet", onclick: () => session.disband() }, "Disband"),
-                );
-            } else {
-                actions.push(
-                    h("button", { class: "primary", onclick: () => session.setReady(!mine?.ready) }, mine?.ready ? "Not ready" : "Ready"),
-                    h("div", { class: "stats" }, "The host starts the run once everyone's ready."),
-                );
-            }
-            // Public or private: the host's switch, and everyone's word on
-            // which it is (the code matters for a private one)
-            const privacy = isHost
-                ? h(
-                      "div",
-                      { class: "row privacy" },
-                      h("span", { class: "stats" }, room.open ? "Public: anyone can join from the server list." : "Private: only the code gets anyone in."),
-                      h("button", { class: "quiet", disabled: room.started, onclick: () => session.setOpen(!room.open) }, room.open ? "Make it private" : "Make it public"),
-                  )
-                : h("div", { class: "record-line" }, room.open ? "A public server: anyone can join from the list." : "A private server: only the code gets anyone in.");
-            children.push(
+            head.push(this.partyCodeRow(room.code));
+            chatBody = h("div", { class: "war-chat-body" });
+            const here = room.members.length;
+            body = h(
+                "div",
+                { class: "war-columns" },
+                this.partyPanel(),
                 h(
                     "div",
-                    { class: "panel coop" },
-                    h("div", { class: "record-line server-name" }, room.name),
-                    privacy,
+                    { class: "war-side" },
+                    this.findPartyPanel(room, this.browsing),
+                    this.friendsPanel(room),
                     h(
                         "div",
-                        { class: "party-code" },
-                        h("span", { class: "stats" }, room.open ? "Code" : "Code for your friends"),
-                        h("span", { class: "code" }, room.code),
-                        h(
-                            "button",
-                            {
-                                class: "quiet",
-                                onclick: () => void navigator.clipboard?.writeText(room.code).catch(() => undefined),
-                            },
-                            "Copy",
-                        ),
-                    ),
-                    mapRow,
-                    h("h3", {}, `Party (${room.members.length} of 4)`),
-                    h("div", { class: "item-list" }, ...rows),
-                    h("div", { class: "row" }, ...actions),
-                    view.error ? h("div", { class: "record-line notice" }, view.error) : null,
-                    h("h3", {}, "While you wait"),
-                    h("div", { class: "stats" }, "The guild's rooms, and back here when you're done; what you wear and pack goes with you."),
-                    h(
-                        "div",
-                        { class: "row small" },
-                        h("button", { onclick: () => this.showStash() }, "Bank & gear"),
-                        h("button", { onclick: () => this.showShop() }, "Shop"),
-                        h("button", { onclick: () => this.showTasks() }, "Tasks & pets"),
-                        h("button", { onclick: () => this.showCharacter() }, "Character"),
-                        h("button", { onclick: () => this.showSettings() }, "Settings"),
+                        { class: "panel war-chat" },
+                        h("h2", { class: "left" }, "Party chat ", h("span", { class: "muted" }, `${here} here`)),
+                        chatBody,
                     ),
                 ),
             );
         }
-        children.push(
-            h(
-                "div",
-                { class: "row" },
-                room ? h("button", { onclick: () => session.leave() }, "Leave the server") : null,
-                h("button", { onclick: () => this.showMenu() }, "Title screen"),
-            ),
+        const foot = h(
+            "div",
+            { class: "war-foot" },
+            room ? h("button", { class: "quiet", onclick: () => session.leave() }, "Leave the party") : null,
+            room && session.isHost && !room.started ? h("button", { class: "quiet", onclick: () => session.disband() }, "Disband") : null,
+            h("span", { class: "spacer" }),
+            room ? h("button", { onclick: () => this.showStash() }, "Vault") : null,
+            room ? h("button", { onclick: () => this.showShop() }, "Shop") : null,
+            room ? h("button", { onclick: () => this.showCharacter() }, "Character") : null,
+            h("button", { onclick: () => this.showMenu() }, "Title screen"),
         );
         // Drawn again while a code's being typed (the list changed): the
         // typing carries on in the new box
-        const typing = document.activeElement instanceof HTMLInputElement && document.activeElement.classList.contains("code");
-        this.showKeyed("coop", h("div", { class: "screen" }, ...children));
+        const active = document.activeElement;
+        const typing = active instanceof HTMLInputElement && (active.classList.contains("code") || active.classList.contains("friend-code")) ? active.className : undefined;
+        this.showKeyed("coop", h("div", { class: "screen war-room" }, h("div", { class: "war-head" }, ...head), body, foot));
+        // The party's chat sits in its panel here (chat.ts), back over the
+        // screen everywhere else
+        if (chatBody) {
+            this.chat.dock(chatBody);
+        }
         // The list of public servers, asked for every few seconds while this
-        // screen is up out of a server (place() stops it for any other)
-        session.browse(view.status === "online" && !room);
+        // screen is up (place() stops it for any other)
+        session.browse(view.status === "online");
         if (typing) {
-            const again = this.root.querySelector<HTMLInputElement>("input.code");
+            const again = this.root.querySelector<HTMLInputElement>(`input.${typing.split(" ")[0]}`);
             again?.focus();
             again?.setSelectionRange(again.value.length, again.value.length);
         }
+    }
+
+    // The party's code big, with Copy and an invite link (the game opened
+    // with ?join=<code> joins it)
+    private partyCodeRow(code: string): HTMLElement {
+        const copy = (text: string, button: HTMLButtonElement, done: string) => {
+            void navigator.clipboard
+                ?.writeText(text)
+                .then(() => (button.textContent = done))
+                .catch(() => prompt("Copy this:", text));
+        };
+        const copyButton = h("button", { class: "small", onclick: () => copy(code, copyButton, "Copied") }, "Copy");
+        const inviteButton = h(
+            "button",
+            { class: "small", title: "A link that opens the game straight into this party", onclick: () => copy(inviteLink(code), inviteButton, "Link copied") },
+            "Invite link",
+        );
+        return h("div", { class: "war-code" }, h("span", { class: "muted" }, "Party code"), h("span", { class: "code" }, code), copyButton, inviteButton);
+    }
+
+    // The party: a seat each, with what they wear and carry and whether
+    // they're ready, the open seats, a word on anyone short of food or
+    // prayer, and along the bottom the map, the loot rule, who can join and
+    // the way in
+    private partyPanel(): HTMLElement {
+        const session = this.session;
+        const room = session.room!;
+        const me = session.view.you;
+        const isHost = session.isHost;
+        const world = WORLD_BY_ID.get(room.mapId);
+        const guests = room.members.filter((m) => m.id !== room.hostId);
+        const readyCount = room.members.filter((m) => m.id === room.hostId || m.ready).length;
+        const allReady = guests.every((m) => m.ready);
+        const seats: HTMLElement[] = room.members.map((m) => this.seat(m, room.hostId, me, isHost));
+        for (let i = room.members.length; i < 4; i++) {
+            seats.push(
+                h(
+                    "div",
+                    { class: "seat open" },
+                    h("div", { class: "seat-portrait empty" }),
+                    h("span", { class: "muted seat-open" }, "Open seat"),
+                    h(
+                        "button",
+                        {
+                            class: "small",
+                            title: "Copy a link that brings a friend straight into this party",
+                            onclick: (e: MouseEvent) => {
+                                const button = e.currentTarget as HTMLButtonElement;
+                                void navigator.clipboard
+                                    ?.writeText(inviteLink(room.code))
+                                    .then(() => (button.textContent = "Link copied"))
+                                    .catch(() => prompt("Send a friend this link:", inviteLink(room.code)));
+                            },
+                        },
+                        "Invite",
+                    ),
+                ),
+            );
+        }
+        const warnings = room.members.flatMap((m) => {
+            const text = this.headsUp(m, world?.tier ?? 1);
+            return text ? [h("div", { class: "heads-up" }, h("span", { class: "orange" }, "Heads up: "), this.heroLabel(m, room.members, ""), ` ${text}`)] : [];
+        });
+        const seg = (options: [string, string, boolean][], pick: (value: string) => void, enabled: boolean) =>
+            h(
+                "div",
+                { class: "seg" + (enabled ? "" : " fixed") },
+                ...options.map(([value, label, on]) => h("button", { class: on ? "on" : "", disabled: !enabled && !on, onclick: () => enabled && !on && pick(value) }, label)),
+            );
+        const loot: LootRule = room.loot ?? "keep";
+        const mapPick = isHost && !room.started
+            ? (() => {
+                  const select = h("select", { class: "war-select" });
+                  for (const w of WORLDS) {
+                      if (mapUnlocked(this.save.stats.mapsBeaten, w.id)) {
+                          const option = h("option", { value: w.id }, `${w.name} ${"★".repeat(w.tier)}`);
+                          option.selected = w.id === room.mapId;
+                          select.append(option);
+                      }
+                  }
+                  select.addEventListener("change", () => session.setMap(select.value));
+                  return select;
+              })()
+            : h("div", { class: "yellow bold" }, world ? `${world.name} ${"★".repeat(world.tier)}` : room.mapId);
+        const mine = room.members.find((m) => m.id === me);
+        const go = room.started
+            ? h("button", { class: "go", disabled: true }, "The run is under way")
+            : isHost
+              ? h(
+                    "button",
+                    {
+                        class: "go",
+                        disabled: !allReady,
+                        title: allReady ? "Start the run for everyone here" : "Everyone has to be ready first",
+                        onclick: () => this.startParty(),
+                    },
+                    room.members.length === 1 ? "Descend alone" : `Descend · ${readyCount}/${room.members.length} ready`,
+                )
+              : h("button", { class: mine?.ready ? "" : "go", onclick: () => session.setReady(!mine?.ready) }, mine?.ready ? "Not ready" : `Ready · ${readyCount}/${room.members.length}`);
+        return h(
+            "div",
+            { class: "panel war-main" },
+            h("h2", {}, "Party ", h("span", { class: "plain" }, `${room.members.length} / 4`)),
+            h("div", { class: "seats" }, ...seats),
+            ...warnings,
+            session.view.error ? h("div", { class: "record-line notice" }, session.view.error) : null,
+            h(
+                "div",
+                { class: "war-bar" },
+                h(
+                    "div",
+                    { class: "war-field" },
+                    h("div", { class: "muted" }, "Map"),
+                    mapPick,
+                    world ? h("div", { class: "green small-text" }, `${DIFFICULTY[world.tier] ?? ""} · ${world.boss.name.toLowerCase()}`) : null,
+                ),
+                h(
+                    "div",
+                    { class: "war-field" },
+                    h("div", { class: "muted" }, "Loot"),
+                    seg(
+                        [
+                            ["keep", "Keep what you grab", loot === "keep"],
+                            ["split", "Split at the exit", loot === "split"],
+                        ],
+                        (v) => session.setLoot(v as LootRule),
+                        isHost && !room.started,
+                    ),
+                ),
+                h(
+                    "div",
+                    { class: "war-field" },
+                    h("div", { class: "muted" }, "Who can join"),
+                    seg(
+                        [
+                            ["code", "Code", !room.open],
+                            ["anyone", "Anyone", room.open],
+                        ],
+                        (v) => session.setOpen(v === "anyone"),
+                        isHost && !room.started,
+                    ),
+                ),
+                go,
+            ),
+            h(
+                "div",
+                { class: "stats war-note" },
+                loot === "split"
+                    ? "Split: every coin anyone picks up is shared between everyone still in, and each keeps their share by getting out."
+                    : "Keep: whoever reaches a drop first takes it.",
+            ),
+        );
+    }
+
+    // A party member's seat
+    private seat(m: MemberView, hostId: string, me: string | undefined, isHost: boolean): HTMLElement {
+        const lo = m.loadout;
+        const host = m.id === hostId;
+        const ready = host || m.ready;
+        const weapon = lo?.equipment.weapon !== undefined ? getItem(lo.equipment.weapon) : undefined;
+        const style = weaponStyle(weapon);
+        const crown = crownVerified(lo?.crown, () => this.onSessionChange());
+        const pack = lo?.pack;
+        const away = lo?.activity === "vault" ? "in the vault" : lo?.activity === "shop" ? "in the shop" : undefined;
+        const gear = (["head", "body", "weapon", "neck"] as Slot[]).map((slot) => {
+            const id = lo?.equipment[slot];
+            if (id === undefined) {
+                return h("div", { class: "slot empty" });
+            }
+            return h(
+                "div",
+                { class: "slot", title: getItem(id).name },
+                iconElement(id),
+                slot === "weapon" && pack?.ammo !== undefined ? h("span", { class: "count" }, String(pack.ammo)) : null,
+            );
+        });
+        const foodName = pack?.foodId !== undefined ? plural(pack.food, getItem(pack.foodId).name.toLowerCase()) : "no food";
+        const prayer = pack ? `${pack.prayerPots} pot${pack.prayerPots === 1 ? "" : "s"} · ${Math.round(prayerSeconds(lo!.equipment, pack.prayerPots))}s` : "–";
+        const low = pack ? this.lowFood(pack.heal) : false;
+        return h(
+            "div",
+            { class: "seat" + (ready ? " ready" : " waiting") + (m.id === me ? " mine" : "") },
+            h("div", { class: "seat-portrait" }, crown ? crownIcon(crown) : weapon ? iconElement(weapon.id) : null),
+            h(
+                "div",
+                { class: "seat-who" },
+                this.heroLabel(m, [], ""),
+                h("div", { class: "muted" }, host ? `Leader · ${style}` : capitalize(style), away ? h("span", { class: "orange" }, ` · ${away}`) : null),
+                lo ? h("div", { class: "green" }, `level-${combatLevel(lo.equipment)}`) : null,
+            ),
+            h("div", { class: "seat-gear" }, ...gear),
+            h(
+                "div",
+                { class: "seat-pack" },
+                h("div", { class: "card-line" }, h("span", { class: "label" }, "Food"), h("span", { class: "value" + (low ? " red" : "") }, pack ? foodName : "–")),
+                h("div", { class: "card-line" }, h("span", { class: "label" }, "Prayer"), h("span", { class: "value" }, prayer)),
+                h("div", { class: "card-line" }, h("span", { class: "label" }, "Risking"), h("span", { class: "value yellow" }, pack ? formatCoins(pack.risk) : "–")),
+            ),
+            h("div", { class: "seat-ready" }, h("span", { class: "check" + (ready ? " on" : " no") }), h("span", { class: ready ? "green bold" : "red bold" }, ready ? "Ready" : "Not ready")),
+            isHost && !host ? h("button", { class: "small quiet seat-kick", title: "Remove them from the party", onclick: () => this.session.kick(m.id) }, "Kick") : null,
+        );
+    }
+
+    // Whether this much healing is short for a run: under three minutes at
+    // this player's own pace (gear.ts), or under 150 hitpoints before
+    // there's a pace to go by
+    private lowFood(heal: number): boolean {
+        const minutes = foodMinutes({ food: 0, heal, prayerPots: 0, risk: 0 }, this.save.stats);
+        return minutes !== undefined ? minutes < 3 : heal < 150;
+    }
+
+    // A word on a member who's short of food, or of prayer past the first
+    // tier, or undefined when they're fine
+    private headsUp(m: MemberView, tier: number): string | undefined {
+        const pack = m.loadout?.pack;
+        if (!pack) {
+            return undefined;
+        }
+        const minutes = foodMinutes({ ...pack }, this.save.stats);
+        const food = this.lowFood(pack.heal)
+            ? pack.heal <= 0
+                ? "has no food"
+                : minutes !== undefined
+                  ? `has food for ${minutesText(minutes)}`
+                  : `has only ${pack.heal} hitpoints of food`
+            : undefined;
+        const prayer = tier >= 2 && pack.prayerPots === 0 ? "no prayer potions" : undefined;
+        if (food && prayer) {
+            return `${food} and ${prayer}.`;
+        }
+        if (food) {
+            return `${food}.`;
+        }
+        return prayer ? `has ${prayer}.` : undefined;
+    }
+
+    // Other parties: how many wait (on this party's map, in one), a code to
+    // join one by, and the list of them to pick from
+    private findPartyPanel(room: RoomView | undefined, listed: boolean): HTMLElement {
+        const session = this.session;
+        const view = session.view;
+        const servers = (view.servers ?? []).filter((s) => s.code !== room?.code);
+        const onMap = room ? servers.filter((s) => s.mapId === room.mapId) : servers;
+        const mapName = room ? (WORLD_BY_ID.get(room.mapId)?.name ?? room.mapId) : undefined;
+        const input = h("input", {
+            type: "text",
+            class: "code",
+            placeholder: "Enter a party code",
+            value: this.joinCode,
+            maxLength: 8,
+            autocapitalize: "characters",
+            spellcheck: false,
+        });
+        input.addEventListener("input", () => (this.joinCode = input.value.toUpperCase()));
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                session.join(this.joinCode);
+            }
+        });
+        const rows = servers.map((s) => {
+            const world = WORLD_BY_ID.get(s.mapId);
+            const locked = !view.anyMap && !mapUnlocked(this.save.stats.mapsBeaten, s.mapId);
+            return h(
+                "div",
+                { class: "item-row server" },
+                h("span", { class: "name" }, s.name),
+                h("span", { class: "stats" }, `${world ? `${world.name} ${"★".repeat(world.tier)}` : s.mapId}${locked ? " (not unlocked for you)" : ""} · ${s.players} of ${s.max}`),
+                h("button", { class: "small", disabled: locked, title: locked ? "Beat the map before it to play this one" : `Join ${s.name}`, onclick: () => session.join(s.code) }, "Join"),
+            );
+        });
+        return h(
+            "div",
+            { class: "panel war-find" },
+            h("h2", {}, "Find a party"),
+            h(
+                "div",
+                {},
+                room ? `Open parties on ${mapName} right now: ` : "Open parties right now: ",
+                h("span", { class: "yellow" }, view.servers === undefined ? "…" : String(onMap.length)),
+            ),
+            h("div", { class: "war-join" }, input, h("button", { class: "small", onclick: () => session.join(this.joinCode) }, "Join")),
+            room
+                ? h(
+                      "button",
+                      {
+                          class: "wide",
+                          onclick: () => {
+                              this.browsing = !this.browsing;
+                              this.showCoop();
+                          },
+                      },
+                      this.browsing ? "Hide open parties" : "Browse open parties",
+                  )
+                : null,
+            listed
+                ? rows.length > 0
+                    ? h("div", { class: "item-list war-list" }, ...rows)
+                    : h("div", { class: "muted" }, view.servers === undefined ? "Looking for parties..." : "No open parties right now. Host one, and it shows up here for everyone.")
+                : null,
+            !room && view.error ? h("div", { class: "record-line notice" }, view.error) : null,
+        );
+    }
+
+    // A party of this player's own, out of one: the map from those unlocked,
+    // open to anyone or by its code
+    private hostPartyPanel(): HTMLElement {
+        const session = this.session;
+        const view = session.view;
+        const startMap = this.save.recentMaps.find((id) => mapUnlocked(this.save.stats.mapsBeaten, id)) ?? WORLDS[0].id;
+        return h(
+            "div",
+            { class: "panel war-host" },
+            h("h2", {}, "Host a party"),
+            h(
+                "div",
+                { class: "stats" },
+                "Up to four on one map. Your browser runs the map and the others play through it, so the best connection should host. A party by code is for friends; one open to anyone is in everyone's list. The map, the loot rule and who can join can all change in the war room.",
+            ),
+            h(
+                "div",
+                { class: "row" },
+                h("button", { class: "go", disabled: view.full, onclick: () => session.create(startMap, false) }, "Host for friends (code)"),
+                h("button", { disabled: view.full, onclick: () => session.create(startMap, true) }, "Host for anyone"),
+            ),
+            view.full ? h("div", { class: "record-line notice" }, "The co-op server has no room for another party right now; try again in a bit.") : null,
+        );
+    }
+
+    // Friends (version 115): this character's code to give, a box for a
+    // friend's, and the friends with what they're doing, a Join when their
+    // party has a seat
+    private friendsPanel(room: RoomView | undefined): HTMLElement {
+        const save = this.save;
+        const session = this.session;
+        const view = session.view;
+        const online = new Map((view.friends ?? []).map((f) => [f.code, f]));
+        // A friend online under a new name: kept, for when they're not
+        let renamed = false;
+        for (const friend of save.friends ?? []) {
+            const now = online.get(friend.code);
+            if (now && now.name !== friend.name) {
+                friend.name = now.name;
+                renamed = true;
+            }
+        }
+        if (renamed) {
+            this.persist();
+        }
+        const input = h("input", { type: "text", class: "friend-code", placeholder: "A friend's code", value: this.friendTyped, maxLength: 9, autocapitalize: "characters", spellcheck: false });
+        const add = () => {
+            const code = this.friendTyped.toUpperCase().replace(/[^A-Z0-9]/g, "");
+            const friends = (save.friends ??= []);
+            if (code.length !== 8) {
+                this.friendNote = "A friend code is eight letters and numbers.";
+            } else if (code === view.friendCode) {
+                this.friendNote = "That's your own code.";
+            } else if (friends.some((f) => f.code === code)) {
+                this.friendNote = "They're on your list already.";
+            } else if (friends.length >= MAX_FRIENDS) {
+                this.friendNote = `Your list is full (${MAX_FRIENDS}).`;
+            } else {
+                friends.push({ code, name: "A friend" });
+                this.friendTyped = "";
+                this.friendNote = "Added. They show up here once they've added your code too.";
+                this.persist();
+                this.tellFriends();
+            }
+            this.showCoop();
+        };
+        input.addEventListener("input", () => (this.friendTyped = input.value));
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                add();
+            }
+        });
+        const friends = [...(save.friends ?? [])].sort((a, b) => Number(online.has(b.code)) - Number(online.has(a.code)) || a.name.localeCompare(b.name));
+        const rows = friends.map((friend) => {
+            const now = online.get(friend.code);
+            const canJoin = now?.party && now.party.code !== room?.code;
+            return h(
+                "div",
+                { class: "friend-row" + (now ? " online" : "") },
+                h("span", { class: "friend-dot" + (now ? " on" : "") }),
+                h("span", { class: "friend-who" }, now ? this.friendName(now) : h("span", { class: "friend-name muted" }, friend.name), h("span", { class: "muted" }, now ? this.friendDoing(now) : "offline")),
+                canJoin ? h("button", { class: "small go", onclick: () => this.joinFriend(now!) }, "Join") : null,
+                h(
+                    "button",
+                    {
+                        class: "small quiet",
+                        title: "Take them off your list",
+                        onclick: () => {
+                            save.friends = (save.friends ?? []).filter((f) => f.code !== friend.code);
+                            this.persist();
+                            this.tellFriends();
+                            this.showCoop();
+                        },
+                    },
+                    "×",
+                ),
+            );
+        });
+        const code = view.friendCode;
+        const copy = h(
+            "button",
+            {
+                class: "small",
+                disabled: !code,
+                onclick: () => {
+                    if (code) {
+                        void navigator.clipboard?.writeText(code).then(() => (copy.textContent = "Copied")).catch(() => prompt("Your friend code:", code));
+                    }
+                },
+            },
+            "Copy",
+        );
+        return h(
+            "div",
+            { class: "panel war-friends" },
+            h("h2", {}, "Friends ", h("span", { class: "plain" }, `${online.size} online`)),
+            h("div", { class: "friend-mine" }, h("span", { class: "muted" }, "Your code"), h("span", { class: "code" }, code ? `${code.slice(0, 4)}-${code.slice(4)}` : "…"), copy),
+            h("div", { class: "war-join" }, input, h("button", { class: "small", onclick: add }, "Add")),
+            this.friendNote ? h("div", { class: "muted small-text" }, this.friendNote) : null,
+            rows.length > 0
+                ? h("div", { class: "friend-list" }, ...rows)
+                : h("div", { class: "muted small-text" }, "Give friends your code and add theirs. Once you've both added each other, you see each other online here and on the title screen."),
+        );
     }
 
     // The host starts it: everyone's loadout goes with the start, and the
@@ -1268,7 +1939,7 @@ export class UI {
             characterId: m.characterId,
             loadout: m.loadout ?? { ...fallback, character: { ...fallback.character, name: "Adventurer" } },
         }));
-        this.session.start({ seed: (Date.now() ^ (world.tier * 7919)) >>> 0, mapId: world.id, endless: false, hard: false, heroes });
+        this.session.start({ seed: (Date.now() ^ (world.tier * 7919)) >>> 0, mapId: world.id, endless: false, hard: false, heroes, loot: room.loot ?? "keep" });
     }
 
     // -----------------------------------------------------------------------
@@ -1695,6 +2366,57 @@ export class UI {
     // -----------------------------------------------------------------------
     // Stash
 
+    // How a piece stands against what's worn in its slot (the vault's hover
+    // card): a weapon's max hit, speed and special, armour's defence,
+    // hitpoints and prayer
+    private compareLine(item: ItemDef): HTMLElement[] {
+        const slot = item.slot;
+        if (!slot) {
+            return [h("div", {}, describe(item))];
+        }
+        const wornId = this.save.equipment[slot];
+        if (wornId === item.id) {
+            return [h("div", { class: "green" }, "Worn now")];
+        }
+        const worn = wornId !== undefined ? getItem(wornId) : undefined;
+        const diff = (n: number, word: string, lowerIsBetter = false): Child =>
+            n === 0 ? null : h("span", { class: (n > 0) !== lowerIsBetter ? "green" : "red" }, `${n > 0 ? "+" : ""}${Math.round(n * 10) / 10} ${word}`);
+        const parts: Child[] = [];
+        if (slot === "weapon") {
+            const hit = (item.damage ?? 0) - (worn?.damage ?? 3);
+            const speed = Math.round(((item.speed ?? 0) - (worn?.speed ?? 0.7)) * 10) / 10;
+            parts.push(
+                diff(hit, "max hit") ?? "same max hit",
+                ", ",
+                speed === 0 ? "same speed" : h("span", { class: speed < 0 ? "green" : "red" }, speed < 0 ? "faster" : "slower"),
+                ", ",
+                `special: ${specialOf(item)?.name ?? "none"}`,
+            );
+        } else {
+            const found = [
+                diff((item.defence ?? 0) - (worn?.defence ?? 0), "defence"),
+                diff((item.hp ?? 0) - (worn?.hp ?? 0), "hitpoints"),
+                diff((item.prayer ?? 0) - (worn?.prayer ?? 0), "prayer"),
+            ].filter(Boolean);
+            if (found.length === 0) {
+                parts.push("no better or worse");
+            }
+            found.forEach((part, i) => parts.push(...(i > 0 ? [", ", part] : [part])));
+        }
+        return [h("div", {}, worn ? `vs your ${worn.name}: ` : "Nothing worn there: ", ...parts)];
+    }
+
+    // How many a move takes, of so many there
+    private quantity(have: number): number {
+        const q = this.bankQty;
+        return q === "all" ? have : q === "x" ? this.bankX : q;
+    }
+
+    private quantityWord(): string {
+        const q = this.bankQty;
+        return q === "all" ? "all" : q === "x" ? String(this.bankX) : String(q);
+    }
+
     showStash(): void {
         const save = this.save;
         const stats = gearStats(save.equipment, save.wear);
@@ -1705,16 +2427,27 @@ export class UI {
             return w > 0 ? ` Worn ${Math.round(w * 100)}%${w >= 1 ? ", half its defence gone" : ""}.` : "";
         };
 
+        // What's worn as the client's equipment tab lays it out (version
+        // 115): head; cape, neck, ammunition; weapon, body, shield; legs;
+        // hands, feet, ring. A click takes a piece off into the bank.
+        const cross: (Slot | "ammo" | undefined)[] = [undefined, "head", undefined, "cape", "neck", "ammo", "weapon", "body", "shield", undefined, "legs", undefined, "hands", "feet", "ring"];
         const equipment = h(
             "div",
-            { class: "equipment" },
-            ...SLOTS.map((slot) => {
+            { class: "equip-cross" },
+            ...cross.map((slot) => {
+                if (slot === undefined) {
+                    return h("div", { class: "equip-slot none" });
+                }
+                if (slot === "ammo") {
+                    return this.ammoSlot("equip-slot");
+                }
                 const id = save.equipment[slot];
                 const item = id !== undefined ? getItem(id) : undefined;
+                const wear = id !== undefined ? wearOf(save.wear, id) : 0;
                 return h(
                     "div",
                     {
-                        class: "equip-slot",
+                        class: "equip-slot" + (item ? "" : " empty") + (wear > 0 ? " worn" : ""),
                         title: item ? `${item.name}: ${describe(item)}.${wornNote(item.id)} Click to take off.` : slot,
                         onclick: () => {
                             if (unequip(save.equipment, save.stash, slot)) {
@@ -1723,7 +2456,7 @@ export class UI {
                             }
                         },
                     },
-                    item ? icon(item) : slot,
+                    item ? icon(item) : h("span", { class: "slot-name" }, slot),
                 );
             }),
         );
@@ -1741,25 +2474,18 @@ export class UI {
                 return h(
                     "div",
                     {
-                        class: "slot",
-                        title: `${item.name}: ${describe(item)}. ${all > 1 ? "Click to pick how many go back in the bank." : "Click to put back in the bank."}`,
+                        class: "slot" + (this.bankSelected === stack.id ? " selected" : ""),
+                        title: `${item.name}: ${describe(item)}. Click to put ${all > 1 ? `${this.quantityWord()} of them` : "it"} back in the vault.`,
                         onclick: () => {
-                            // More than one: picked in the bank, to say how many
-                            // (version 102; it was the whole stack)
-                            if (all > 1) {
-                                this.bankSelected = stack.id;
-                                this.itemAmount = "";
-                                this.itemNote = "";
-                                render();
-                                return;
-                            }
-                            // The count first: taking the stack out of the pack empties it
-                            const { id, count } = stack;
-                            removeItem(save.backpack, id, count);
+                            // As many as the quantity says (version 115; 102
+                            // asked how many when there was more than one)
+                            const { id } = stack;
+                            const n = Math.min(all, this.quantity(all));
+                            removeItem(save.backpack, id, n);
                             if (id === COINS) {
-                                save.coins += count;
+                                save.coins += n;
                             } else {
-                                addItem(save.stash, id, count);
+                                addItem(save.stash, id, n);
                             }
                             this.persist();
                             render();
@@ -1930,15 +2656,52 @@ export class UI {
         for (const stack of save.stash) {
             held.set(stack.id, (held.get(stack.id) ?? 0) + stack.count);
         }
+        // Arranged by hand (version 115: dragged about, save.bankOrder) first
+        // in that order, the rest after as before
+        const order = new Map((save.bankOrder ?? []).map((id, i) => [id, i]));
         const kinds = [...held.keys()].sort(
             (a, b) =>
+                (order.get(a) ?? Infinity) - (order.get(b) ?? Infinity) ||
                 Number(!!getItem(b).exclusive) - Number(!!getItem(a).exclusive) ||
                 getItem(b).tier - getItem(a).tier ||
                 getItem(a).name.localeCompare(getItem(b).name),
         );
+        // A cell dragged onto another: the two swap places, or it goes in
+        // before the other, as Rearrange says; the order is then the whole
+        // bank's as it stands
+        const rearrange = (from: number, to: number) => {
+            const list = kinds.slice();
+            const a = list.indexOf(from);
+            const b = list.indexOf(to);
+            if (a < 0 || b < 0 || a === b) {
+                return;
+            }
+            if (this.bankRearrange === "swap") {
+                [list[a], list[b]] = [list[b], list[a]];
+            } else {
+                list.splice(a, 1);
+                list.splice(list.indexOf(to), 0, from);
+            }
+            save.bankOrder = list;
+            this.persist();
+            render();
+        };
+        // A tab of the player's own (version 115) takes a thing dropped on it
+        const addToTab = (index: number, id: number) => {
+            const tab = save.bankTabs?.[index];
+            if (tab && !tab.ids.includes(id)) {
+                tab.ids.push(id);
+                this.persist();
+                render();
+            }
+        };
+        // Tabs with nothing left in them go
+        if (save.bankTabs?.some((t) => !t.ids.some((id) => held.has(id)))) {
+            save.bankTabs = save.bankTabs.filter((t) => t.ids.some((id) => held.has(id)));
+        }
         const firstExclusive = kinds.find((id) => getItem(id).exclusive);
         const armourSlots = ["head", "body", "legs", "feet", "hands", "shield"];
-        const tabs: { key: string; name: string; icon?: number; has: (item: ItemDef) => boolean }[] = [
+        const tabs: { key: string; name: string; icon?: number; has: (item: ItemDef) => boolean; own?: number }[] = [
             { key: "all", name: "All", has: () => true },
             ...(firstExclusive !== undefined ? [{ key: "yours", name: "Yours alone", icon: firstExclusive, has: (i: ItemDef) => !!i.exclusive }] : []),
             { key: "weapons", name: "Weapons", icon: 1333, has: (i) => i.slot === "weapon" },
@@ -1946,6 +2709,13 @@ export class UI {
             { key: "jewellery", name: "Jewellery and capes", icon: 1704, has: (i) => i.slot === "neck" || i.slot === "ring" || i.slot === "cape" },
             { key: "supplies", name: "Food and potions", icon: 379, has: (i) => !!i.heal || !!i.potion },
             { key: "ammo", name: "Arrows and runes", icon: 882, has: (i) => !!i.ammo },
+            ...(save.bankTabs ?? []).map((t, index) => ({
+                key: `own:${index}`,
+                name: `${t.name} (your tab: drop things on it to add them)`,
+                icon: t.ids.find((id) => held.has(id)),
+                has: (i: ItemDef) => t.ids.includes(i.id),
+                own: index,
+            })),
         ];
         if (!tabs.some((t) => t.key === this.bankTab)) {
             this.bankTab = "all";
@@ -1967,17 +2737,75 @@ export class UI {
                   ? h("span", { class: "count mid" }, `${Math.floor(n / 1000)}K`)
                   : h("span", { class: "count" }, String(n));
         const grid = h("div", { class: "bank-grid" });
+        // Out into the pack, as many as the quantity says, as the pack's
+        // limits and slots allow
+        const withdraw = (id: number) => {
+            if (id === COINS) {
+                const n = Math.min(save.coins, this.quantity(save.coins));
+                if (n > 0 && addItem(save.backpack, COINS, n, packSize(save))) {
+                    save.coins -= n;
+                    this.persist();
+                    render();
+                }
+                return;
+            }
+            const item = getItem(id);
+            const have = countOfKind(id);
+            const wanted = Math.min(have, this.quantity(have));
+            const allowed = roomFor(save.backpack, id, wanted);
+            const free = packSize(save) - save.backpack.length;
+            const n = item.stackable ? (save.backpack.some((s) => s.id === id) || free > 0 ? allowed : 0) : Math.max(0, Math.min(allowed, free));
+            this.bankSelected = id;
+            if (n <= 0) {
+                this.itemNote = canCarry(save.backpack, id, 1) ? "The pack is full." : carryLimitText(id);
+            } else {
+                addItem(save.backpack, id, n, packSize(save));
+                removeItem(save.stash, id, n);
+                this.itemNote = n < wanted ? `${formatCoins(n)} packed: no room for more.` : `${formatCoins(n)} packed.`;
+                this.persist();
+            }
+            render();
+        };
+        // The hover card, under the cell (a computer's: a phone has no hover)
+        const tip = h("div", { class: "bank-tip" });
+        const gridWrap = h("div", { class: "bank-grid-wrap" }, grid, tip);
+        const showTip = (cell: HTMLElement, id: number, n: number) => {
+            if (isTouch) {
+                return;
+            }
+            const item = getItem(id);
+            const kind = item.slot
+                ? `Tier ${item.tier} ${item.slot === "weapon" ? weaponStyle(item) : (item.style ? `${item.style} ` : "") + item.slot}`
+                : item.heal
+                  ? `Food · heals ${item.heal}`
+                  : item.potion
+                    ? POTION_EFFECT[item.potion]
+                    : item.ammo
+                      ? `${capitalize(item.ammo)} for ${"★".repeat(item.tier)}`
+                      : "";
+            tip.replaceChildren(
+                h("div", { class: "tip-head" }, h("span", { class: "orange bold" }, item.name), n > 1 ? h("span", { class: "muted" }, `x${formatCoins(n)}`) : null),
+                id === COINS
+                    ? h("div", { class: "muted" }, `${n.toLocaleString()} coins`)
+                    : h("div", { class: "muted" }, [kind, `${formatCoins(price(item))} each`].filter(Boolean).join(" · ")),
+                ...(id === COINS ? [] : this.compareLine(item)),
+            );
+            const r = cell.getBoundingClientRect();
+            const g = gridWrap.getBoundingClientRect();
+            tip.style.left = `${Math.max(0, Math.min(r.left - g.left, g.width - 320))}px`;
+            tip.style.top = `${r.bottom - g.top + 6}px`;
+            tip.classList.add("shown");
+        };
         const fillGrid = () => {
             const ids = shown();
             grid.replaceChildren(
                 ...ids.map((id) => {
                     const item = getItem(id);
                     const n = countOfKind(id);
-                    return h(
+                    const cell = h(
                         "button",
                         {
                             class: "bank-slot" + (this.bankSelected === id ? " selected" : "") + (item.exclusive ? " exclusive" : ""),
-                            title: `${item.name}${n > 1 ? ` x${formatCoins(n)}` : ""}: ${describe(item)}`,
                             onclick: () => {
                                 this.bankSelected = this.bankSelected === id ? undefined : id;
                                 this.itemAmount = "";
@@ -1988,6 +2816,30 @@ export class UI {
                         iconElement(id, item.name),
                         n > 1 || item.stackable ? stackLabel(n) : null,
                     );
+                    // A double click takes the quantity out into the pack
+                    cell.addEventListener("dblclick", () => withdraw(id));
+                    // The hover card: what it is, what it's worth, and how it
+                    // stands against what's worn (version 115)
+                    cell.addEventListener("mouseenter", () => showTip(cell, id, n));
+                    cell.addEventListener("mouseleave", () => tip.classList.remove("shown"));
+                    // Dragged onto another cell to rearrange, or onto a tab of
+                    // the player's own to add it there
+                    if (id !== COINS && !isTouch) {
+                        cell.draggable = true;
+                        cell.addEventListener("dragstart", (e) => {
+                            tip.classList.remove("shown");
+                            e.dataTransfer?.setData("text/plain", String(id));
+                        });
+                        cell.addEventListener("dragover", (e) => e.preventDefault());
+                        cell.addEventListener("drop", (e) => {
+                            e.preventDefault();
+                            const from = Number(e.dataTransfer?.getData("text/plain"));
+                            if (from && from !== id) {
+                                rearrange(from, id);
+                            }
+                        });
+                    }
+                    return cell;
                 }),
             );
             if (ids.length === 0) {
@@ -2003,20 +2855,57 @@ export class UI {
         const tabBar = h(
             "div",
             { class: "bank-tabs" },
-            ...tabs.map((t) =>
-                h(
+            ...tabs.map((t) => {
+                const button = h(
                     "button",
                     {
-                        class: "bank-tab" + (t.key === this.bankTab ? " active" : ""),
+                        class: "bank-tab" + (t.key === this.bankTab ? " active" : "") + (t.own !== undefined ? " own" : ""),
                         title: t.name,
                         onclick: () => {
                             this.bankTab = t.key;
                             render();
                         },
                     },
-                    t.icon !== undefined ? iconElement(t.icon, t.name) : h("span", { class: "bank-tab-text" }, t.name),
-                ),
-            ),
+                    t.icon !== undefined ? iconElement(t.icon, t.name) : h("span", { class: "bank-tab-text" }, t.key === "all" ? "∞" : t.name),
+                );
+                if (t.own !== undefined) {
+                    const index = t.own;
+                    button.addEventListener("dragover", (e) => e.preventDefault());
+                    button.addEventListener("drop", (e) => {
+                        e.preventDefault();
+                        const id = Number(e.dataTransfer?.getData("text/plain"));
+                        if (id) {
+                            addToTab(index, id);
+                        }
+                    });
+                }
+                return button;
+            }),
+            // A tab of the player's own: made from what's picked (or dropped
+            // on it), and more added by dropping things on its tab
+            (save.bankTabs ?? []).length < MAX_BANK_TABS
+                ? (() => {
+                      const make = (id: number | undefined) => {
+                          if (id === undefined || id === COINS || !held.has(id)) {
+                              this.itemNote = "Pick something in the vault first (or drag it onto +), and + makes a tab of it.";
+                              render();
+                              return;
+                          }
+                          const tabsNow = (save.bankTabs ??= []);
+                          tabsNow.push({ name: getItem(id).name.split(" ")[0], ids: [id] });
+                          this.bankTab = `own:${tabsNow.length - 1}`;
+                          this.persist();
+                          render();
+                      };
+                      const plus = h("button", { class: "bank-tab add", title: "A tab of your own, from what's picked; drag things onto it to add them", onclick: () => make(this.bankSelected) }, "+");
+                      plus.addEventListener("dragover", (e) => e.preventDefault());
+                      plus.addEventListener("drop", (e) => {
+                          e.preventDefault();
+                          make(Number(e.dataTransfer?.getData("text/plain")) || undefined);
+                      });
+                      return plus;
+                  })()
+                : null,
         );
 
         // What's picked, to wear or pack: the coins' amounts, or a thing's
@@ -2053,10 +2942,9 @@ export class UI {
             // picked, or all of it when none is, up to the pack's limit for
             // food and ammunition and its free slots
             const packed = countOf(save.backpack, item.id);
-            const typed = (): number => {
-                const n = Math.floor(Number(this.itemAmount.replace(/[^0-9]/g, "")));
-                return Number.isFinite(n) && n > 0 ? n : 0;
-            };
+            // The vault's quantity (version 115; it was typed here): none
+            // for all of it
+            const typed = (): number => (this.bankQty === "all" ? 0 : this.quantity(0));
             const roomForIt = (wanted: number): number => {
                 const allowed = roomFor(save.backpack, item.id, wanted);
                 const free = packSize(save) - save.backpack.length;
@@ -2123,31 +3011,24 @@ export class UI {
             if (packed > 0) {
                 buttons.push(bankButton);
             }
-            // The amount: typed, or a quick one, or all (only where there's
-            // more than one to move)
-            let amountRows: HTMLElement[] = [];
-            if (have > 1 || packed > 1) {
-                const amountInput = h("input", { type: "text", inputMode: "numeric", placeholder: "How many", value: this.itemAmount });
-                amountInput.addEventListener("input", () => {
-                    this.itemAmount = amountInput.value;
-                    label();
-                });
-                const setAmount = (n: number) => {
-                    this.itemAmount = n > 0 ? String(n) : "";
-                    this.itemNote = "";
-                    render();
-                };
-                const most = Math.max(have, packed);
-                amountRows = [
-                    h("div", { class: "coin-move" }, amountInput, ...buttons),
-                    h(
-                        "div",
-                        { class: "coin-move" },
-                        ...[1, 5, 10, 100].filter((n) => n < most).map((n) => h("button", { onclick: () => setAmount(n) }, String(n))),
-                        h("button", { onclick: () => setAmount(0) }, "All"),
-                    ),
-                ];
-            }
+            // The player's own tabs it's in, or could be: a click puts it in
+            // or takes it out
+            const ownTabs = (save.bankTabs ?? []).map((t) =>
+                h(
+                    "button",
+                    {
+                        class: "small" + (t.ids.includes(item.id) ? " on" : ""),
+                        title: t.ids.includes(item.id) ? `Take it out of the ${t.name} tab` : `Put it in the ${t.name} tab too`,
+                        onclick: () => {
+                            t.ids = t.ids.includes(item.id) ? t.ids.filter((x) => x !== item.id) : [...t.ids, item.id];
+                            this.persist();
+                            render();
+                        },
+                    },
+                    t.name,
+                ),
+            );
+            const amountRows: HTMLElement[] = ownTabs.length > 0 ? [h("div", { class: "row" }, ...buttons), h("div", { class: "row own-tabs" }, h("span", { class: "muted" }, "Tabs:"), ...ownTabs)] : [];
             label();
             detail = h(
                 "div",
@@ -2164,7 +3045,14 @@ export class UI {
                 this.itemNote ? h("div", { class: "subtitle" }, this.itemNote) : null,
             );
         } else {
-            detail = h("div", { class: "bank-detail empty" }, "Pick something in the bank to see it, and wear it or pack it for the next run.");
+            // A word on the last thing done (a loadout put on, say), once
+            const note = this.itemNote;
+            this.itemNote = "";
+            detail = h(
+                "div",
+                { class: "bank-detail empty" },
+                note || "Pick something to see it, wear it or pack it; a double click packs the quantity; drag to rearrange.",
+            );
         }
 
         // OSRS's two quick buttons: everything packed back in, everything
@@ -2187,7 +3075,7 @@ export class UI {
                     render();
                 },
             },
-            "Deposit pack",
+            "Whole pack",
         );
         const depositWorn = h(
             "button",
@@ -2202,85 +3090,333 @@ export class UI {
                     render();
                 },
             },
-            "Deposit worn",
+            "Worn gear",
+        );
+        const depositCoins = h(
+            "button",
+            {
+                disabled: packedCoins <= 0,
+                title: "The coins packed back into the vault",
+                onclick: () => bankCoins(packedCoins),
+            },
+            "Loose coins",
         );
         const kindsCount = kinds.length + (save.coins > 0 ? 1 : 0);
+        const pieces = save.stash.reduce((n, s) => n + s.count, 0);
+        const worth = vaultWorth(save.stash, save.coins);
+        const shownValue = shown().reduce((n, id) => n + (id === COINS ? save.coins : price(getItem(id)) * countOfKind(id)), 0);
 
+        // The bonuses of what's worn, a row each
+        const bonus = (label: string, value: string, n?: number) =>
+            h("div", { class: "card-line" }, h("span", { class: "label" }, label), h("span", { class: "value" + (n === undefined ? "" : n > 0 ? " green" : n < 0 ? " red" : "") }, value));
+        const signed = (n: number) => `${n > 0 ? "+" : ""}${n}`;
+        const worstWorn = Object.values(save.equipment)
+            .filter((id): id is number => id !== undefined)
+            .map((id) => ({ id, wear: wearOf(save.wear, id) }))
+            .sort((a, b) => b.wear - a.wear)[0];
+        const bonuses = h(
+            "div",
+            { class: "card-lines" },
+            bonus("Max hit", `${stats.damage} every ${stats.speed}s`),
+            stats.styleBonus !== 0 ? bonus(`${capitalize(weaponStyle(stats.weapon))} armour`, `${signed(Math.round(stats.styleBonus * 100))}%`, stats.styleBonus) : null,
+            bonus("Defence vs melee", signed(stats.defenceVs.melee), stats.defenceVs.melee),
+            bonus("Defence vs ranged", signed(stats.defenceVs.ranged), stats.defenceVs.ranged),
+            bonus("Defence vs magic", signed(stats.defenceVs.magic), stats.defenceVs.magic),
+            bonus("Hitpoints", String(BASE_HP + stats.hp), stats.hp),
+            bonus("Prayer", signed(stats.prayer), stats.prayer),
+            stats.set ? h("div", { class: "card-note" }, `${BARROWS_SETS[stats.set].name} set: ${SET_EFFECTS[stats.set]}`) : null,
+        );
+
+        // Loadouts (version 115): a set of gear and its pack, saved, and put on
+        // in one click (what's on now goes back in the vault first)
+        const loadouts = save.loadouts ?? [];
+        const sameGear = (a: Equipment, b: Equipment) => SLOTS.every((slot) => a[slot] === b[slot]);
+        const applyLoadout = (loadout: SaveLoadout) => {
+            for (const stack of save.backpack) {
+                if (stack.id === COINS) {
+                    save.coins += stack.count;
+                } else {
+                    addItem(save.stash, stack.id, stack.count);
+                }
+            }
+            save.backpack = [];
+            for (const slot of SLOTS) {
+                unequip(save.equipment, save.stash, slot);
+            }
+            const missing: string[] = [];
+            for (const slot of SLOTS) {
+                const id = loadout.equipment[slot];
+                if (id === undefined) {
+                    continue;
+                }
+                if (countOf(save.stash, id) > 0) {
+                    equip(save.equipment, save.stash, id);
+                } else {
+                    missing.push(getItem(id).name);
+                }
+            }
+            for (const stack of loadout.backpack) {
+                if (stack.id === COINS) {
+                    const n = Math.min(stack.count, save.coins);
+                    if (n > 0 && addItem(save.backpack, COINS, n, packSize(save))) {
+                        save.coins -= n;
+                    }
+                    continue;
+                }
+                const have = countOf(save.stash, stack.id);
+                const allowed = roomFor(save.backpack, stack.id, Math.min(have, stack.count));
+                const free = packSize(save) - save.backpack.length;
+                const n = getItem(stack.id).stackable ? (free > 0 || save.backpack.some((s) => s.id === stack.id) ? allowed : 0) : Math.min(allowed, free);
+                if (n > 0) {
+                    addItem(save.backpack, stack.id, n, packSize(save));
+                    removeItem(save.stash, stack.id, n);
+                }
+                if (n < stack.count) {
+                    missing.push(`${getItem(stack.id).name}${n > 0 ? ` (${n} of ${stack.count})` : ""}`);
+                }
+            }
+            this.itemNote = missing.length
+                ? `${loadout.name} on. Not in the vault: ${missing.slice(0, 4).join(", ")}${missing.length > 4 ? ` and ${missing.length - 4} more` : ""}.`
+                : `${loadout.name} on, its pack packed.`;
+            this.persist();
+            render();
+        };
+        const saveLoadout = () => {
+            const style = capitalize(weaponStyle(stats.weapon));
+            const name = prompt("Name this loadout (what's worn and packed now):", loadouts.some((l) => l.name === style) ? "" : style)?.trim().slice(0, 16);
+            if (!name) {
+                return;
+            }
+            const loadout: SaveLoadout = { name, equipment: { ...save.equipment }, backpack: save.backpack.map((s) => ({ ...s })) };
+            const at = loadouts.findIndex((l) => l.name === name);
+            if (at >= 0) {
+                loadouts[at] = loadout;
+            } else if (loadouts.length < MAX_LOADOUTS) {
+                loadouts.push(loadout);
+            }
+            save.loadouts = loadouts;
+            this.itemNote = `${name} saved.`;
+            this.persist();
+            render();
+        };
+        const loadoutRow = h(
+            "div",
+            { class: "loadouts" },
+            ...loadouts.map((l) => {
+                const b = h(
+                    "button",
+                    {
+                        class: sameGear(l.equipment, save.equipment) ? "on" : "",
+                        title: `Wear ${l.name} and pack its pack. Right click (or hold) to forget it.`,
+                        onclick: () => applyLoadout(l),
+                    },
+                    l.name,
+                );
+                b.addEventListener("contextmenu", (e) => {
+                    e.preventDefault();
+                    if (confirm(`Forget the ${l.name} loadout?`)) {
+                        save.loadouts = loadouts.filter((x) => x !== l);
+                        this.persist();
+                        render();
+                    }
+                });
+                return b;
+            }),
+            loadouts.length < MAX_LOADOUTS ? h("button", { title: "Save what's worn and packed now as a loadout", onclick: saveLoadout }, "+") : null,
+        );
+
+        // The pack's word on the run ahead: how long the food and prayer
+        // last, and what a death would cost
+        const summary = packSummary(save.equipment, save.backpack, save.insured);
+        const minutes = foodMinutes(summary, save.stats);
+        const prayerSecs = prayerSeconds(save.equipment, summary.prayerPots);
+        const packNote = h(
+            "div",
+            { class: "pack-note" },
+            h(
+                "div",
+                {},
+                summary.heal <= 0
+                    ? h("span", { class: "red" }, "No food packed")
+                    : minutes !== undefined
+                      ? h("span", {}, "Food for ", h("span", { class: minutes < 3 ? "red" : "" }, minutesText(minutes)))
+                      : `Food heals ${summary.heal} hitpoints`,
+            ),
+            h("div", {}, `Protection prayer for ${minutesText(prayerSecs / 60)}`),
+            h("div", {}, "If you die you lose ", h("span", { class: "red" }, formatCoins(summary.risk))),
+        );
+        const last = save.recentMaps.map((id) => WORLD_BY_ID.get(id)).find((w) => w && mapUnlocked(save.stats.mapsBeaten, w.id));
+        const room = this.session.room;
+        const readyGo = h(
+            "button",
+            {
+                class: "go",
+                onclick: () => {
+                    if (room) {
+                        if (!this.session.isHost) {
+                            this.session.setReady(true);
+                        }
+                        this.showCoop();
+                    } else if (last) {
+                        this.hooks.startRun(last.id);
+                    } else {
+                        this.showMaps();
+                    }
+                },
+            },
+            room ? (this.session.isHost ? "Back to the party" : "Ready · back to the party") : last ? `Ready · Descend into ${last.name}` : "Ready · Choose a map",
+        );
+        const segOf = <T extends string | number>(options: [T, string][], current: T, pick: (value: T) => void) =>
+            h("div", { class: "seg" }, ...options.map(([value, label]) => h("button", { class: value === current ? "on" : "", onclick: () => pick(value) }, label)));
+        const quantityBar = segOf<1 | 5 | 10 | "x" | "all">(
+            [
+                [1, "1"],
+                [5, "5"],
+                [10, "10"],
+                ["x", this.bankQty === "x" ? String(this.bankX) : "X"],
+                ["all", "All"],
+            ],
+            this.bankQty,
+            (value) => {
+                if (value === "x") {
+                    const n = Math.floor(Number(prompt("How many at a time?", String(this.bankX))?.replace(/[^0-9]/g, "")));
+                    if (!Number.isFinite(n) || n <= 0) {
+                        return;
+                    }
+                    this.bankX = n;
+                }
+                this.bankQty = value;
+                render();
+            },
+        );
+        const rearrangeBar = segOf<"swap" | "insert">(
+            [
+                ["swap", "Swap"],
+                ["insert", "Insert"],
+            ],
+            this.bankRearrange,
+            (value) => {
+                this.bankRearrange = value;
+                render();
+            },
+        );
+        const crown = crownVerified(crownKey());
+        const usedSlots = save.backpack.length;
+
+        // The vault (version 115, the mockup's): what's worn with its
+        // bonuses and the loadouts on the left, the bank in the middle with
+        // its quantity, rearranging and deposits along the foot, the pack
+        // on the right with its word on the run ahead and the way in
         this.showKeyed(
             "stash",
             h(
                 "div",
-                { class: "screen" },
-                h("h2", {}, "Bank & gear"),
+                { class: "screen vault" },
                 h(
                     "div",
-                    { class: "columns" },
+                    { class: "vault-head" },
+                    h("h1", {}, "The Vault"),
+                    h(
+                        "span",
+                        { class: "vault-of" },
+                        "of ",
+                        h("span", { class: "vault-name" }, crown ? crownIcon(crown) : null, save.character.name),
+                        ` · ${kindsCount} kinds · ${pieces.toLocaleString()} pieces · ${formatCoins(worth)}`,
+                    ),
+                    h("button", { class: "vault-close", title: "Back", onclick: () => this.back() }, "✕"),
+                ),
+                h(
+                    "div",
+                    { class: "vault-columns" },
                     h(
                         "div",
-                        { class: "panel" },
-                        h("h2", {}, "Worn"),
+                        { class: "panel vault-worn" },
+                        h("h2", {}, "Worn equipment"),
                         equipment,
+                        worstWorn && worstWorn.wear > 0 ? h("div", { class: "orange center" }, `${getItem(worstWorn.id).name} is ${Math.round(worstWorn.wear * 100)}% worn`) : null,
+                        h("h2", {}, "Bonuses"),
+                        bonuses,
+                        h("h2", {}, "Loadouts"),
+                        loadoutRow,
+                        h("div", { class: "muted center small-text" }, loadouts.length > 0 ? "One click wears the set and packs its food." : "Wear and pack a set, then + saves it to put on in one click."),
+                        h(
+                            "details",
+                            { class: "vault-more" },
+                            h("summary", {}, save.insured !== undefined ? `Insurance: ${getItem(save.insured).name}` : "Insurance"),
+                            h(
+                                "div",
+                                { class: "subtitle" },
+                                save.insured !== undefined
+                                    ? `Your ${getItem(save.insured).name.toLowerCase()} is insured for the next run: it comes home even if you don't. The fee is spent either way.`
+                                    : "Pay the guild a fifth of a piece's price to bring it home if you don't make it. One piece, worn or packed, for one run; the fee is spent either way.",
+                            ),
+                            h("div", { class: "item-list" }, ...insuranceRows),
+                            insuranceRows.length === 0 ? h("div", { class: "subtitle" }, "Wear or pack some gear first.") : null,
+                        ),
+                        h(
+                            "details",
+                            { class: "vault-more" },
+                            h("summary", {}, repairable.length > 0 ? `Repairs (${repairable.length})` : "Repairs"),
+                            h(
+                                "div",
+                                { class: "subtitle" },
+                                "Every hit you take wears the armour you're wearing; worn through, a piece has lost half its defence. The guild repairs a piece for a tenth of its price.",
+                            ),
+                            repairRows.length > 0 ? h("div", { class: "item-list" }, ...repairRows) : h("div", { class: "subtitle" }, "Nothing needs repair."),
+                            repairable.length > 1
+                                ? h(
+                                      "button",
+                                      {
+                                          disabled: save.coins < repairAll,
+                                          onclick: () => {
+                                              save.coins -= repairAll;
+                                              for (const id of repairable) {
+                                                  delete save.wear[id];
+                                              }
+                                              this.persist();
+                                              render();
+                                          },
+                                      },
+                                      `Repair everything ${formatCoins(repairAll)}`,
+                                  )
+                                : null,
+                        ),
+                    ),
+                    h(
+                        "div",
+                        { class: "panel vault-bank" },
+                        h("div", { class: "bank-top" }, tabBar, search),
+                        gridWrap,
+                        detail,
+                        kindsCount === 0 ? h("div", { class: "subtitle" }, "Empty. Gear is found in the dungeon's chests.") : null,
                         h(
                             "div",
-                            { class: "subtitle" },
-                            `Max hit ${stats.damage} every ${stats.speed}s${styleNote(stats)} · defence vs melee ${stats.defenceVs.melee}, ranged ${stats.defenceVs.ranged}, magic ${stats.defenceVs.magic} · ${100 + stats.hp} hitpoints` +
-                                prayerNote(stats) +
-                                (stats.set ? ` · ${BARROWS_SETS[stats.set].name} set: ${SET_EFFECTS[stats.set]}` : ""),
+                            { class: "bank-foot" },
+                            h("div", { class: "bank-control" }, h("span", { class: "muted" }, "Quantity"), quantityBar),
+                            isTouch ? null : h("div", { class: "bank-control" }, h("span", { class: "muted" }, "Rearrange"), rearrangeBar),
                         ),
-                        h("h2", {}, "Backpack for the next run"),
+                        h(
+                            "div",
+                            { class: "bank-foot" },
+                            h("div", { class: "bank-control" }, h("span", { class: "muted" }, "Deposit"), depositPack, depositWorn, depositCoins),
+                            h("span", { class: "muted bank-value" }, "Value shown ", h("span", { class: "plain" }, shownValue.toLocaleString())),
+                        ),
+                    ),
+                    h(
+                        "div",
+                        { class: "panel vault-pack" },
+                        h("h2", {}, "Pack ", h("span", { class: "plain" }, `${usedSlots} / ${packSize(save)}`)),
                         backpack,
                         h(
                             "div",
-                            { class: "subtitle" },
-                            `What's packed goes in with you. Extract and it comes home; die and it's gone. The pack takes ${FOOD_LIMIT} pieces of food at most, and ${AMMO_LIMITS.arrows} arrows and ${AMMO_LIMITS.runes} runes (every kind together). A bow shoots the best arrows packed; a staff casts the spell picked in its spellbook (B in a run), taking that spell's runes. Pick a thing in the bank to pack as many as you like; click a packed thing to bank it, or to say how many when there's more than one. Coins are packed from the bank's Coins.`,
+                            { class: "muted small-text" },
+                            `Food ${FOOD_LIMIT} pieces at most, arrows ${AMMO_LIMITS.arrows} and runes ${AMMO_LIMITS.runes} of every kind together. A click puts ${this.quantityWord() === "all" ? "a stack" : this.quantityWord()} back in the vault.`,
                         ),
-                        h("h2", {}, "Insurance"),
-                        h(
-                            "div",
-                            { class: "subtitle" },
-                            save.insured !== undefined
-                                ? `Your ${getItem(save.insured).name.toLowerCase()} is insured for the next run: it comes home even if you don't. The fee is spent either way.`
-                                : "Pay the guild a fifth of a piece's price to bring it home if you don't make it. One piece, worn or packed, for one run; the fee is spent either way.",
-                        ),
-                        h("div", { class: "item-list" }, ...insuranceRows),
-                        insuranceRows.length === 0 ? h("div", { class: "subtitle" }, "Wear or pack some gear first.") : null,
-                        h("h2", {}, "Repairs"),
-                        h(
-                            "div",
-                            { class: "subtitle" },
-                            "Every hit you take wears the armour you're wearing; worn through, a piece has lost half its defence. The guild repairs a piece for a tenth of its price.",
-                        ),
-                        repairRows.length > 0 ? h("div", { class: "item-list" }, ...repairRows) : h("div", { class: "subtitle" }, "Nothing needs repair."),
-                        repairable.length > 1
-                            ? h(
-                                  "button",
-                                  {
-                                      disabled: save.coins < repairAll,
-                                      onclick: () => {
-                                          save.coins -= repairAll;
-                                          for (const id of repairable) {
-                                              delete save.wear[id];
-                                          }
-                                          this.persist();
-                                          render();
-                                      },
-                                  },
-                                  `Repair everything ${formatCoins(repairAll)}`,
-                              )
-                            : null,
-                    ),
-                    h(
-                        "div",
-                        { class: "panel bank" },
-                        h("h2", {}, `Bank (${kindsCount})`),
-                        tabBar,
-                        h("div", { class: "bank-tools" }, search, depositPack, depositWorn),
-                        grid,
-                        detail,
-                        kindsCount === 0 ? h("div", { class: "subtitle" }, "Empty. Gear is found in the dungeon's chests.") : null,
+                        packNote,
+                        h("button", { class: "wide", disabled: save.backpack.length === 0, onclick: () => depositPack.click() }, "Empty pack into vault"),
+                        readyGo,
                     ),
                 ),
-                h("button", { onclick: () => this.back() }, "Back"),
             ),
         );
     }
@@ -3185,7 +4321,7 @@ export class UI {
     showSummary(
         result: RunResult,
         kept: ItemStack[],
-        extras: { tasks: Task[]; insured?: number; grave?: boolean; graveHalved?: boolean; pet?: string },
+        extras: { tasks: Task[]; insured?: number; grave?: boolean; graveHalved?: boolean; pet?: string; contract?: Contract },
     ): void {
         const extracted = result.kind === "extracted";
         const report = result.report;
@@ -3257,6 +4393,13 @@ export class UI {
                   `${petName(extras.pet)} followed you home. It waits in the courtyard and comes along on runs; the Tasks screen picks which pet does.`,
               )
             : null;
+        const contract = extras.contract
+            ? h(
+                  "div",
+                  { class: "subtitle contract-paid" },
+                  `Daily contract done: ${formatCoins(extras.contract.reward)} coins and a clue scroll, both in the bank.`,
+              )
+            : null;
         const list = h(
             "div",
             { class: "summary-list" },
@@ -3297,6 +4440,7 @@ export class UI {
                 insured,
                 grave,
                 pet,
+                contract,
                 recap,
                 tasks,
                 this.session.room

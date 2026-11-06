@@ -129,6 +129,9 @@ export type DownMessage =
     | { k: "revive"; id: string; by: string }
     // A hero's out of the run, one way or another
     | { k: "gone"; id: string; how: "extracted" | "died" | "left" }
+    // Coins found in a party that splits its loot (version 115): who found
+    // how many, and each hero's share of them
+    | { k: "share"; by: string; n: number; s: [string, number][] }
     // The host's run is over
     | { k: "over" };
 

@@ -126,7 +126,7 @@ const IDLE_MS = 30 * 60_000;
 // browsing, and a player's own updates and name, which could otherwise be
 // sent now and then to hold a room for ever. A connection in no room only
 // idles on pings (IDLE_CONNECTION_MS): browsing the list is waiting for a room.
-const IDLE_MESSAGES = new Set(["ping", "list", "me", "rename"]);
+const IDLE_MESSAGES = new Set(["ping", "list", "me", "rename", "hello", "stats"]);
 // Bigger than any real loadout (the shop's bonuses, unlocked items and
 // Armoury); a bigger one is dropped rather than sent round the room
 export const MAX_LOADOUT_BYTES = 16 * 1024;
@@ -626,6 +626,36 @@ export function chatText(text) {
     return [...clean].slice(0, MAX_CHAT_CHARS).join("");
 }
 
+// ---- Friends (game version 115) ----
+
+// A player's friend code: what the game shows them and their friends type
+// in. The game keeps a key of its own and says that; the code is the key's
+// hash, so nobody can be another player's code without their browser's key.
+export const FRIEND_CODE_LENGTH = 8;
+// Friend codes a player can watch for
+const MAX_FRIENDS = 100;
+// What a player can say they're doing, between runs or in one
+const FRIEND_STATUSES = new Set(["menu", "vault", "shop", "lobby", "run"]);
+const MAX_HELLO_BYTES = 8 * 1024;
+// Hellos (a status change, a friend added) at once, then one a second
+const HELLO_BURST = 10;
+const HELLO_REFILL_MS = 1000;
+
+export function friendCode(key) {
+    const hash = createHash("sha256").update(`runkov-friend:${key}`).digest();
+    let code = "";
+    for (let i = 0; i < FRIEND_CODE_LENGTH; i++) {
+        code += CODE_CHARS[hash[i] % CODE_CHARS.length];
+    }
+    return code;
+}
+
+function cleanFriendCode(code) {
+    return typeof code === "string"
+        ? code.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, FRIEND_CODE_LENGTH)
+        : "";
+}
+
 // limits: any of the relay's limits to change (the tests' tighter or looser
 // ones); the rest are as above
 export function createRelay(limits = {}) {
@@ -687,6 +717,14 @@ export function createRelay(limits = {}) {
     // The open rooms as the list shows them, worked out again only after a
     // room changes (everyone browsing asks every few seconds)
     let openRooms;
+    // Friends (game version 115): who's connected by friend code (a player
+    // with two tabs open is there twice), and who's watching for each code
+    const byFriendCode = new Map();
+    const watchersOf = new Map();
+    // The counts every game asks for now and then, worked out at most once
+    // a second
+    let liveStatsAt = 0;
+    let liveStatsCache;
 
     function metricsText() {
         let lobbyPlayers = 0;
@@ -838,6 +876,9 @@ export function createRelay(limits = {}) {
             endless: room.endless,
             hard: room.hard,
             started: room.started,
+            // How coins found are shared (game version 115): each keeps what
+            // they grab, or it's split between everyone still in
+            loot: room.loot,
             members: room.members.map((client) => ({
                 id: client.id,
                 name: client.name,
@@ -857,7 +898,150 @@ export function createRelay(limits = {}) {
         for (const member of room.members) {
             const message = `{"t":"room","room":${view},"you":${JSON.stringify(member.id)}}`;
             member.connection.sendFrame(0x1, Buffer.from(message, "utf8"));
+            // Their friends see the party: its size, whether it's begun
+            presenceChanged(member);
         }
+    }
+
+    // Whether two players have each other's friend codes
+    function mutual(a, b) {
+        return (
+            a.friendCode !== undefined &&
+            b.friendCode !== undefined &&
+            a.watch.has(b.friendCode) &&
+            b.watch.has(a.friendCode)
+        );
+    }
+
+    // What a player's friends see of them: their character, what they're
+    // doing, and the party they're in when there's a seat in it to take
+    function friendView(client) {
+        const room = client.room;
+        const party =
+            room && !room.started && room.members.length < MAX_PARTY
+                ? { code: room.code, players: room.members.length, max: MAX_PARTY, mapId: room.mapId }
+                : undefined;
+        return {
+            code: client.friendCode,
+            name: client.presence.name || characterName(client) || "Adventurer",
+            crown: client.presence.crown,
+            color: client.presence.color,
+            status: room ? (room.started ? "run" : "lobby") : client.presence.status ?? "menu",
+            map: room ? room.mapId : client.presence.map,
+            party,
+        };
+    }
+
+    // A player's friends who are here, as they are now (a friend with two
+    // tabs, as the newest)
+    function sendFriends(client) {
+        if (client.friendCode === undefined) {
+            return;
+        }
+        const online = new Map();
+        for (const code of client.watch) {
+            for (const other of byFriendCode.get(code) ?? []) {
+                if (other !== client && mutual(client, other)) {
+                    online.set(code, friendView(other));
+                }
+            }
+        }
+        client.connection.send({ t: "friends", online: [...online.values()] });
+    }
+
+    // Everyone watching for a player's code hears how they are now (whether
+    // they still have each other is sendFriends' to say)
+    function presenceChanged(client) {
+        if (client.friendCode === undefined) {
+            return;
+        }
+        for (const watcher of watchersOf.get(client.friendCode) ?? []) {
+            if (watcher !== client) {
+                sendFriends(watcher);
+            }
+        }
+    }
+
+    function indexFriend(client, add) {
+        const code = client.friendCode;
+        if (code === undefined) {
+            return;
+        }
+        const here = byFriendCode.get(code) ?? new Set();
+        if (add) {
+            here.add(client);
+            byFriendCode.set(code, here);
+        } else {
+            here.delete(client);
+            if (here.size === 0) {
+                byFriendCode.delete(code);
+            }
+        }
+    }
+
+    function setWatching(client, codes) {
+        for (const code of client.watch) {
+            if (!codes.has(code)) {
+                const watchers = watchersOf.get(code);
+                watchers?.delete(client);
+                if (watchers?.size === 0) {
+                    watchersOf.delete(code);
+                }
+            }
+        }
+        for (const code of codes) {
+            const watchers = watchersOf.get(code) ?? new Set();
+            watchers.add(client);
+            watchersOf.set(code, watchers);
+        }
+        client.watch = codes;
+    }
+
+    // Whether a player may say hello again now (see HELLO_BURST)
+    function allowHello(client) {
+        const now = Date.now();
+        if (client.helloTokens === undefined) {
+            client.helloTokens = HELLO_BURST;
+            client.helloAt = now;
+        }
+        client.helloTokens = Math.min(HELLO_BURST, client.helloTokens + (now - client.helloAt) / HELLO_REFILL_MS);
+        client.helloAt = now;
+        if (client.helloTokens < 1) {
+            return false;
+        }
+        client.helloTokens -= 1;
+        return true;
+    }
+
+    // For the title screen: how many are connected, how many of them are in a
+    // run (a party's under way, or they've said they're in one alone), and
+    // the public servers waiting, in all and on each map
+    function liveStats() {
+        const now = Date.now();
+        if (liveStatsCache && now - liveStatsAt < 1000) {
+            return liveStatsCache;
+        }
+        const raiders = new Set();
+        for (const room of rooms.values()) {
+            if (room.started) {
+                for (const member of room.members) {
+                    raiders.add(member);
+                }
+            }
+        }
+        for (const client of clients) {
+            if (client.presence.status === "run") {
+                raiders.add(client);
+            }
+        }
+        const open = getOpenRooms();
+        const maps = {};
+        for (const room of open) {
+            maps[room.mapId] = (maps[room.mapId] ?? 0) + 1;
+        }
+        liveStatsAt = now;
+        liveStatsCache = { players: clients.size, raiders: raiders.size, servers: open.length, maps };
+        return liveStatsCache;
     }
 
     // Tells everyone in a room how it is now, if it's been a while, and
@@ -935,6 +1119,7 @@ export function createRelay(limits = {}) {
         if (reason) {
             client.connection.send({ t: "gone", reason });
         }
+        presenceChanged(client);
         if (room.members.length === 0) {
             rooms.delete(room.code);
             openRooms = undefined;
@@ -964,6 +1149,7 @@ export function createRelay(limits = {}) {
             member.room = undefined;
             member.ready = false;
             member.connection.send({ t: "gone", reason });
+            presenceChanged(member);
         }
         room.members = [];
     }
@@ -1161,6 +1347,63 @@ export function createRelay(limits = {}) {
                 });
                 return;
             }
+            // Who this player is to their friends and what they're doing, and
+            // the friend codes they're watching for (game version 115). The
+            // key is theirs alone; their code is made from it.
+            case "hello": {
+                if (payload.length > MAX_HELLO_BYTES || !allowHello(client)) {
+                    return;
+                }
+                if (typeof message.key === "string" && message.key.length >= 16 && message.key.length <= 128) {
+                    const code = friendCode(message.key);
+                    if (code !== client.friendCode) {
+                        const before = client.friendCode;
+                        indexFriend(client, false);
+                        if (before !== undefined) {
+                            for (const watcher of watchersOf.get(before) ?? []) {
+                                sendFriends(watcher);
+                            }
+                        }
+                        client.friendCode = code;
+                        indexFriend(client, true);
+                        client.connection.send({ t: "friendCode", code });
+                    }
+                }
+                if (client.friendCode === undefined) {
+                    return;
+                }
+                const presence = client.presence;
+                if (typeof message.name === "string") {
+                    presence.name = chatText(message.name).slice(0, 16);
+                }
+                if (message.crown === null || typeof message.crown === "string") {
+                    presence.crown = message.crown ? message.crown.slice(0, 128) : undefined;
+                }
+                if (message.color === null || typeof message.color === "string") {
+                    presence.color = /^#[0-9a-fA-F]{6}$/.test(message.color ?? "") ? message.color : undefined;
+                }
+                if (FRIEND_STATUSES.has(message.status)) {
+                    presence.status = message.status;
+                }
+                if (message.map !== undefined) {
+                    presence.map = cleanId(message.map) || undefined;
+                }
+                if (Array.isArray(message.watch)) {
+                    const codes = new Set(
+                        message.watch
+                            .slice(0, MAX_FRIENDS)
+                            .map(cleanFriendCode)
+                            .filter((code) => code.length === FRIEND_CODE_LENGTH && code !== client.friendCode),
+                    );
+                    setWatching(client, codes);
+                }
+                sendFriends(client);
+                presenceChanged(client);
+                return;
+            }
+            case "stats":
+                client.connection.send({ t: "stats", ...liveStats() });
+                return;
             case "create": {
                 if (rooms.size >= maxRooms) {
                     error(FULL_TEXT);
@@ -1200,6 +1443,7 @@ export function createRelay(limits = {}) {
                     endless: message.endless === true,
                     hard: message.hard === true,
                     started: false,
+                    loot: message.loot === "split" ? "split" : "keep",
                     members: [client],
                     order: nextRoomOrder++,
                     lastActive: Date.now(),
@@ -1307,6 +1551,9 @@ export function createRelay(limits = {}) {
                 if (isHost && !room.started) {
                     if (message.open !== undefined) {
                         room.open = message.open === true;
+                    }
+                    if (message.loot !== undefined) {
+                        room.loot = message.loot === "split" ? "split" : "keep";
                     }
                     const mapId =
                         message.mapId !== undefined
@@ -1500,6 +1747,11 @@ export function createRelay(limits = {}) {
             lastActive: Date.now(),
             upSecond: 0,
             upsThisSecond: 0,
+            // Friends (game version 115): their code once they've said hello,
+            // what they've said of themselves, and the codes they watch for
+            friendCode: undefined,
+            presence: {},
+            watch: new Set(),
         };
         client.connection = new Connection(
             socket,
@@ -1510,6 +1762,10 @@ export function createRelay(limits = {}) {
                 addCount(connectionsFrom, address, -1);
                 addCount(connectionsFromNetwork, network, -1);
                 leaveRoom(client);
+                // Gone for their friends too (another tab of theirs may stay)
+                indexFriend(client, false);
+                setWatching(client, new Set());
+                presenceChanged(client);
             },
             bytesPerSecond,
         );
@@ -1544,7 +1800,8 @@ export function createRelay(limits = {}) {
             }
         }
         for (const client of clients) {
-            if (!client.room && now - client.lastActive > idleConnectionMs) {
+            // A game that said hello stays for its friends (version 115)
+            if (!client.room && client.friendCode === undefined && now - client.lastActive > idleConnectionMs) {
                 client.connection.close(1001);
             }
         }

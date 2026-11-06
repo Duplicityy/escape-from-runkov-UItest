@@ -207,7 +207,7 @@ export class Chat {
     // Folded, the last few lines show under the bar for a moment, as the
     // messages over the run did
     private renderTicker(): void {
-        if (settings.chatOpen || !this.active) {
+        if (settings.chatOpen || !this.active || this.root.classList.contains("docked")) {
             this.ticker.replaceChildren();
             return;
         }
@@ -253,8 +253,39 @@ export class Chat {
         return id ? this.session.room?.members.find((m) => m.id === id) : undefined;
     }
 
+    // Docked (version 115): the war room's Party chat panel holds it, open,
+    // with no bar; undocked, it's the box over the screen again
+    dock(into: HTMLElement | undefined): void {
+        const docked = this.root.classList.contains("docked");
+        // Moved while typing (the war room draws itself again as the party
+        // changes): the typing carries on
+        const typing = document.activeElement === this.input;
+        const caret = this.input.selectionStart;
+        const refocus = () => {
+            if (typing && document.activeElement !== this.input) {
+                this.input.focus();
+                this.input.setSelectionRange(caret, caret);
+            }
+        };
+        queueMicrotask(refocus);
+        if (into) {
+            into.append(this.root);
+            this.root.classList.add("docked");
+            this.panel.hidden = false;
+            this.log.scrollTop = this.log.scrollHeight;
+            this.unread = 0;
+            this.renderBar();
+        } else if (docked) {
+            document.body.append(this.root);
+            this.root.classList.remove("docked");
+            this.panel.hidden = !settings.chatOpen;
+        }
+        this.renderTicker();
+        this.measure();
+    }
+
     private measure(): void {
-        const height = this.active ? this.root.getBoundingClientRect().height : 0;
+        const height = this.active && !this.root.classList.contains("docked") ? this.root.getBoundingClientRect().height : 0;
         document.documentElement.style.setProperty("--chat-h", `${Math.round(height)}px`);
     }
 }

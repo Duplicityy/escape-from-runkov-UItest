@@ -42,6 +42,13 @@ const CROWNS: Record<string, Crown> = {
 
 const CROWN_STORAGE = "dungeon-extraction-crown";
 
+// A crown by its name (its alt), as a friend's game says they wear it
+// (version 115). The key never goes to friends, so this is their word for
+// it: shown in the friends list and nowhere a key is checked.
+export function crownByAlt(alt: string | undefined): Crown | undefined {
+    return alt ? Object.values(CROWNS).find((c) => c.alt === alt) : undefined;
+}
+
 // A crowned player may colour their name (version 73): over their head, in
 // the party, on the title screen. One of these, or the client's yellow.
 export const DEFAULT_NAME_COLOR = "#ffff00";

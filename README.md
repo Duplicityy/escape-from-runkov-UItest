@@ -426,6 +426,40 @@ its eight-letter code, which the host gives their friends. The host can switch a
 public and private until the run starts. (The list is asked for every three seconds while the
 screen is up; `browse()` in `coop.ts`.)
 
+**The war room** (version 115, the mockup's): the Co-op screen. Out of a party, Find a party (the
+open ones, joined from the list or by code) and Host a party (for friends by code, or for anyone).
+In one, the party's code big with Copy and an **Invite link** (the game opened with `?join=<code>`
+joins it once connected), and a seat each: the crown or weapon, the name, leader and fighting
+style, what they're doing if not waiting (in the vault, in the shop), the combat level, head,
+body, weapon (with the ammunition packed) and neck, their food, prayer potions with the seconds of
+protection they give, and what they're **risking** (worn and packed, the insured piece and kept
+kit aside), and ready or not; open seats have an Invite that copies the link. A **heads up** names
+anyone short of food (under three minutes at this player's own pace of damage, or 150 hitpoints
+before there's a pace) or, past the first tier, without prayer potions. Along the bottom the map
+(the host's to change), the **loot** rule (Keep what you grab; or **Split at the exit**: every
+coin picked up is shared on the host between everyone still in, the odd coins the finder's, each
+share in its owner's purse to keep by getting out; `shareCoins` in `run.ts`, a `share` message
+down), **who can join** (Code or Anyone), and Descend with how many are ready (a guest's Ready).
+On the right, Find a party (how many wait on this map, Browse open parties), Friends, and the
+**party chat** docked in its panel (chat.ts's `dock`; it's the box over the screen everywhere
+else, and the typing carries on as the room redraws). The chat says when someone opens the vault
+or goes to the shop. A member's activity and pack go in their loadout (`Loadout.activity`,
+`.pack`), so the relay needs nothing for them.
+
+**Friends** (version 115): every character has a friend code, eight letters and numbers made by
+the relay from a key the save keeps (`friendKey`, never shown; so nobody can be another player's
+code), shown in the war room's Friends panel to copy and give out. Adding a friend's code keeps
+them in the save (`friends`, at most 50). Once two players have each other's codes, each sees the
+other online with what they're doing (title screen, vault, shop, a party with seats free, a run
+on a map) and a Join for a party with a seat, there and on the title screen; until both have
+added each other neither sees the other. The game connects to the relay as the page opens and
+stays connected (tried again 5 s after a drop, doubling to a minute) and says hello with the key,
+its character's name, crown name and name colour, what it's doing and the codes it watches; the
+relay (`hello`, `friends`, `friendCode`, and `stats` for the counts, in `coop-relay.mjs`) sends
+each player their friends who are both online and mutual, again whenever one changes, and keeps a
+connection that said hello past the ten-minute idle close. A friend's crown is their game's word
+for it (`crownByAlt`): keys go to nobody.
+
 **Chat** (version 105, `src/ui/chat.ts`): a box at the top of the screen on a phone, and since
 version 113 at the bottom left on a computer, left of the hotbar and opening upward. It folds to a
 bar (it remembers which; folded on a phone to begin with). It holds the run's own messages and, in
@@ -561,7 +595,20 @@ screen"; `osrsMenu`, `railMenu` and `cardMenu` in `ui.ts`):
 
 - **Card and rooms** (the default on a computer since version 114): the character's card on the
   left with what they wear laid out as the equipment tab does and their record in big numbers,
-  the rooms down the right, and "Descend into" the last map along the bottom.
+  the rooms down the right, and "Descend into" the last map along the bottom. Since version 115,
+  as the mockups have it: under the name the crown's word and a **combat level** (`gear.ts`: the
+  game has no skills, so it's the gear's, each slot's piece against the best there is for it, the
+  weapon 45%, from 3 to 126); the packed ammunition beside the neck; the vault's worth and how the
+  last run went and when; Character and **Loadouts** (the vault). The Co-op room names a friend
+  who's online with a **Join** when their party has a seat, or else how many servers are open and
+  players online; Bank & gear says the vault's worth; the shop that it restocks after a run.
+  Above the way in, the **daily contract** (`contract.ts`): one job a day from the date, on the
+  newest map open or one of the two before it (kept once seen that day), to escape it with so many
+  coins found, kill so many, open so many chests or slay its boss; the best escape of the day
+  shows as a gold bar, and the run that does it pays 400 coins (2.2 times more a tier) and a clue
+  scroll into the bank (a scroll taken into a run names its spot as one picked up does). **Solo /
+  Party** beside the way in: Party hosts a private party on the map and opens the war room. Along
+  the bottom the build and how many are in a run right now (the relay's count).
 - **Rail** (the only one on a phone): the name and the character's record top
   left, the character in the middle, and the rooms down a rail on the right, each with a line on
   what's waiting there: the last map played and the best escape, how many pieces are in the
@@ -599,7 +646,23 @@ the renderer's own curve.
   How many box, 1, 5, 10, 100 and All, and Pack N and Bank N, held to the food and ammunition
   limits and the pack's free slots; a packed stack of more than one, clicked, opens the same
   instead of going back whole. Deposit pack puts the whole backpack back, Deposit worn takes
-  everything off into it. Wear things, and pack up to 28 slots for the next run. Food in the pack can be
+  everything off into it. Wear things, and pack up to 28 slots for the next run. Since version
+  115 it's **The Vault**, as the mockup has it: worn equipment in the equipment tab's cross (the
+  ammunition packed beside the neck), the most worn piece, the **bonuses** a row each, and
+  **loadouts** (up to six sets of gear and pack: + saves what's on now, a click puts one on with
+  what's on going back first and says what the vault was short of, right click or hold forgets
+  one), with insurance and repairs folded under; the bank in the middle with a **hover card** for
+  each thing (its tier, kind and price, and against what's worn there: max hit, speed and special,
+  or defence, hitpoints and prayer), **Quantity** 1, 5, 10, X or All for every move (a double
+  click packs that many, a click on the pack banks that many; it was the How many box),
+  **Rearrange** by dragging a cell onto another (Swap or Insert; `bankOrder`), **tabs of your
+  own** (+ makes one of what's picked, things dragged onto it go in, the picked thing's panel puts
+  it in or out; `bankTabs`, at most eight, gone once empty), Deposit whole pack, worn gear and
+  loose coins, and the value of what's shown; the pack on the right as its 28 slots with how long
+  the food lasts at this player's pace of damage (`stats.damageTaken`, `secondsPlayed`, once five
+  minutes of runs say), the protection prayer the bar and potions give, what a death would cost,
+  Empty pack into vault, and Ready · Descend (back to the party, ready, when in one). OSRS's
+  Withdraw as Note isn't there: nothing in a run takes a note. Food in the pack can be
   eaten during a run from the pack panel. **Coins** are here too (version 71): the bank's coins
   head the stash as a stack, and the Coins section packs some for the next run (type how many, or
   pack them all; a hundred, a thousand, ten thousand and half the bank are a press each) and banks
