@@ -2,3 +2,5 @@ node_modules/
 dist/
 # Copied from ../full-assets by npm run assets
 public/assets/
+# Wrangler's own: the local accounts database `pages dev` keeps
+.wrangler/

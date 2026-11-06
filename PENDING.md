@@ -1,5 +1,18 @@
 # Pending for the next push
 
+Version 116 (built 6 November 2026, playtest only): accounts (README's "Accounts"). Create
+account or Log in before the guild; names unique across players; the save kept with the account
+in Cloudflare D1 and synced to every device logged in to it; the friend code given on the welcome
+screen and the title card, made in the game from the save's key. New: `functions/api/[[path]].ts`,
+`wrangler.toml` (D1 `runkov-accounts` 
+d528c70c-a6fc-486b-9de7-25ac58e777a3 for the main site, `runkov-accounts-playtest`
+1cfd86c2-9118-491f-8f21-c07ec9881285 for previews), `db/accounts.sql`, `src/game/account.ts`,
+`src/game/friendcode.ts`. The main site's build (105.1, the `release` branch) has no functions, so
+accounts there wait for a full deploy of main. Checked locally with `wrangler pages dev`: the API
+(sign-up, a taken name in any case and spacing, wrong password, login, save, a stale save turned
+down) and two fresh browsers (one made Salmon and changed its coins; the other logged in and had
+them, and the same friend code; Log out back to the account screen). `GAME_BUILD` 116.
+
 Version 115 (built 6 November 2026, not deployed to the main site): the rest of the menu mockups
 and a friends list (README's "Card and rooms", "The war room", "Friends", "Bank & gear"). The
 title screen's combat level, vault worth, last run, Loadouts, friend online with Join, servers

@@ -60,6 +60,8 @@ import { FriendStatus, FriendView, GAME_BUILD, GameStart, Loadout, LootRule, Mem
 import { DEFAULT_NAME_COLOR, NAME_COLORS, crownByAlt, crownIcon, crownKey, crownVerified, nameColorOf } from "../game/crown";
 import { Contract, contractProgress, contractResetsIn, todaysContract } from "../game/contract";
 import { combatLevel, foodMinutes, minutesText, packSummary, prayerSeconds, vaultWorth } from "../game/gear";
+import { Account } from "../game/account";
+import { formatFriendCode, friendCodeOf } from "../game/friendcode";
 import {
     BARROWS_SETS,
     BASE_HP,
@@ -96,6 +98,7 @@ import {
     Upgrades,
     loadedSlot,
     packSize,
+    parseSave,
     parseSaveCode,
     peekSlot,
     resetSave,
@@ -673,6 +676,229 @@ export class UI {
     // added each other see each other online, what they're doing, and can
     // join the other's party when it has a seat
 
+    // This character's friend code (version 116): made here from its key
+    // (friendcode.ts) the moment the character is, so it's there to give out
+    // with or without the relay; the relay's word for it until it's made
+    private codeFor?: string;
+
+    friendCode(): string | undefined {
+        const save = this.save;
+        const key = save.friendKey;
+        if (key && this.codeFor !== key) {
+            this.codeFor = key;
+            void friendCodeOf(key)
+                .then((code) => {
+                    if (code && save.friendKey === key && save.friendCode !== code) {
+                        save.friendCode = code;
+                        this.persist();
+                        this.onSessionChange();
+                    }
+                })
+                .catch(() => undefined);
+        }
+        return save.friendCode ?? this.session.view.friendCode;
+    }
+
+    // -----------------------------------------------------------------------
+    // Accounts (version 116, account.ts): before the guild, a name nobody
+    // else has and a password; the save is kept with the account, so it's
+    // the same on every device logged in to it
+
+    account?: Account;
+    private accountMode: "create" | "login" = "create";
+    private accountTyped = "";
+
+    showAccount(mode: "create" | "login" = this.accountMode, note = ""): void {
+        const account = this.account;
+        if (!account) {
+            this.showMenu();
+            return;
+        }
+        this.accountMode = mode;
+        const create = mode === "create";
+        const nameInput = h("input", { type: "text", class: "account-name", maxLength: 12, placeholder: "Name", autocomplete: "username", spellcheck: false, value: this.accountTyped });
+        const password = h("input", { type: "password", placeholder: "Password", autocomplete: create ? "new-password" : "current-password", maxLength: 128 });
+        const again = create ? h("input", { type: "password", placeholder: "Password again", autocomplete: "new-password", maxLength: 128 }) : null;
+        const nameState = h("div", { class: "account-check muted" }, create ? "1 to 12 letters, numbers, spaces, dashes or underscores." : "");
+        const status = h("div", { class: "account-status" + (note ? " red" : "") }, note);
+        const offline = h("button", { class: "quiet", hidden: true, onclick: () => this.showMenu() }, "Play on this device for now");
+        let checkTimer: number | undefined;
+        nameInput.addEventListener("input", () => {
+            this.accountTyped = nameInput.value;
+            if (!create) {
+                return;
+            }
+            window.clearTimeout(checkTimer);
+            const name = nameInput.value.trim();
+            if (!name) {
+                nameState.className = "account-check muted";
+                nameState.textContent = "1 to 12 letters, numbers, spaces, dashes or underscores.";
+                return;
+            }
+            checkTimer = window.setTimeout(async () => {
+                const result = await account.checkName(name);
+                if (nameInput.value.trim() !== name) {
+                    return;
+                }
+                const free = result.ok && result.data.free;
+                nameState.className = "account-check " + (free ? "green" : "red");
+                nameState.textContent = result.ok ? (free ? "That name is free." : (result.data.why ?? "That name is taken by another player.")) : result.error;
+            }, 350);
+        });
+        const button = h("button", { class: "go wide", type: "submit" }, create ? "Create account" : "Log in");
+        const failWith = (text: string, unreachable = false) => {
+            button.disabled = false;
+            status.className = "account-status red";
+            status.textContent = text;
+            offline.hidden = !unreachable;
+        };
+        const submit = async () => {
+            const name = nameInput.value.trim().replace(/\s+/g, " ");
+            const pass = password.value;
+            if (!name) {
+                failWith("Pick a name first.");
+                return;
+            }
+            if (create && pass.length < 6) {
+                failWith("A password is at least 6 characters.");
+                return;
+            }
+            if (again && pass !== again.value) {
+                failWith("The two passwords aren't the same.");
+                return;
+            }
+            button.disabled = true;
+            status.className = "account-status muted";
+            status.textContent = create ? "Making your account..." : "Logging in...";
+            if (create) {
+                // This browser's progress goes up as the account's, named for it
+                const before = this.save.character.name;
+                this.save.character.name = name;
+                const result = await account.signUp(name, pass, this.save);
+                if (!result.ok) {
+                    this.save.character.name = before;
+                    failWith(result.error, result.status === 0);
+                    return;
+                }
+                this.save.character.name = result.data.name;
+                writeSave(this.save, true);
+                this.accountTyped = "";
+                await this.showWelcome();
+                return;
+            }
+            const result = await account.logIn(name, pass);
+            if (!result.ok) {
+                failWith(result.error, result.status === 0);
+                return;
+            }
+            this.adoptAccountSave(result.data.save, result.data.name);
+            // An account with nothing kept yet takes this browser's progress
+            if (!result.data.save) {
+                account.push(this.save, false);
+            }
+            this.accountTyped = "";
+            this.showMenu();
+        };
+        const form = h(
+            "form",
+            { class: "panel account-panel" },
+            h(
+                "div",
+                { class: "seg account-tabs" },
+                h("button", { type: "button", class: create ? "on" : "", onclick: () => this.showAccount("create") }, "Create account"),
+                h("button", { type: "button", class: create ? "" : "on", onclick: () => this.showAccount("login") }, "Log in"),
+            ),
+            h(
+                "div",
+                { class: "subtitle" },
+                create
+                    ? "Your name is yours alone in the game: nobody else can take it. Your progress is kept with your account, so it's there on any phone or computer you log in on."
+                    : "Log in to bring your account's progress to this device.",
+            ),
+            nameInput,
+            nameState,
+            password,
+            again,
+            create && this.save.stats.runs > 0 ? h("div", { class: "muted small-text" }, `The progress in this browser (${this.save.stats.runs} runs) becomes your account's.`) : null,
+            !create && this.save.stats.runs > 0 ? h("div", { class: "muted small-text" }, "The progress in this browser is replaced by the account's.") : null,
+            button,
+            status,
+            offline,
+        );
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            void submit();
+        });
+        this.showKeyed("account", h("div", { class: "screen account" }, h("h1", {}, "Escape from Runkov"), h("div", { class: "tagline muted" }, "Go in geared. Come out richer. Or don't come out."), form));
+        (create || !nameInput.value ? nameInput : password).focus();
+    }
+
+    // Made: the friend code, given with the account, and on into the guild
+    private async showWelcome(): Promise<void> {
+        const key = this.save.friendKey;
+        const code = key ? ((await friendCodeOf(key).catch(() => undefined)) ?? this.friendCode()) : this.friendCode();
+        if (code && this.save.friendCode !== code) {
+            this.save.friendCode = code;
+            this.persist();
+        }
+        const copy = h(
+            "button",
+            {
+                onclick: () => {
+                    if (code) {
+                        void navigator.clipboard?.writeText(code).then(() => (copy.textContent = "Copied")).catch(() => prompt("Your friend code:", code));
+                    }
+                },
+            },
+            "Copy",
+        );
+        this.showKeyed(
+            "welcome",
+            h(
+                "div",
+                { class: "screen account" },
+                h("h1", {}, `Welcome, ${this.save.character.name}`),
+                h(
+                    "div",
+                    { class: "panel account-panel" },
+                    h("h2", {}, "Your friend code"),
+                    h("div", { class: "friend-code-big" }, code ? formatFriendCode(code) : "…"),
+                    h("div", { class: "row center-row" }, copy),
+                    h(
+                        "div",
+                        { class: "subtitle" },
+                        "Give it to your friends and add theirs in the War Room (Co-op). Once you've both added each other you see each other online, and can join each other's parties.",
+                    ),
+                    h("button", { class: "go wide", onclick: () => this.showMenu() }, "Into the guild"),
+                ),
+            ),
+        );
+    }
+
+    // The first character's name is its account's
+    private keepAccountName(): void {
+        if (this.account?.name && loadedSlot() === 0) {
+            this.save.character.name = this.account.name;
+        }
+    }
+
+    // The account's save, as this device's now (the name always the
+    // account's): every field replaced, none of this one's left over
+    adoptAccountSave(raw: unknown, name: string): void {
+        const parsed = raw ? parseSave(JSON.stringify(raw)) : undefined;
+        if (parsed) {
+            const target = this.save as unknown as Record<string, unknown>;
+            for (const key of Object.keys(target)) {
+                if (!(key in parsed)) {
+                    delete target[key];
+                }
+            }
+            Object.assign(this.save, parsed);
+        }
+        this.save.character.name = name;
+        writeSave(this.save, true);
+    }
+
     // What this player tells the relay about themselves for their friends
     presence(): Presence {
         const crown = crownVerified(crownKey());
@@ -902,6 +1128,8 @@ export class UI {
                             return;
                         }
                         Object.assign(this.save, loaded);
+                        // An account keeps its name whatever the code's was
+                        this.keepAccountName();
                         this.persist();
                         this.showMenu();
                     },
@@ -915,8 +1143,10 @@ export class UI {
                     class: "quiet",
                     title: "Wipe the stash, coins and character and begin again",
                     onclick: () => {
-                        if (confirm("Start over? The stash, coins and character are wiped.")) {
+                        if (confirm(this.account?.name ? "Start over? The stash, coins and character are wiped, on every device this account is on." : "Start over? The stash, coins and character are wiped.")) {
                             Object.assign(this.save, resetSave());
+                            this.keepAccountName();
+                            this.persist();
                             this.showMenu();
                         }
                     },
@@ -953,6 +1183,7 @@ export class UI {
                     { class: "menu-box record" },
                     this.recordName(),
                     h("div", { class: "record-line" }, f.record),
+                    this.friendCode() ? h("div", { class: "record-line" }, `Friend code ${formatFriendCode(this.friendCode()!)}`) : null,
                     f.pet ? h("div", { class: "record-line" }, f.pet) : null,
                     f.grave ? h("div", { class: "record-line grave" }, f.grave) : null,
                     this.notice ? h("div", { class: "record-line notice" }, this.notice) : null,
@@ -1132,6 +1363,7 @@ export class UI {
                 "div",
                 { class: "card-lines" },
                 line("Vault worth", formatCoins(vaultWorth(save.stash, save.coins)), "yellow"),
+                this.friendCode() ? line("Friend code", formatFriendCode(this.friendCode()!)) : null,
                 lastWord ? line("Last run", lastWord) : line("Escapes", `${s.extractions} of ${s.runs}`),
                 worst && worst.wear > 0 ? line(getItem(worst.id).name, `${Math.round(worst.wear * 100)}% worn`, "orange") : null,
                 save.insured !== undefined ? line("Insured", getItem(save.insured).name, "green") : null,
@@ -1405,7 +1637,10 @@ export class UI {
     // there
     joinFromLink(code: string): void {
         this.pendingCoop = { join: code };
-        this.showCoop();
+        // Not over the account screen: it's joined, and shown once in
+        if (this.screenKey !== "account" && this.screenKey !== "welcome" && !this.loading) {
+            this.showCoop();
+        }
     }
 
     // Whether a run is loading behind the loading screen
@@ -1897,7 +2132,7 @@ export class UI {
                 ),
             );
         });
-        const code = view.friendCode;
+        const code = this.friendCode();
         const copy = h(
             "button",
             {
@@ -1915,7 +2150,7 @@ export class UI {
             "div",
             { class: "panel war-friends" },
             h("h2", {}, "Friends ", h("span", { class: "plain" }, `${online.size} online`)),
-            h("div", { class: "friend-mine" }, h("span", { class: "muted" }, "Your code"), h("span", { class: "code" }, code ? `${code.slice(0, 4)}-${code.slice(4)}` : "…"), copy),
+            h("div", { class: "friend-mine" }, h("span", { class: "muted" }, "Your code"), h("span", { class: "code" }, code ? formatFriendCode(code) : "…"), copy),
             h("div", { class: "war-join" }, input, h("button", { class: "small", onclick: add }, "Add")),
             this.friendNote ? h("div", { class: "muted small-text" }, this.friendNote) : null,
             rows.length > 0
@@ -1980,6 +2215,30 @@ export class UI {
             "div",
             { class: "panel settings" },
             h("h2", {}, "Settings"),
+            // The account (version 116), between runs: logging out leaves this
+            // device's copy until another account logs in on it
+            this.account?.name && !this.hud && loadedSlot() === 0
+                ? row(
+                      "Account",
+                      h(
+                          "button",
+                          {
+                              onclick: async () => {
+                                  if (this.session.room) {
+                                      alert("Leave the party first.");
+                                      return;
+                                  }
+                                  if (confirm(`Log out of ${this.account?.name}? Your progress is kept with the account.`)) {
+                                      await this.account?.logOut();
+                                      this.showAccount("login");
+                                  }
+                              },
+                          },
+                          "Log out",
+                      ),
+                      `${this.account.name}: your progress is saved with it, on every device you log in on`,
+                  )
+                : null,
             row(
                 "Brightness",
                 slider(settings.brightness, BRIGHTNESS_MIN, BRIGHTNESS_MAX, (v) => {
@@ -3583,6 +3842,14 @@ export class UI {
     showCharacter(): void {
         const c = this.save.character;
         const name = h("input", { type: "text", value: c.name, maxLength: 16 });
+        // With an account (version 116) the name is the account's, nobody
+        // else's, so it isn't changed here (a test character's still is)
+        const accountName = loadedSlot() === 0 ? this.account?.name : undefined;
+        if (accountName) {
+            name.value = accountName;
+            name.readOnly = true;
+            name.title = "Your account's name: nobody else can have it";
+        }
         const size = h("input", { type: "range", min: "85", max: "120", value: String(Math.round(c.size * 100)) });
         const parts = h("div", { class: "item-list" }, h("div", { class: "loading" }, "Loading looks..."));
         const colors = h("div", { class: "item-list" });
@@ -3645,7 +3912,7 @@ export class UI {
                     {
                         class: "primary",
                         onclick: () => {
-                            c.name = name.value.trim() || "Adventurer";
+                            c.name = accountName ?? (name.value.trim() || "Adventurer");
                             this.persist();
                             this.back();
                         },

@@ -446,6 +446,30 @@ else, and the typing carries on as the room redraws). The chat says when someone
 or goes to the shop. A member's activity and pack go in their loadout (`Loadout.activity`,
 `.pack`), so the relay needs nothing for them.
 
+**Accounts** (version 116): before the guild, the game asks for an account: **Create account**
+(a name of 1 to 12 letters, numbers, spaces, dashes or underscores, checked as it's typed and
+turned down only when another player has it, compared without case and with spaces, dashes and
+underscores alike; and a password of at least 6) or **Log in**. The save is kept with the account
+on the server, so the same progress is on every phone and computer logged in to it: this
+browser's progress becomes a new account's; logging in brings the account's here. The character's
+name is the account's (the Character screen doesn't change it). Every write of the save is sent
+2.5 s after the last (`account.ts`, through `save.ts`'s `setOnWrite`), and at once as the page
+goes; each write carries the revision it came from, so a device that's behind is turned down and
+gets the newer save instead ("played on another device since", never mid-run). If the server
+can't be reached the game plays from this device's copy and sends it later. Log out is in
+Settings. A crowned browser's test character stays this browser's alone. The account's welcome
+screen gives its **friend code**, made in the game from the save's key (`friendcode.ts`, the
+relay's sum), so every character has one from the start, shown on the title card too.
+
+The server is a Cloudflare Pages Function, `functions/api/[[path]].ts`, with D1 (`wrangler.toml`):
+`runkov-accounts` for the main site, `runkov-accounts-playtest` for the playtest and every other
+preview, so the playtest's kit never reaches a real save. Passwords are PBKDF2-SHA256 (100,000
+rounds, a salt each), a device's token is kept as its SHA-256, a session lasts 180 days unseen,
+and wrong passwords are limited to 8 a name and 30 an address in 15 minutes, new accounts to 10
+an address an hour. `db/accounts.sql` has the tables (the function makes them too). Locally:
+`npx wrangler pages dev dist --port 8790` serves a build with the API and a local database, and the
+Vite dev server's game uses it there.
+
 **Friends** (version 115): every character has a friend code, eight letters and numbers made by
 the relay from a key the save keeps (`friendKey`, never shown; so nobody can be another player's
 code), shown in the war room's Friends panel to copy and give out. Adding a friend's code keeps

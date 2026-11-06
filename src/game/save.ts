@@ -62,6 +62,9 @@ export type SaveData = {
     // relay makes the code from it; the key itself is shown nowhere), and
     // the friends added, by code with the name they had when added
     friendKey?: string;
+    // The code made from that key (friendcode.ts, version 116), kept so it
+    // shows at once; made again whenever the key isn't the one it's from
+    friendCode?: string;
     friends?: Friend[];
     // Sets of gear and pack saved in the vault, worn and packed in one click
     loadouts?: Loadout[];
@@ -293,6 +296,10 @@ export function parseSave(raw: string): SaveData | undefined {
         // Version 115's: anything that isn't what it should be goes
         if (typeof save.friendKey !== "string" || save.friendKey.length < 16) {
             delete save.friendKey;
+            delete save.friendCode;
+        }
+        if (typeof save.friendCode !== "string" || !/^[A-Z0-9]{8}$/.test(save.friendCode)) {
+            delete save.friendCode;
         }
         save.friends = Array.isArray(save.friends)
             ? save.friends.filter((f) => f && typeof f.code === "string" && typeof f.name === "string").slice(0, MAX_FRIENDS)
@@ -430,8 +437,20 @@ export async function parseSaveCode(code: string): Promise<SaveData | undefined>
     return undefined;
 }
 
-export function writeSave(save: SaveData): void {
+// Told of every write of the first character's save (version 116: main.ts
+// sends it to the account), unless it's quiet (a save that came from the
+// account)
+let onWrite: ((save: SaveData) => void) | undefined;
+
+export function setOnWrite(listener: (save: SaveData) => void): void {
+    onWrite = listener;
+}
+
+export function writeSave(save: SaveData, quiet = false): void {
     localStorage.setItem(slotKey(pageSlot), JSON.stringify(save));
+    if (!quiet && pageSlot === 0) {
+        onWrite?.(save);
+    }
 }
 
 export function resetSave(): SaveData {

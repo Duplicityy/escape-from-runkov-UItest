@@ -1070,6 +1070,77 @@
     color: #00ff00;
 }
 
+/* ---- The account screen (version 116): before the guild ---- */
+
+.screen.account {
+    gap: 12px;
+    line-height: 18px;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.screen.account h1 {
+    font-size: clamp(32px, 5vw, 56px);
+}
+
+.screen.account .tagline {
+    font-family: "OSRS Small", sans-serif;
+}
+
+.account-panel {
+    width: min(420px, 92vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: "OSRS Small", sans-serif;
+    font-size: 16px;
+}
+
+.account-tabs {
+    align-self: center;
+}
+
+.account-panel input {
+    font: inherit;
+    font-size: 18px;
+    color: var(--text);
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.45);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(130, 106, 70, 0.7);
+    user-select: text;
+    -webkit-user-select: text;
+}
+
+.account-check,
+.account-status {
+    font-size: 14px;
+    min-height: 18px;
+}
+
+.account-panel .go {
+    height: 46px;
+    font-size: 18px;
+}
+
+.friend-code-big {
+    text-align: center;
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 40px;
+    line-height: 48px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+    text-shadow: 2px 2px 0 #000;
+}
+
+.center-row {
+    display: flex;
+    justify-content: center;
+}
+
 /* ---- The war room ---- */
 
 /* The client's small font has next to no line height of its own */

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { COINS, ITEMS, PRIZES, SLOTS, rollGear, rollShopStock } from "./content/items";
 import { TASKS } from "./content/tasks";
 import { WORLD_BY_ID, WorldDef, getWorld, mapUnlocked } from "./content/worlds";
+import { Account } from "./game/account";
 import { recordAttempt } from "./game/contract";
 import { GameStart, Session } from "./game/coop";
 import { crownKey, crownVerified, takeCrownFromUrl } from "./game/crown";
@@ -12,7 +13,7 @@ import { restoreKit } from "./game/kit";
 import { MenuScene } from "./game/menu";
 import { PlayerLook } from "./game/player";
 import { CoopSetup, Run, RunCarry, RunResult } from "./game/run";
-import { GRAVE_RUNS, Grave, ItemStack, activeSlot, loadSave, loadedSlot, packSize, setActiveSlot, writeSave } from "./game/save";
+import { GRAVE_RUNS, Grave, ItemStack, activeSlot, loadSave, loadedSlot, packSize, setActiveSlot, setOnWrite, writeSave } from "./game/save";
 import { settings } from "./game/settings";
 import { isTouch } from "./ui/touch";
 import { UI } from "./ui/ui";
@@ -370,7 +371,65 @@ async function onRunEnd(result: RunResult): Promise<void> {
 // Every item icon in one sheet, fetched once (icons drawn before it comes
 // fill in when it does)
 void loadIconSheet();
-ui.showMenu();
+
+// The account (version 116, account.ts): made or logged in to before the
+// guild, the save kept with it on the server. The account's copy is
+// fetched as the page opens (newer than this device's, it's loaded), and
+// every change to the save is sent a moment after. A test character (a
+// crowned browser's second, save.ts) is this browser's alone.
+const account = new Account();
+ui.account = account;
+setOnWrite((written) => account.push(written));
+account.onNewer = (newer) => {
+    // Never mid-run: the run's end is written, turned down, and comes here
+    // again with the run over
+    if (run) {
+        return;
+    }
+    ui.adoptAccountSave(newer, account.name ?? save.character.name);
+    ui.notice = "This account was played on another device since: its newer progress is loaded.";
+    ui.showMenu();
+};
+account.onLoggedOut = () => {
+    if (!run && loadedSlot() === 0) {
+        ui.showAccount("login", "This device was logged out. Log in again to carry on.");
+    }
+};
+// The page going away: what's waiting goes now
+window.addEventListener("pagehide", () => {
+    if (loadedSlot() === 0) {
+        account.push(save, false);
+    }
+});
+
+async function openGame(): Promise<void> {
+    if (loadedSlot() !== 0) {
+        ui.showMenu();
+        return;
+    }
+    if (!account.state) {
+        ui.showAccount("create");
+        return;
+    }
+    ui.showLoading("Loading your account");
+    const result = await account.pull();
+    if (result.ok) {
+        if (result.data.save) {
+            ui.adoptAccountSave(result.data.save, result.data.name);
+        } else {
+            save.character.name = result.data.name;
+            account.push(save, false);
+        }
+        ui.showMenu();
+    } else if (result.status === 401) {
+        ui.showAccount("login", "This device isn't logged in any more. Log in again.");
+    } else {
+        // The server can't be reached: this device's copy, sent once it can
+        ui.notice = "Couldn't reach the account server: playing from this device's copy, which is sent when the connection's back.";
+        ui.showMenu();
+    }
+}
+void openGame();
 
 // Phones play sideways only: upright, the cover comes down and a run waits
 if (isTouch) {

@@ -1,0 +1,18 @@
+# The Pages project's settings (version 116): the account API in functions/
+# keeps accounts in D1. The playtest (and every other branch's preview) has
+# its own database, so its every-item kit never reaches a real save; the
+# main site's is the production one.
+name = "escape-from-runkov"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "runkov-accounts-playtest"
+database_id = "1cfd86c2-9118-491f-8f21-c07ec9881285"
+
+[env.production]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "runkov-accounts"
+database_id = "d528c70c-a6fc-486b-9de7-25ac58e777a3"
