@@ -633,8 +633,15 @@ const PRIZE_BOSS_CHEST = 1 / 15;
 const PRIZE_CASKET = 1 / 32;
 const CAMERA_OFFSET = new THREE.Vector3(0, 13, 9);
 const UP = new THREE.Vector3(0, 1, 0);
-// How far round the camera goes for a pixel of a middle-button drag
+// How far round (and up or down) the camera goes for a pixel of a drag
 const TURN_PER_PIXEL = 0.008;
+// How steeply the camera looks down: CAMERA_OFFSET's, and as flat and as
+// overhead as a drag can tilt it
+const BASE_PITCH = Math.atan2(CAMERA_OFFSET.y, CAMERA_OFFSET.z);
+const PITCH_MIN = 0.6;
+const PITCH_MAX = 1.4;
+// How far a finger can wander and still be a tap (a swing), in pixels
+const TAP_SLOP = 10;
 const PROJECTILE_SPEED = 14;
 // The minimap shows this many tiles across its circle
 const MINIMAP_TILES = 40;
@@ -836,18 +843,22 @@ export class Run {
     // How far off the camera stands: the settings' distance, and the wheel's
     private zoom = settings.zoom;
     private readonly cameraOffset = new THREE.Vector3();
-    // How far the camera's been turned round you from the south, in radians
-    // (version 123): a middle-button drag on a desktop, a two-finger twist on
-    // a touch screen. The keys and the stick turn with it, so up is always
-    // away from the camera.
+    // How far the camera's been turned round you from the south, in radians,
+    // and how steeply it looks down (version 123; version 124 made it OSRS
+    // mobile's): a middle-button drag on a desktop, a finger dragged on the
+    // world on a touch screen. The keys and the stick turn with it, so up is
+    // always away from the camera.
     private cameraYaw = 0;
+    private cameraPitch = BASE_PITCH;
     // The middle button held down for turning, and where it was
     private turnPointer?: number;
     private turnX = 0;
-    // The fingers on the world (not a button, nor the stick's while it
-    // steers), for the twist; two on the stick's side come by twist()
-    private readonly fingers = new Map<number, { x: number; y: number }>();
-    private twistAngle?: number;
+    private turnY = 0;
+    // The fingers on the world (not the stick or a button): where each is
+    // and came down, and whether it's dragged (so it won't swing on lifting)
+    private readonly fingers = new Map<number, { x: number; y: number; fromX: number; fromY: number; dragged: boolean }>();
+    // How far apart two fingers were at the pinch's last move
+    private pinchFrom?: number;
 
     private keys = new Set<string>();
     private wantAttack = false;
@@ -2421,18 +2432,25 @@ export class Run {
 
     private onMouseDown = (e: PointerEvent): void => {
         const onWorld = (e.target as HTMLElement).tagName === "CANVAS";
-        if (e.pointerType === "touch" && onWorld) {
-            this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-            this.twistAngle = this.fingerAngle();
-            // A second finger down makes it a twist, not a second swing
-            if (this.fingers.size > 1) {
-                return;
+        if (e.pointerType === "touch") {
+            // A finger on the world swings when it lifts, if it hasn't
+            // dragged the camera round; a second makes it a pinch
+            if (onWorld) {
+                this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, fromX: e.clientX, fromY: e.clientY, dragged: false });
+                if (this.fingers.size > 1) {
+                    for (const f of this.fingers.values()) {
+                        f.dragged = true;
+                    }
+                    this.pinchFrom = this.fingerSpread();
+                }
             }
+            return;
         }
         if (e.button === 1 && onWorld) {
             e.preventDefault();
             this.turnPointer = e.pointerId;
             this.turnX = e.clientX;
+            this.turnY = e.clientY;
             // Its moves and its letting go still come once it's off the page
             try {
                 (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -2453,53 +2471,70 @@ export class Run {
         }
     };
 
-    // A middle-button drag across turns the camera round you; two fingers
-    // on the world twisting turn it with them
+    // A drag turns the camera round you and tilts it, OSRS's way: across
+    // turns it, up and down tilts it, as if the world were held and moved.
+    // The middle button drags on a desktop, one finger on the world on a
+    // touch screen; two fingers there pinch it in and out.
     private onPointerMove = (e: PointerEvent): void => {
         if (e.pointerId === this.turnPointer) {
-            this.cameraYaw -= (e.clientX - this.turnX) * TURN_PER_PIXEL;
+            this.dragCamera(e.clientX - this.turnX, e.clientY - this.turnY);
             this.turnX = e.clientX;
+            this.turnY = e.clientY;
             return;
         }
         const finger = this.fingers.get(e.pointerId);
         if (!finger) {
             return;
         }
+        const dx = e.clientX - finger.x;
+        const dy = e.clientY - finger.y;
         finger.x = e.clientX;
         finger.y = e.clientY;
-        const angle = this.fingerAngle();
-        if (angle !== undefined && this.twistAngle !== undefined) {
-            // The shorter way round, so crossing straight up isn't a whole turn
-            let by = angle - this.twistAngle;
-            by = Math.atan2(Math.sin(by), Math.cos(by));
-            this.cameraYaw += by;
+        if (this.fingers.size > 1) {
+            const spread = this.fingerSpread();
+            if (this.pinchFrom && spread) {
+                this.setZoom(this.zoom * (this.pinchFrom / spread));
+            }
+            this.pinchFrom = spread;
+            return;
         }
-        this.twistAngle = angle;
+        if (!finger.dragged && Math.hypot(e.clientX - finger.fromX, e.clientY - finger.fromY) > TAP_SLOP) {
+            finger.dragged = true;
+        }
+        if (finger.dragged) {
+            this.dragCamera(dx, dy);
+        }
     };
 
     private onPointerUp = (e: PointerEvent): void => {
         if (e.pointerId === this.turnPointer) {
             this.turnPointer = undefined;
         }
-        if (this.fingers.delete(e.pointerId)) {
-            this.twistAngle = this.fingerAngle();
+        const finger = this.fingers.get(e.pointerId);
+        if (!finger) {
+            return;
+        }
+        this.fingers.delete(e.pointerId);
+        if (e.type === "pointerup" && !finger.dragged && !this.paused && !this.menuOpen) {
+            this.wantAttack = true;
+        }
+        if (this.pinchFrom !== undefined && this.fingers.size < 2) {
+            // The pinch's distance is kept for the next run, like the wheel's
+            this.pinchFrom = undefined;
+            settings.zoom = this.zoom;
+            saveSettings();
         }
     };
 
-    // Fingers the touch controls hand over for twisting (two on the stick's
-    // side of the screen); their moves and lifting come here like the world's
-    twist(fingers: { id: number; x: number; y: number }[]): void {
-        for (const f of fingers) {
-            this.fingers.set(f.id, { x: f.x, y: f.y });
-        }
-        this.twistAngle = this.fingerAngle();
+    private dragCamera(dx: number, dy: number): void {
+        this.cameraYaw -= dx * TURN_PER_PIXEL;
+        this.cameraPitch = Math.min(PITCH_MAX, Math.max(PITCH_MIN, this.cameraPitch - dy * TURN_PER_PIXEL));
     }
 
-    // The angle on the screen from the first finger on the world to the
-    // second; nothing with fewer than two down
-    private fingerAngle(): number | undefined {
+    // How far apart the first two fingers on the world are
+    private fingerSpread(): number | undefined {
         const [a, b] = this.fingers.values();
-        return a && b ? Math.atan2(b.y - a.y, b.x - a.x) : undefined;
+        return a && b ? Math.hypot(b.x - a.x, b.y - a.y) : undefined;
     }
 
     // The wheel takes the camera a little in and out, and the next run
@@ -2927,7 +2962,10 @@ export class Run {
             }
         }
         const py = this.groundY(x, z);
-        this.cameraOffset.copy(CAMERA_OFFSET).multiplyScalar(this.zoom).applyAxisAngle(UP, this.cameraYaw);
+        this.cameraOffset
+            .set(0, Math.sin(this.cameraPitch), Math.cos(this.cameraPitch))
+            .multiplyScalar(CAMERA_OFFSET.length() * this.zoom)
+            .applyAxisAngle(UP, this.cameraYaw);
         this.camera.position.set(x, py, z).add(this.cameraOffset);
         this.camera.lookAt(x, py + 0.6, z);
     }

@@ -1,6 +1,10 @@
 # Pending for the next push
 
-Version 123 (built 6 November 2026): the camera turns round you in a run, with a middle-button
+Version 124 (built 6 November 2026): the touch camera as OSRS mobile has it, one finger dragged
+on the world turning and tilting it and two pinching it, in place of 123's two-finger twist; a
+tap on the world swings as the finger lifts. The middle-button drag tilts too. `GAME_BUILD` 124.
+
+Version 123 (built 6 November 2026; on the main site as 105.6, the playtest as 117.1): the camera turns round you in a run, with a middle-button
 drag on a desktop or a two-finger twist on a touch screen (README's minimap and camera lines);
 the keys, the stick and the roof check turn with it. `GAME_BUILD` 123.
 
