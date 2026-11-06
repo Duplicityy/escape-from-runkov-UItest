@@ -1,6 +1,17 @@
 # Pending for the next push
 
-Nothing.
+Version 106 (built 5 November 2026, not deployed): the spellbook (README's "The spellbook";
+`src/content/spells.ts`). Staves cast the standard spellbook's twenty combat spells, strike to
+surge in wind, water, earth and fire, with OSRS's rune costs and spot animations (42 new
+spotanims exported and packed into `public/assets/spotanims`, ids in `assets.json`); the staff's
+tier is how high it casts; elemental, battle, mystic and combination staves, the Kodai wand and
+the tomes give their runes. B (or the pack panel's Spellbook tab) picks a spell to autocast,
+kept in the save as `autocast`. New item: wrath runes (21880, tier 5, surges' catalyst; icon in
+the sheet). Runes re-tiered (the four elemental runes tier 1, chaos 2, death 3, blood 4, wrath
+5), `AMMO_LIMITS.runes` 100 to 2,000, kills drop 15 to 30 elemental runes or 4 to 8 of the map's
+catalyst, the shop sells elemental runes by 100/500, and the trader sells the map's catalyst
+and 100 air runes. The staff special is now "Power surge". `GAME_BUILD` 106. Spell icons are
+the cache's sprites in `public/ui/spells/`.
 
 Version 36 (3 November 2026): co-op for up to four players (README's "Co-op"), with the relay
 live on Fly.io (`relay/README.md`). Version 37 fixed the host being thrown back to the guild

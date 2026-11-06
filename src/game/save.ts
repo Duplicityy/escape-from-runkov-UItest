@@ -1,6 +1,7 @@
 // What persists between runs, in localStorage: the stash, coins, what's worn
 // and who the character is.
 import { ITEM_BY_ID, Slot, rollShopStock } from "../content/items";
+import { SPELL_BY_ID } from "../content/spells";
 import { DEFAULT_COLORS, DEFAULT_KITS } from "./player";
 
 export type ItemStack = { id: number; count: number };
@@ -52,6 +53,9 @@ export type SaveData = {
     wear: Record<number, number>;
     // The last few maps started, newest first, for the title screen
     recentMaps: string[];
+    // The spell picked to autocast (content/spells.ts; version 106), or
+    // none for the strongest the staff can cast
+    autocast?: string;
 };
 
 export type Grave = { map: string; x: number; z: number; items: ItemStack[]; runsLeft: number };
@@ -207,6 +211,9 @@ export function parseSave(raw: string): SaveData | undefined {
         }
         if (!Array.isArray(save.recentMaps)) {
             save.recentMaps = [];
+        }
+        if (save.autocast !== undefined && !SPELL_BY_ID.has(save.autocast)) {
+            delete save.autocast;
         }
         // Empty stacks (a deposit that went wrong before version 39) go, and
         // so does anything the game no longer has (the Santa hat, say)

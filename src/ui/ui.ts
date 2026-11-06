@@ -26,6 +26,8 @@ import {
     PRAYER_BONUS_SCALE,
 } from "../content/items";
 import { iconElement, setIcon } from "../game/icons";
+import { assetUrl } from "../game/paths";
+import { AIR as AIR_RUNE, EARTH, ELEMENTS, FAMILIES, FIRE, SPELL_BY_ID, SpellDef, WATER, castsLeft, catalystOfTier, spellScale, staffCasts } from "../content/spells";
 import { TASKS, Task } from "../content/tasks";
 import { isKept } from "../game/kit";
 import { Chat } from "./chat";
@@ -75,6 +77,10 @@ import { BRIGHTNESS_MAX, BRIGHTNESS_MIN, HOTBAR_MAX, HOTBAR_MIN, ZOOM_MAX, ZOOM_
 import { HURT_SHARE, TouchControls, fullscreenButton, isTouch, touchControls, touchPrompt } from "./touch";
 
 type Child = Node | string | null | undefined | false;
+
+// The elemental runes, which the shop sells by the hundred (spells take
+// several a cast; version 106)
+const ELEMENTAL_RUNES = [AIR_RUNE, WATER, EARTH, FIRE];
 
 type HotSlot = {
     kind: "food" | Potion;
@@ -260,6 +266,8 @@ export class UI {
         prompt: HTMLElement;
         inventory: HTMLElement;
         inventoryOpen: boolean;
+        // Which page of it is up: the pack, or the spellbook (version 106)
+        inventoryView: "pack" | "spells";
         signature: string;
         run: Run;
         // The whole HUD (it's marked hurt when hitpoints are low), and a
@@ -335,7 +343,10 @@ export class UI {
                 this.togglePause();
             } else if ((e.code === "KeyI" || e.code === "Tab") && !this.hud.run.paused) {
                 e.preventDefault();
-                this.toggleInventory();
+                this.toggleInventory("pack");
+            } else if (e.code === "KeyB" && !this.hud.run.paused && !(document.activeElement instanceof HTMLInputElement)) {
+                e.preventDefault();
+                this.toggleInventory("spells");
             }
         });
     }
@@ -366,13 +377,36 @@ export class UI {
         }
     }
 
-    private toggleInventory(): void {
+    // The pack panel, on its pack or its spellbook: the key for the page up
+    // shuts it, the other's turns the page
+    private toggleInventory(view: "pack" | "spells" = "pack"): void {
         if (!this.hud) {
             return;
         }
-        this.hud.inventoryOpen = !this.hud.inventoryOpen;
+        if (this.hud.inventoryOpen && this.hud.inventoryView !== view) {
+            this.hud.inventoryView = view;
+        } else {
+            this.hud.inventoryOpen = !this.hud.inventoryOpen;
+            this.hud.inventoryView = view;
+        }
         this.hud.signature = "";
         this.updateHud();
+    }
+
+    // The spell to autocast, picked in the spellbook (none: the strongest
+    // the staff can cast); kept in the save for the next run
+    private pickSpell(run: Run, id: string | undefined): void {
+        run.autocast = id;
+        if (id) {
+            this.save.autocast = id;
+        } else {
+            delete this.save.autocast;
+        }
+        this.persist();
+        if (this.hud) {
+            this.hud.signature = "";
+            this.updateHud();
+        }
     }
 
     // A guild screen: the world behind it, with the character as the save
@@ -1293,9 +1327,11 @@ export class UI {
         const stock: { id: number; count: number }[] = [
             { id: FOOD_BY_TIER[Math.min(FOOD_BY_TIER.length - 1, tier - 1)], count: 1 },
             ...SHOP_POTIONS.map((id) => ({ id, count: 1 })),
-            // The map's own tier of arrows and runes (its best kind)
+            // The map's own tier of arrows (its best kind), its spells'
+            // catalyst, and air runes, which most spells take
             { id: ammoOfTier("arrows", tier, 0.99), count: 25 },
-            { id: ammoOfTier("runes", tier, 0.99), count: 25 },
+            { id: catalystOfTier(tier), count: 25 },
+            { id: AIR_RUNE, count: 100 },
         ];
         const again = () => this.showPauseView("trade");
         const rows = stock.map(({ id, count }) => {
@@ -2054,7 +2090,7 @@ export class UI {
                         h(
                             "div",
                             { class: "subtitle" },
-                            `What's packed goes in with you. Extract and it comes home; die and it's gone. The pack takes ${FOOD_LIMIT} pieces of food at most, and ${AMMO_LIMITS.arrows} arrows and ${AMMO_LIMITS.runes} runes (every kind together). A bow or staff shoots the best kind packed. Pick a thing in the bank to pack as many as you like; click a packed thing to bank it, or to say how many when there's more than one. Coins are packed from the bank's Coins.`,
+                            `What's packed goes in with you. Extract and it comes home; die and it's gone. The pack takes ${FOOD_LIMIT} pieces of food at most, and ${AMMO_LIMITS.arrows} arrows and ${AMMO_LIMITS.runes} runes (every kind together). A bow shoots the best arrows packed; a staff casts the spell picked in its spellbook (B in a run), taking that spell's runes. Pick a thing in the bank to pack as many as you like; click a packed thing to bank it, or to say how many when there's more than one. Coins are packed from the bank's Coins.`,
                         ),
                         h("h2", {}, "Insurance"),
                         h(
@@ -2148,11 +2184,13 @@ export class UI {
         const ammo = SHOP_AMMO.filter((id) => getItem(id).tier <= ammoTier).map((id) => {
             const item = getItem(id);
             const cost = price(item);
+            // Elemental runes by the hundred (spells take several a cast)
+            const [small, big] = ELEMENTAL_RUNES.includes(id) ? [100, 500] : [25, 100];
             return itemRow(
                 item,
                 1,
-                h("button", { disabled: save.coins < cost * 25, onclick: () => buy(id, 25, false) }, `Buy 25 for ${formatCoins(cost * 25)}`),
-                h("button", { disabled: save.coins < cost * 100, onclick: () => buy(id, 100, false) }, "x100"),
+                h("button", { disabled: save.coins < cost * small, onclick: () => buy(id, small, false) }, `Buy ${small} for ${formatCoins(cost * small)}`),
+                h("button", { disabled: save.coins < cost * big, onclick: () => buy(id, big, false) }, `x${big}`),
             );
         });
         const gear = save.shop.map((id) => {
@@ -2530,6 +2568,7 @@ export class UI {
             prompt,
             inventory,
             inventoryOpen: false,
+            inventoryView: "pack",
             signature: "",
             run,
             hotbar: hotSlots,
@@ -2590,10 +2629,17 @@ export class UI {
                 : `Protect from ${run.protect} ${Math.round(run.prayer)}%`;
         hud.prayer.parentElement?.classList.toggle("on", run.protect !== "none");
         const uses = run.stats.weapon?.uses;
-        const ammo = run.ammo();
-        hud.coins.textContent =
-            `${formatCoins(run.coins)} coins · pack ${run.inventory.length}/${run.slots}` +
-            (uses ? ` · ${ammo ? `${ammo.count} ${getItem(ammo.id).name.toLowerCase()}` : `no ${uses}`}` : "");
+        let ammoText = "";
+        if (uses === "runes") {
+            // A staff: the spell it casts and how many casts the runes hold
+            const { spell } = run.castingSpell();
+            const casts = spell ? castsLeft(spell, run.runesGiven(), run.count) : 0;
+            ammoText = spell ? ` · ${spell.name}, ${casts === Infinity ? "no runes needed" : `${casts} cast${casts === 1 ? "" : "s"}`}` : " · no spell (B)";
+        } else if (uses) {
+            const ammo = run.ammo();
+            ammoText = ` · ${ammo ? `${ammo.count} ${getItem(ammo.id).name.toLowerCase()}` : `no ${uses}`}`;
+        }
+        hud.coins.textContent = `${formatCoins(run.coins)} coins · pack ${run.inventory.length}/${run.slots}` + ammoText;
         const left = run.timeLeft;
         hud.clock.textContent = run.closed
             ? "Way out closed"
@@ -2627,10 +2673,14 @@ export class UI {
         }
         hud.inventory.hidden = !hud.inventoryOpen;
         if (hud.inventoryOpen) {
-            const signature = JSON.stringify([run.inventory, run.equipment]);
+            const signature = JSON.stringify([run.inventory, run.equipment, hud.inventoryView, run.autocast]);
             if (signature !== hud.signature) {
                 hud.signature = signature;
-                this.renderInventory(run);
+                if (hud.inventoryView === "spells") {
+                    this.renderSpellbook(run);
+                } else {
+                    this.renderInventory(run);
+                }
             }
         }
         // The party: everyone's health at a glance, this player first
@@ -2731,6 +2781,7 @@ export class UI {
         const stats = run.stats;
         const weight = run.weight();
         hud.inventory.replaceChildren(
+            this.packTabs(),
             h("h3", {}, "Worn"),
             equipment,
             h(
@@ -2760,6 +2811,120 @@ export class UI {
             ),
             slots,
         );
+    }
+
+    // The pack panel's two pages: the pack (I) and the spellbook (B)
+    private packTabs(): HTMLElement {
+        const hud = this.hud!;
+        const tab = (view: "pack" | "spells", label: string, key: string) =>
+            h(
+                "button",
+                {
+                    class: "pack-tab" + (hud.inventoryView === view ? " on" : ""),
+                    title: isTouch ? label : `${label} (${key})`,
+                    onclick: () => {
+                        hud.inventoryView = view;
+                        hud.signature = "";
+                        this.updateHud();
+                    },
+                },
+                label,
+            );
+        return h("div", { class: "pack-tabs" }, tab("pack", "Pack", "I"), tab("spells", "Spellbook", "B"));
+    }
+
+    // The spellbook (version 106): the standard spellbook's twenty combat
+    // spells, strikes to surges down, wind, water, earth and fire across. A
+    // click picks one to autocast (again: back to the strongest the staff
+    // can); the staff's tier decides how high it casts, and the runes packed
+    // how often.
+    private renderSpellbook(run: Run): void {
+        const hud = this.hud!;
+        const weapon = run.stats.weapon;
+        const staff = weapon?.uses === "runes";
+        const given = run.runesGiven();
+        const casting = run.castingSpell();
+        const maxHit = (spell: SpellDef) => Math.max(1, Math.round(run.stats.damage * spellScale(weapon, spell)));
+        const runeName = (id: number) => getItem(id).name.replace(/s$/, "").toLowerCase();
+        const status = (spell: SpellDef): string => {
+            if (!staff) {
+                return "Wield a staff to cast it.";
+            }
+            if (!staffCasts(weapon, spell)) {
+                return `It takes a tier ${spell.tier} staff; yours is tier ${weapon!.tier}.`;
+            }
+            const casts = castsLeft(spell, given, run.count);
+            return casts <= 0 ? "Not enough runes packed." : `Max hit ${maxHit(spell)}, ${casts === Infinity ? "no runes needed" : `${casts} cast${casts === 1 ? "" : "s"} packed`}.`;
+        };
+        const grid = h(
+            "div",
+            { class: "spellbook" },
+            ...FAMILIES.flatMap((family) =>
+                ELEMENTS.map((element) => {
+                    const spell = SPELL_BY_ID.get(`${element}_${family}`)!;
+                    const usable = staff && staffCasts(weapon, spell) && castsLeft(spell, given, run.count) > 0;
+                    const picked = run.autocast === spell.id;
+                    const cost = spell.runes.map((r) => `${r.n} ${runeName(r.id)}${given.has(r.id) ? " (your staff gives these)" : ""}`).join(", ");
+                    const img = document.createElement("img");
+                    img.src = assetUrl(`ui/spells/${spell.icon}.png`);
+                    img.alt = spell.name;
+                    img.draggable = false;
+                    return h(
+                        "div",
+                        {
+                            class: "spell" + (usable ? "" : " off") + (picked ? " on" : "") + (casting.spell?.id === spell.id ? " now" : ""),
+                            title: `${spell.name} (tier ${spell.tier}): ${cost}. ${status(spell)} ${picked ? "Click again to cast the strongest you can." : "Click to autocast it."}`,
+                            onclick: () => this.pickSpell(run, picked ? undefined : spell.id),
+                        },
+                        img,
+                    );
+                }),
+            ),
+        );
+        // What's cast now, and what it takes from the pack
+        const shown = casting.spell ?? (run.autocast ? SPELL_BY_ID.get(run.autocast) : undefined);
+        const detail = shown
+            ? h(
+                  "div",
+                  { class: "spell-detail" },
+                  h("div", { class: "spell-name" }, shown.name, h("span", { class: "stats" }, ` · ${status(shown)}`)),
+                  h(
+                      "div",
+                      { class: "spell-runes" },
+                      ...shown.runes.map((r) =>
+                          h(
+                              "div",
+                              { class: "rune" + (!given.has(r.id) && run.count(r.id) < r.n ? " short" : ""), title: getItem(r.id).name },
+                              icon(getItem(r.id)),
+                              h("span", { class: "count" }, String(r.n)),
+                              h("span", { class: "have" }, given.has(r.id) ? "staff" : String(run.count(r.id))),
+                          ),
+                      ),
+                  ),
+              )
+            : null;
+        const head = h(
+            "div",
+            { class: "row pack-head" },
+            h("span", { class: "stats" }, run.autocast ? `Autocast: ${SPELL_BY_ID.get(run.autocast)?.name}` : "Autocast: strongest"),
+            h(
+                "button",
+                {
+                    class: "quiet" + (run.autocast ? "" : " on"),
+                    title: "Cast the strongest spell your staff can, with the runes you have packed",
+                    onclick: () => this.pickSpell(run, undefined),
+                },
+                "Strongest",
+            ),
+        );
+        const hint = h(
+            "div",
+            { class: "hint" },
+            !staff ? "Wield a staff, wand or sceptre to cast these. " : casting.why ? casting.why + " " : "",
+            `Your staff's tier is how high it casts: strikes at 1 up to surges at 5. Elemental staffs and tomes give their runes. Enemies here drop elemental and ${getItem(catalystOfTier(run.world.tier)).name.toLowerCase()}.`,
+        );
+        // One page the pack's width, so the words wrap
+        hud.inventory.replaceChildren(h("div", { class: "spell-page" }, this.packTabs(), head, grid, ...(detail ? [detail] : []), hint));
     }
 
     // -----------------------------------------------------------------------

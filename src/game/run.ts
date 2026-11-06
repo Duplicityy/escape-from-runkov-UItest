@@ -26,6 +26,7 @@ import {
     rollGear,
     specialOf,
 } from "../content/items";
+import { SPELL_BY_ID, SpellDef, bestSpell, castsLeft, runeDrop, runesGiven, spellCost, spellScale, staffCasts } from "../content/spells";
 import { WorldDef } from "../content/worlds";
 import { GameStart } from "./coop";
 import { Hero, Mate } from "./mates";
@@ -89,6 +90,7 @@ import {
     addItem,
     canCarry,
     carryLimitText,
+    countOf,
     equip,
     gearStats,
     removeItem,
@@ -121,6 +123,9 @@ export type RunCarry = {
     // How worn each piece of armour is (inventory.ts): it wears on in a run
     // and comes back with the gear
     wear?: Wear;
+    // The spell picked to autocast (content/spells.ts; version 106), or
+    // none: a staff then casts the strongest it can
+    autocast?: string;
 };
 
 // A style to protect from: enemies hit with it do half while the prayer
@@ -671,6 +676,9 @@ export class Run {
     private chased = false;
     private champions = new Map<EnemyDef, EnemyDef>();
     private ammoMessageAt = -10;
+    // The spell picked to autocast (the spellbook sets it), or none for the
+    // strongest the staff can cast with the runes packed
+    autocast?: string;
     private slamRing?: THREE.RingGeometry;
     private hazards: Hazard[] = [];
     // A ring under the enemy being hit, where there's no cursor to show it
@@ -826,6 +834,7 @@ export class Run {
     ) {
         this.rng = makeRng(seed);
         this.carry = carry;
+        this.autocast = carry.autocast && SPELL_BY_ID.has(carry.autocast) ? carry.autocast : undefined;
         this.coop = coop;
         this.hostLeft = this.closeSeconds();
         // The first draw, so every browser in a party gets the same night
@@ -2051,8 +2060,39 @@ export class Run {
         return PLAYER_SPEED * (1 - this.weight()) * (1 + (this.petBuff?.speed ?? 0));
     }
 
+    // How many of a thing the pack holds
+    readonly count = (id: number): number => countOf(this.inventory, id);
+
+    // The runes the staff and shield in hand give for nothing (spells.ts)
+    runesGiven(): Set<number> {
+        return runesGiven(this.equipment.weapon, this.equipment.shield);
+    }
+
+    // The spell a staff casts now (version 106): the one picked to
+    // autocast, or, none picked, the strongest it can with the runes packed;
+    // or why it can't cast
+    castingSpell(): { spell?: SpellDef; why?: string } {
+        const weapon = this.stats.weapon;
+        if (weapon?.uses !== "runes") {
+            return {};
+        }
+        const given = this.runesGiven();
+        const picked = this.autocast ? SPELL_BY_ID.get(this.autocast) : undefined;
+        if (picked) {
+            if (!staffCasts(weapon, picked)) {
+                return { why: `Your ${weapon.name.toLowerCase()} can't cast ${picked.name}: it takes a tier ${picked.tier} staff.` };
+            }
+            if (castsLeft(picked, given, this.count) <= 0) {
+                return { why: `You don't have the runes for ${picked.name}.` };
+            }
+            return { spell: picked };
+        }
+        const best = bestSpell(weapon, given, this.count);
+        return best ? { spell: best } : { why: "You don't have the runes for any spell your staff can cast." };
+    }
+
     // The ammunition the weapon in hand shoots, if it's in the pack: the
-    // best kind there
+    // best kind there (a staff's runes are the spell's to take: castingSpell)
     ammo(): ItemStack | undefined {
         const uses = this.stats.weapon?.uses;
         if (!uses) {
@@ -2874,11 +2914,14 @@ export class Run {
     // A swing: on its own (at what's after you) or asked for (at anything)
     private beginSwing(asked = false): void {
         const stats = this.stats;
-        // A bow or staff shoots nothing without its ammunition in the pack
-        if (stats.weapon?.uses && !this.ammo()) {
+        // A bow shoots nothing without arrows in the pack, and a staff casts
+        // nothing it can't (its tier) or hasn't the runes for
+        const casting = stats.weapon?.uses === "runes" ? this.castingSpell() : undefined;
+        const why = stats.weapon?.uses === "arrows" && !this.ammo() ? "You're out of arrows." : casting && !casting.spell ? casting.why : undefined;
+        if (why) {
             if (this.time - this.ammoMessageAt > 3) {
                 this.ammoMessageAt = this.time;
-                this.hooks.onMessage(stats.weapon.uses === "arrows" ? "You're out of arrows." : "You're out of runes.");
+                this.hooks.onMessage(why);
             }
             this.attackCooldown = 1;
             return;
@@ -2896,6 +2939,10 @@ export class Run {
         this.attacks++;
         if (stats.sound) {
             playSound(`sounds/${stats.sound}`, 0.4);
+        }
+        // A spell's own light on the caster as it's cast
+        if (casting?.spell && target) {
+            void this.burst(casting.spell.cast, this.px, this.pz);
         }
     }
 
@@ -2927,7 +2974,22 @@ export class Run {
                 // shot (ammoScale; a crossbow shoots a bolt whatever's packed)
                 let look: Look = { projectile: stats.weapon?.projectile, impact: stats.weapon?.impact };
                 let scale = 1;
-                if (stats.weapon?.uses) {
+                if (stats.weapon?.uses === "runes") {
+                    // A spell: its runes (OSRS's costs, less what the staff
+                    // and shield give), its hit and its look (spells.ts)
+                    const { spell } = this.castingSpell();
+                    if (!spell) {
+                        return;
+                    }
+                    scale = spellScale(stats.weapon, spell);
+                    look = { projectile: spell.projectile, impact: spell.impact };
+                    if (!(this.petBuff?.ammoSave && this.rng() < this.petBuff.ammoSave)) {
+                        for (const rune of spellCost(spell, this.runesGiven())) {
+                            removeItem(this.inventory, rune.id, rune.n);
+                        }
+                        this.hooks.onChanged();
+                    }
+                } else if (stats.weapon?.uses) {
                     const ammo = this.ammo();
                     if (!ammo) {
                         return;
@@ -3275,11 +3337,17 @@ export class Run {
             }
             return;
         }
-        // Arrows or runes, for whoever shoots: one kill in four, a few, of
-        // the map's tier
+        // Arrows or runes, for whoever shoots: one kill in four, a few
+        // arrows of the map's tier, or a handful of elemental runes or a few
+        // of the tier's catalyst (version 106: spells take OSRS's costs)
         if (this.rng() < AMMO_DROP_CHANCE) {
-            const kind = ammoOfTier(this.rng() < 0.5 ? "arrows" : "runes", this.world.tier, this.rng());
-            this.dropPickup(kind, randInt(this.rng, 3, 6), e.x + 0.3, e.z - 0.3);
+            if (this.rng() < 0.5) {
+                const kind = ammoOfTier("arrows", this.world.tier, this.rng());
+                this.dropPickup(kind, randInt(this.rng, 3, 6), e.x + 0.3, e.z - 0.3);
+            } else {
+                const runes = runeDrop(this.world.tier, this.rng(), this.rng(), (lo, hi) => randInt(this.rng, lo, hi));
+                this.dropPickup(runes.id, runes.count, e.x + 0.3, e.z - 0.3);
+            }
         }
         // A clue scroll, once a run
         if (!this.clueDropped && this.rng() < CLUE_CHANCE) {

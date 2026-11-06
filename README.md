@@ -107,8 +107,10 @@ browsers.
   in `items.ts`; the stash's Pack button, pickups and the trader all stop there; a stack on the
   ground gives what fits and leaves the rest, since version 100), and a bite takes
   1.8 seconds before the next (`EAT_DELAY`): "You're still chewing." Ammunition is 150 arrows
-  and 100 runes at most, every kind together (`AMMO_LIMITS`), at 3 to 100 coins each in the shop
-  by the kind, and a kill drops three to six of its map's tier one time in four. A roused melee boss moves nearly as fast as you do unburdened
+  and 2,000 runes at most, every kind together (`AMMO_LIMITS`; runes were 100 before the
+  spellbook, version 106), at 3 to 150 coins each in the shop by the kind, and a kill drops
+  ammunition one time in four: three to six arrows of its map's tier, or 15 to 30 of one
+  elemental rune, or four to eight of the map tier's catalyst (`runeDrop` in `spells.ts`). A roused melee boss moves nearly as fast as you do unburdened
   (`BOSS_CHASE_SPEED`), so it can't be shot from a walk backwards for ever; a boss that shoots
   keeps its own pace.
 - **Armour has a kind**, the combat triangle's way (`style` on each piece in `items.ts`, from its
@@ -207,19 +209,36 @@ browsers.
   Hunllef throw fire waves; revenants, serpent shamans and TzHaar-Mej throw fire strikes; desert
   bandits, the God Wars rangers and aviansies, nylocas toxobolos, Iorwerth archers, TzHaar-Xil
   and the Javelin Colossus shoot).
-- Bows take an arrow a shot and staves a rune a cast, from the pack, the best kind packed.
-  Arrows come in eight kinds (bronze, iron, steel, mithril, adamant, rune, amethyst, dragon)
-  and runes in eight (mind, air, water, earth, fire, chaos, death, blood), each of a tier
-  (version 59; `AMMO` in `items.ts`): a bow or staff hits what its max hit says with the best
-  kind of its own tier, more with a better kind and less with a worse one (`ammoScale` in
-  `combat.ts`: the kind's power over the tier's, `MATCH_POWER`; a ★★★ bow hits 58% with bronze
-  arrows and 121% with dragon), and the shot flies as the arrow it is, a spell as its rune's
-  (wind strike for mind, the bolts, fire blast for chaos, fire wave for death, a blood splash for
-  blood). Enemies drop a handful of their map's tier one kill in four, the shop sells each kind by
-  the bundle once a map of its tier is open, the trader sells the map's own, and without any a
-  bow or staff shoots nothing. Thrown weapons (darts, knives, throwing axes, chinchompas,
+- Bows take an arrow a shot from the pack, the best kind packed. Arrows come in eight kinds
+  (bronze, iron, steel, mithril, adamant, rune, amethyst, dragon), each of a tier (version 59;
+  `AMMO` in `items.ts`): a bow hits what its max hit says with the best kind of its own tier,
+  more with a better kind and less with a worse one (`ammoScale` in `combat.ts`: the kind's power
+  over the tier's, `MATCH_POWER`; a ★★★ bow hits 58% with bronze arrows and 121% with dragon), and
+  the shot flies as the arrow it is. Enemies drop a few of their map's tier, the shop sells each
+  kind by the bundle once a map of its tier is open, the trader sells the map's own, and without
+  any a bow shoots nothing. Thrown weapons (darts, knives, throwing axes, chinchompas,
   salamanders) need none: they're their own, and hit less than a bow of their tier for it; a
   chinchompa's burst takes half off everything beside what it hit (`splash`).
+- **The spellbook** (version 106, `content/spells.ts`): staves, wands and sceptres cast the
+  standard spellbook's twenty combat spells, OSRS's own: Wind, Water, Earth and Fire Strike, Bolt,
+  Blast, Wave and Surge, with OSRS's rune costs (Fire Bolt is 4 fire, 3 air and a chaos rune;
+  Water Surge 10 water, 7 air and a wrath rune) and their own cast, flight and impact animations.
+  The game has no Magic level, so a staff's tier is how high it casts: strikes at tier 1, bolts
+  at 2, blasts at 3, waves at 4, surges at 5. A spell hits what the staff's max hit says when it's
+  the staff's own tier's fire spell, a little less for earth, water and wind (97%, 94%, 91%), and
+  less again for a lower family (`spellScale`: the spell's power over `MATCH_POWER`). As in OSRS,
+  elemental staves, battlestaves and mystic staves give their element's runes for nothing, the
+  combination staves (smoke, mist, dust, mud, lava, steam) both of theirs, the Kodai wand water,
+  and the tomes of fire, water and earth theirs from the shield hand (`GIVES`). **B** opens the
+  spellbook, a page of the pack panel (the Pack and Spellbook tabs switch, on a phone too): a
+  click picks a spell to autocast, kept in the save (`autocast`), and **Strongest** goes back to
+  the default, the strongest spell the staff can cast with the runes packed. A spell the staff
+  can't cast or hasn't the runes for is greyed, and the page shows the cast's runes against
+  what's packed. The HUD says the spell being cast and the casts left. Runes are nine kinds: the
+  four elemental runes, every tier's; and each family's catalyst, of its tier: mind for strikes,
+  chaos bolts, death blasts, blood waves and wrath surges. The shop sells elemental runes by the
+  hundred and the catalysts by twenty-five, and the trader the map's catalyst and air runes. A
+  staff's special attack is called Power surge, so it isn't taken for a Surge spell.
 - Every hit shows its number as a hitsplat, the client's red square, floating up off whoever
   took it. An enemy shows a health bar over its head, the client's way, while it's fighting and
   for six seconds after it's hurt. The boss has the bar at the top of the screen instead.
@@ -279,7 +298,7 @@ browsers.
   the next map's, or the shop's, which stocks up to the hardest tier you've been to. An opened
   chest is
   gone, and what was in it lies exactly where it stood. Food is dear in the
-  shop (shrimps 105 coins, a shark 7,875, potions 200 to 300, arrows and runes 12 each), so a run's
+  shop (shrimps 105 coins, a shark 7,875, potions 200 to 300, arrows 3 to 100 each, runes 3 to 150), so a run's
   supplies are a cost against its takings. The boss's golden chest is locked: the boss drops its
   key every time it falls (`BOSS_KEY` in `items.ts`, the muddy key's icon; picking it up says
   where the chest is, and it's no use off the map), and inside are two or three pieces of the
@@ -373,7 +392,7 @@ is always called "Test character" (version 80); in the game it has whatever name
 the Character screen. Both test characters, the owner's and the playtester's, keep every item in
 the game in the stash (`kit.ts`, version 82; version 80's kit was the owner's Saradomin rune set
 and godsword alone): one of every piece of gear, fifteen of each food, a pack's worth of each kind
-of arrow and rune (150 and 100), and ten of each potion, 991 items; nothing of coins, clue scrolls
+of arrow and rune (150 and 2,000), and ten of each potion, 992 items; nothing of coins, clue scrolls
 or keys. Whatever is short is topped back up in the stash, unworn, on opening the page and at
 every run's end, so a death, a drop or a meal costs none of it. None of it can be sold (the guild
 shop shows it as kept, the trader turns it down; that goes for copies found in a run too), and

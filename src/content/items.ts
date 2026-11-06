@@ -156,7 +156,8 @@ export function specialOf(weapon: ItemDef | undefined): Special | undefined {
         return weapon.special;
     }
     if (weapon.uses === "runes") {
-        return { name: "Surge", hits: 1, power: 1.7 };
+        // Named so it isn't taken for the Surge spells (version 106)
+        return { name: "Power surge", hits: 1, power: 1.7 };
     }
     if (weapon.ranged) {
         return { name: "Snap shot", hits: 2, power: 0.85 };
@@ -1469,15 +1470,20 @@ export const ITEMS: ItemDef[] = [
     ammo(892, "Rune arrows", "arrows", 3, 1.2, 35, ARROW_RUNE),
     ammo(21326, "Amethyst arrows", "arrows", 4, 1.3, 60, ARROW_AMETHYST),
     ammo(11212, "Dragon arrows", "arrows", 5, 1.45, 100, ARROW_DRAGON),
-    // The spells: strike, bolt, blast, wave, then blood
+    // Runes (version 106: the spellbook, content/spells.ts, says what each
+    // spell takes). The elemental runes are every tier's, since every spell
+    // needs them; a family's catalyst is its tier's: mind for strikes, chaos
+    // bolts, death blasts, blood waves, wrath surges. Power and look are
+    // the spell's now, not the rune's.
     ammo(558, "Mind runes", "runes", 1, 0.7, 3, 91, 92),
-    ammo(556, "Air runes", "runes", 1, 0.8, 5, 118, 119),
-    ammo(555, "Water runes", "runes", 2, 0.9, 8, 121, 122),
-    ammo(557, "Earth runes", "runes", 2, 1.0, 12, 124, 125),
-    ammo(554, "Fire runes", "runes", 3, 1.1, 20, 127, 128),
-    ammo(562, "Chaos runes", "runes", 3, 1.2, 35, 130, 131),
-    ammo(560, "Death runes", "runes", 4, 1.3, 60, 156, 157),
-    ammo(565, "Blood runes", "runes", 5, 1.45, 100, 156, 375),
+    ammo(556, "Air runes", "runes", 1, 0.8, 4, 118, 119),
+    ammo(555, "Water runes", "runes", 1, 0.9, 4, 121, 122),
+    ammo(557, "Earth runes", "runes", 1, 1.0, 4, 124, 125),
+    ammo(554, "Fire runes", "runes", 1, 1.1, 4, 127, 128),
+    ammo(562, "Chaos runes", "runes", 2, 1.2, 20, 130, 131),
+    ammo(560, "Death runes", "runes", 3, 1.3, 60, 156, 157),
+    ammo(565, "Blood runes", "runes", 4, 1.45, 100, 156, 375),
+    ammo(21880, "Wrath runes", "runes", 5, 1.6, 150, 1465, 1466),
 ];
 
 for (const item of ITEMS) {
@@ -1648,9 +1654,10 @@ export const BOSS_KEY = 991;
 // What a pack carries at most: this many pieces of food in all, and this
 // many arrows and this many runes (every kind together); a bite takes this
 // long before the next (inventory.ts's canCarry enforces the limits,
-// run.ts the delay)
+// run.ts the delay). Runes went from 100 to 2000 with the spellbook
+// (version 106): a spell takes OSRS's two to seventeen of them.
 export const FOOD_LIMIT = 15;
-export const AMMO_LIMITS: Record<"arrows" | "runes", number> = { arrows: 150, runes: 100 };
+export const AMMO_LIMITS: Record<"arrows" | "runes", number> = { arrows: 150, runes: 2000 };
 export const EAT_DELAY = 1.8;
 // The weakest kind of each, what a new pack starts with
 export const AMMO_ARROWS = 882;
