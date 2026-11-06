@@ -543,7 +543,13 @@ socks (OSRS ids 20095 to 20107, the cache's own looks with the ghostly robe's br
 made a deeper red, 937, and kept see-through: every face of the outfit has the cache's alpha 150,
 which the exporter and game keep, exported with `player items` and `item` `--recolor 960:937`;
 OSRS's are cosmetic, so each has the Infinity robe piece's numbers for its slot), `exclusive:
-"owner"`. The owner's test character has
+"owner"`, and the **red ghostly robes** (version 121, `RED_GHOSTLY`): the Ghostly robes, whose
+grey 10266 has the cache's alpha 140, in the same 937 (the cloak's light grey trim, 17467, a
+lighter red, 955), each with its Ghostly piece's numbers. The regular Ghostly robes stay grey for
+everyone. Their ids are spares in the cache: 27166 to 27168 are its second Ghostly hood, top and
+bottom, and 27170 to 27172 (unused copies of other items) carry the gloves', boots' and cloak's
+looks, exported with `player items` and `item` `27166 27167 27168 27170 27171 27172 --like
+27170:6110,27171:6106,27172:6111 --recolor 10266:937,17467:955`. The owner's test character has
 the gilded pieces as well (version 83, `GILDED` in `items.ts`), at the head of its stash under the
 coins: the full and med helms, platebody, chainbody, platelegs, plateskirt, kiteshield, square
 shield and boots (rune's numbers), the coif and d'hide body, chaps and vambraces (green d'hide's;

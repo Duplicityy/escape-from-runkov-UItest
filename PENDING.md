@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 121 (built 6 November 2026; on the main site with 105.4): the red ghostly robes for the
+owner's own first character beside the Ankou outfit (README's two characters section): six
+pieces under the cache's spare ids 27166-27172 with every player clip, packed to
+public/assets/player/items, their icons in the sheet, added to assets.json. Each has its Ghostly
+piece's numbers; the regular Ghostly robes are unchanged. `GAME_BUILD` 121.
+
 Version 120 (built 6 November 2026; on the main site as 105.4): the Ankou outfit for the owner's
 own first character (README's two characters section): five pieces from the cache with every
 player clip, packed to public/assets/player/items, their icons in the sheet, added to assets.json.

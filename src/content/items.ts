@@ -1664,6 +1664,32 @@ export const ANKOU: number[] = [];
     }
 }
 
+// The red ghostly robes (version 121), for the owner's own first character
+// alone as well, as the user asked: the Ghostly robes in the Ankou outfit's
+// deeper red, still see-through, each the twin of its Ghostly piece (whose
+// own grey everyone else keeps). The ids are the cache's spare copies: its
+// second Ghostly hood and robes, and three more spares exported with the
+// gloves', boots' and cloak's looks (Run Escape's --like and --recolor).
+export const RED_GHOSTLY: number[] = [];
+{
+    const twins: [number, string, number][] = [
+        [27166, "Red ghostly hood", 6109],
+        [27167, "Red ghostly robe top", 6107],
+        [27168, "Red ghostly robe bottom", 6108],
+        [27170, "Red ghostly gloves", 6110],
+        [27171, "Red ghostly boots", 6106],
+        [27172, "Red ghostly cloak", 6111],
+    ];
+    for (const [id, name, twin] of twins) {
+        const base = ITEMS.find((i) => i.id === twin);
+        if (!base) {
+            throw new Error(`No ${twin} for ${name} to be the twin of`);
+        }
+        ITEMS.push({ ...base, id, name, exclusive: "owner" });
+        RED_GHOSTLY.push(id);
+    }
+}
+
 export const ITEM_BY_ID: Map<number, ItemDef> = new Map(ITEMS.map((i) => [i.id, i]));
 
 export function getItem(id: number): ItemDef {
