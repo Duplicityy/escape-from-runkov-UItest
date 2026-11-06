@@ -1,4 +1,5 @@
-// The chat box at the top of the screen (version 105): the run's own
+// The chat box at the top of the screen (version 105; at the bottom left on
+// a computer since version 113, style.css's): the run's own
 // messages ("You pick up shrimps.") and, in a co-op room, what the party
 // says to each other, in the lobby and in the run. It folds to a bar that
 // shows the newest line for a moment, with a count of the party's lines

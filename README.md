@@ -423,11 +423,12 @@ its eight-letter code, which the host gives their friends. The host can switch a
 public and private until the run starts. (The list is asked for every three seconds while the
 screen is up; `browse()` in `coop.ts`.)
 
-**Chat** (version 105, `src/ui/chat.ts`): a box at the top of the screen, folding to a bar (it
-remembers which; folded on a phone to begin with). It holds the run's own messages, which used to
-fade at the bottom left, and, in a co-op room, what the party says, in the lobby and through the
-run. Enter opens it to type and Esc leaves it without pausing; folded, the newest lines show under
-the bar for a moment and a count shows what the party said. The relay (`chat` in
+**Chat** (version 105, `src/ui/chat.ts`): a box at the top of the screen on a phone, and since
+version 113 at the bottom left on a computer, left of the hotbar and opening upward. It folds to a
+bar (it remembers which; folded on a phone to begin with). It holds the run's own messages and, in
+a co-op room, what the party says, in the lobby and through the run. Enter opens it to type and Esc
+leaves it without pausing; folded, the newest lines show beside the bar (under it at the top, over
+it at the bottom) for a moment and a count shows what the party said. The relay (`chat` in
 `relay/coop-relay.mjs`) sends a line to everyone in the room, the sayer included. The relay names
 who said it, from their character. A line is one line of at most 120 characters, with control,
 hidden and backwards-text characters taken out, and five can be sent at once, then one every 1.5

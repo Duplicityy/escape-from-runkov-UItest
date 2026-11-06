@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 113 (built 6 November 2026, not deployed): on a computer the chat box is at the bottom
+left, left of the hotbar, opening upward (README's "Chat"); a phone keeps it at the top. Only
+`style.css` changed. Checked at 1600 by 900: open and folded it stays clear of the hotbar, and the
+boss bar goes back to the top. `GAME_BUILD` 113.
+
 Version 112 (built 6 November 2026, not deployed): no walking on water (README's "Water"). Run
 Escape's `collision` command now also writes `overlayTextures`; the twelve maps' region.json
 re-exported with it and copied to public/assets/maps (tiles unchanged). Water tiles newly made

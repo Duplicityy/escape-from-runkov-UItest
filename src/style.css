@@ -1397,7 +1397,8 @@ input[type="range"] {
     width: min(560px, 92vw);
 }
 
-/* The chat box at the top (version 105, ui/chat.ts): a bar that folds and
+/* The chat box at the top (version 105, ui/chat.ts; at the bottom left on a
+   computer since version 113, below): a bar that folds and
    opens, the run's messages and the party's chat. On the page's body, over
    the guild's screens and the HUD. */
 .chat {
@@ -1564,6 +1565,41 @@ body.chat-shown .screen {
     /* From the top, so a tall screen scrolls rather than losing its heading
        above the fold */
     justify-content: flex-start;
+}
+
+/* On a computer (version 113) the chat box sits at the bottom left, left of
+   the hotbar: the bar at the foot, opening upward, the newest lines showing
+   just above it while it's folded. Nothing at the top makes way for it */
+@media not all and (pointer: coarse) {
+    .chat {
+        left: 16px;
+        top: auto;
+        bottom: 16px;
+        transform: none;
+        /* Clear of the hotbar (half its width is about 140px a size) */
+        width: clamp(260px, calc(50vw - 140px * var(--hotbar, 1) - 32px), 480px);
+        display: flex;
+        flex-direction: column-reverse;
+    }
+
+    .chat-ticker {
+        top: auto;
+        bottom: 100%;
+    }
+
+    .chat-panel {
+        border-top: 1px solid var(--edge-light);
+        border-bottom: none;
+    }
+
+    .boss-bar {
+        top: 16px;
+    }
+
+    body.chat-shown .screen {
+        padding-top: calc(16px + var(--safe-top));
+        padding-bottom: calc(var(--chat-h, 0px) + 16px);
+    }
 }
 
 /* The save code box over the menu (version 101), with its Copy button */
