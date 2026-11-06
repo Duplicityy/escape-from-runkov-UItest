@@ -56,7 +56,7 @@ import { isKept } from "../game/kit";
 import { Chat } from "./chat";
 import { FullMap } from "./fullmap";
 import { REGEN_DELAY, soak } from "../game/combat";
-import { GameStart, Loadout, MemberView, Session } from "../game/coop";
+import { GAME_BUILD, GameStart, Loadout, MemberView, Session } from "../game/coop";
 import { DEFAULT_NAME_COLOR, NAME_COLORS, crownIcon, crownKey, crownVerified, nameColorOf } from "../game/crown";
 import {
     BARROWS_SETS,
@@ -96,7 +96,21 @@ import {
     setActiveSlot,
     writeSave,
 } from "../game/save";
-import { BRIGHTNESS_MAX, BRIGHTNESS_MIN, HOTBAR_MAX, HOTBAR_MIN, ZOOM_MAX, ZOOM_MIN, applyHotbarSize, saveSettings, settings } from "../game/settings";
+import {
+    BRIGHTNESS_MAX,
+    BRIGHTNESS_MIN,
+    HOTBAR_MAX,
+    HOTBAR_MIN,
+    MENU_LAYOUTS,
+    MenuLayout,
+    ZOOM_MAX,
+    ZOOM_MIN,
+    applyHotbarSize,
+    saveSettings,
+    settings,
+} from "../game/settings";
+
+const LAYOUT_NAMES: Record<MenuLayout, string> = { osrs: "Card and rooms", rail: "Rail", card: "Card and grid" };
 import { HURT_SHARE, TouchControls, fullscreenButton, isTouch, touchControls, touchPrompt } from "./touch";
 
 type Child = Node | string | null | undefined | false;
@@ -495,10 +509,11 @@ export class UI {
     // rail: it fits under a thumb.
     showMenu(): void {
         const layout = isTouch ? "rail" : settings.menuLayout;
-        this.showKeyed("menu", layout === "card" ? this.cardMenu() : this.railMenu());
-        // The character stands clear of the rail, or above the play bar
-        this.menu.focus = layout === "card" ? 0 : 0.12;
-        this.menu.raise = layout === "card" ? 0.14 : 0.05;
+        this.showKeyed("menu", layout === "card" ? this.cardMenu() : layout === "osrs" ? this.osrsMenu() : this.railMenu());
+        // The character stands clear of the rail, or above the play bar;
+        // between the card and the rooms
+        this.menu.focus = layout === "card" ? 0 : layout === "osrs" ? 0.02 : 0.12;
+        this.menu.raise = layout === "card" ? 0.14 : layout === "osrs" ? 0.08 : 0.05;
     }
 
     // What the title screen says about each room and the character
@@ -571,7 +586,9 @@ export class UI {
         return h(
             "button",
             { class: "room" + (primary ? " primary" : ""), onclick: open },
-            icon,
+            // The icon sits in a well of its own: padding on the icon itself
+            // would show its neighbours on the sheet
+            h("span", { class: "room-well" }, icon),
             h("span", { class: "room-text" }, h("span", { class: "room-name" }, name), sub ? h("span", { class: "room-sub" }, sub) : null),
         );
     }
@@ -842,6 +859,107 @@ export class UI {
                 h("span", { class: "spacer" }),
                 h("div", { class: "row small" }, ...this.utilityButtons()),
             ),
+        );
+    }
+
+    // The OSRS-styled title screen (version 114): the character's
+    // card on the left with what they wear as the equipment tab lays it out
+    // and their record in big numbers, the rooms down the right with a line
+    // on each, and along the bottom the way straight back into the last map
+    private osrsMenu(): HTMLElement {
+        const save = this.save;
+        const s = save.stats;
+        const f = this.menuFacts();
+        const worn = (slot: Slot | undefined) => {
+            const id = slot ? save.equipment[slot] : undefined;
+            if (!slot) {
+                return h("div", { class: "worn-slot none" });
+            }
+            if (id === undefined) {
+                return h("div", { class: "worn-slot empty", title: slot });
+            }
+            const wear = wearOf(save.wear, id);
+            return h(
+                "div",
+                { class: "worn-slot" + (wear > 0 ? " worn" : ""), title: getItem(id).name + (wear > 0 ? ` · ${Math.round(wear * 100)}% worn` : "") },
+                iconElement(id),
+            );
+        };
+        // The equipment tab's cross: head; cape, neck, (ammunition); weapon,
+        // body, shield; legs; hands, feet, ring
+        const layout: (Slot | undefined)[] = [undefined, "head", undefined, "cape", "neck", undefined, "weapon", "body", "shield", undefined, "legs", undefined, "hands", "feet", "ring"];
+        const escapeRate = s.runs > 0 ? `${Math.round((s.extractions / s.runs) * 100)}%` : "–";
+        const tile = (value: string, label: string, color: string) => h("div", { class: "big-stat" }, h("span", { class: "big-value " + color }, value), h("span", { class: "big-label" }, label));
+        const line = (label: string, value: Node | string, cls = "") => h("div", { class: "card-line" }, h("span", { class: "label" }, label), h("span", { class: "value " + cls }, value));
+        const last = save.recentMaps.map((id) => WORLD_BY_ID.get(id)).find((w) => w && mapUnlocked(s.mapsBeaten, w.id));
+        const worst = Object.values(save.equipment)
+            .filter((id): id is number => id !== undefined)
+            .map((id) => ({ id, wear: wearOf(save.wear, id) }))
+            .sort((a, b) => b.wear - a.wear)[0];
+        const card = h(
+            "div",
+            { class: "osrs-card" },
+            h(
+                "div",
+                { class: "card-head" },
+                h("div", { class: "card-portrait" }, this.itemIcon(save.equipment.head ?? 1163)),
+                h("div", { class: "card-who" }, this.recordName(), h("div", { class: "card-sub" }, `${s.runs} runs · hardest map ${s.deepest > 0 ? "★".repeat(s.deepest) : "none yet"}`)),
+            ),
+            h("div", { class: "rule-head" }, "Worn"),
+            h("div", { class: "worn-grid" }, ...layout.map(worn)),
+            h("div", { class: "big-stats" }, tile(escapeRate, "escaped", "green"), tile(formatCoins(s.bestHaul), "best haul", "yellow"), tile(String(s.deaths), "deaths", "red")),
+            h(
+                "div",
+                { class: "card-lines" },
+                line("Banked", `${formatCoins(save.coins)} coins`, "yellow"),
+                line("Escapes", `${s.extractions} of ${s.runs}`),
+                worst && worst.wear > 0 ? line(getItem(worst.id).name, `${Math.round(worst.wear * 100)}% worn`, "orange") : null,
+                save.insured !== undefined ? line("Insured", getItem(save.insured).name, "green") : null,
+                f.pet ? h("div", { class: "card-note" }, f.pet) : null,
+                f.grave ? h("div", { class: "card-note grave" }, f.grave) : null,
+                this.notice ? h("div", { class: "card-note notice" }, this.notice) : null,
+            ),
+            h(
+                "div",
+                { class: "card-buttons" },
+                h("button", { onclick: () => this.showCharacter() }, "Character"),
+                crownVerified(crownKey()) ? (() => {
+                    const b = this.switchCharacterButton(false)!;
+                    b.className = "";
+                    b.replaceChildren("Switch character");
+                    return b;
+                })() : null,
+            ),
+        );
+        const rooms = h(
+            "div",
+            { class: "osrs-rooms" },
+            this.roomButton("Choose a map", f.play, this.itemIcon(2677), () => this.showMaps(), true),
+            this.coopEnabled ? this.roomButton("Co-op", f.coop, this.itemIcon(1019), () => this.showCoop()) : null,
+            this.roomButton("Bank & gear", f.stash, this.itemIcon(1127), () => this.showStash()),
+            this.roomButton("Shop", f.shop, this.itemIcon(995), () => this.showShop()),
+            this.roomButton("Tasks & pets", f.tasks, this.itemIcon(989), () => this.showTasks()),
+            this.roomButton("Settings", "Brightness, sound, camera", this.gearIcon(), () => this.showSettings()),
+        );
+        const play = h(
+            "div",
+            { class: "osrs-play" },
+            this.session.room
+                ? h("button", { class: "go", onclick: () => this.showCoop() }, `Back to ${this.session.room.name}`)
+                : last
+                  ? h("button", { class: "go", onclick: () => this.hooks.startRun(last.id) }, `Descend into ${last.name}`)
+                  : h("button", { class: "go", onclick: () => this.showMaps() }, "Choose your first map"),
+            h("div", { class: "osrs-hint" }, this.controlsHint()),
+        );
+        return h(
+            "div",
+            { class: "screen title layout-osrs" },
+            h("div", { class: "osrs-title" }, h("h1", {}, "Escape from Runkov"), h("div", { class: "tagline" }, "Go in geared. Come out richer. Or don't come out.")),
+            card,
+            rooms,
+            play,
+            h("div", { class: "osrs-build" }, `Build ${GAME_BUILD}`),
+            h("div", { class: "osrs-utility" }, ...this.utilityButtons()),
         );
     }
 
@@ -1237,14 +1355,15 @@ export class UI {
                     "button",
                     {
                         onclick: (e: MouseEvent) => {
-                            settings.menuLayout = settings.menuLayout === "rail" ? "card" : "rail";
+                            const next = MENU_LAYOUTS[(MENU_LAYOUTS.indexOf(settings.menuLayout) + 1) % MENU_LAYOUTS.length];
+                            settings.menuLayout = next;
                             saveSettings();
-                            (e.currentTarget as HTMLButtonElement).textContent = settings.menuLayout === "rail" ? "Rail" : "Card";
+                            (e.currentTarget as HTMLButtonElement).textContent = LAYOUT_NAMES[next];
                         },
                     },
-                    settings.menuLayout === "rail" ? "Rail" : "Card",
+                    LAYOUT_NAMES[settings.menuLayout],
                 ),
-                isTouch ? "phones always use the rail" : "the rooms down a rail, or a card and a grid",
+                isTouch ? "phones always use the rail" : "your card and the rooms, the rooms down a rail, or a card and a grid",
             ),
             h("div", { class: "subtitle" }, "Settings are this browser's; a save code doesn't carry them."),
             h("button", { onclick: back }, "Back"),

@@ -185,7 +185,10 @@ browsers.
   down to a blue dark (the map's materials are darkened in place and put back when the run
   stops, since the menu shares the model; `worldLight` in `assets.ts` is the light on everything
   made during the run), and enemies notice you from only six tenths of their usual distance, so
-  you can slip past things. The minimap is drawn by day either way. The HUD says "night".
+  you can slip past things. The minimap is drawn by day either way. The HUD says "night". Since
+  version 114 each hero carries a **torch** (`src/game/torch.ts`): a warm, flickering light
+  round them, done in each material's shader with no real lights. `?night` in the address makes
+  every solo run a night, to try it.
 - Once the **boss** has noticed you it chases until you're some way off, so a fight you aren't
   ready for can be fled: a melee boss gives up eight tiles from you, one that shoots twenty
   (`BOSS_GIVE_UP_MELEE`, `BOSS_GIVE_UP`), and a boss only notices you from three quarters of
@@ -550,10 +553,16 @@ the world holds) with an `await` every few ticks so the relay's messages arrive.
 
 The guild's screens sit over Lumbridge castle's courtyard, where the character stands in what
 they're wearing while the camera circles them slowly (`src/game/menu.ts`), the way Run Escape's
-title screen does, with the pet that follows them beside them. The title screen comes in two
-layouts (Settings, "Title screen"; `railMenu` and `cardMenu` in `ui.ts`):
+title screen does, with the pet that follows them beside them. Since version 114 the screens
+between runs and the pause menu wear OSRS-styled panels (`src/skin.css`, over `style.css`): warm
+bevelled panels, gold-ruled headings, raised buttons, a green way in, sunk slots and bank cells;
+the HUD over a run is as it was. The title screen comes in three layouts (Settings, "Title
+screen"; `osrsMenu`, `railMenu` and `cardMenu` in `ui.ts`):
 
-- **Rail** (the default, and the only one on a phone): the name and the character's record top
+- **Card and rooms** (the default on a computer since version 114): the character's card on the
+  left with what they wear laid out as the equipment tab does and their record in big numbers,
+  the rooms down the right, and "Descend into" the last map along the bottom.
+- **Rail** (the only one on a phone): the name and the character's record top
   left, the character in the middle, and the rooms down a rail on the right, each with a line on
   what's waiting there: the last map played and the best escape, how many pieces are in the
   stash and how many need repair, what's insured, what's on the shelves and the coins banked,

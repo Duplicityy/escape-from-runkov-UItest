@@ -1,0 +1,803 @@
+/* The OSRS-styled menus (version 114, from the mockups): the client's stone and
+   fonts kept, with warm bevelled panels, gold-ruled headings, raised
+   buttons and sunk slots. Only the screens between runs and the pause
+   menu: the HUD over a run is style.css's, as it was. */
+
+:root {
+    --panel-ring: 0 0 0 2px #15100a, 0 0 0 3px #7a6444, 0 0 0 5px #1a130c;
+    --well: inset 0 2px 5px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 224, 160, 0.07);
+    --raised: 0 0 0 1px #120d08, inset 0 1px 0 rgba(255, 228, 170, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.35), 0 4px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* Panels */
+.screen .panel,
+.screen .menu-box,
+.pause .panel,
+.pause-box,
+.summary-box,
+.save-code-panel {
+    border: 0;
+    border-image: none;
+    border-radius: 12px;
+    background:
+        radial-gradient(ellipse at 50% -20%, rgba(255, 196, 110, 0.18), transparent 55%),
+        url(../ui/interface-bg.png) #3e3529;
+    box-shadow:
+        var(--panel-ring),
+        0 18px 38px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 228, 170, 0.22),
+        inset 0 -24px 40px rgba(0, 0, 0, 0.3);
+}
+
+.screen .panel {
+    padding: 16px 20px;
+}
+
+/* Headings: the title glows; a panel's heading sits between two gold rules */
+.screen h1 {
+    color: var(--orange);
+    text-shadow:
+        2px 2px 0 #000,
+        0 0 24px rgba(255, 140, 30, 0.35);
+}
+
+.screen h2,
+.screen .panel h2,
+.pause .panel h2,
+.pause-box h2,
+.rule-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    white-space: nowrap;
+}
+
+.screen h2::before,
+.screen h2::after,
+.pause .panel h2::before,
+.pause .panel h2::after,
+.pause-box h2::before,
+.pause-box h2::after,
+.rule-head::before,
+.rule-head::after {
+    content: "";
+    flex: 1;
+    max-width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #c8a060);
+}
+
+.screen h2::after,
+.pause .panel h2::after,
+.pause-box h2::after,
+.rule-head::after {
+    background: linear-gradient(90deg, #c8a060, transparent);
+}
+
+.screen h3 {
+    color: var(--orange);
+}
+
+/* Buttons: raised, rounded; the way in is green */
+.screen button,
+.pause button,
+.code-dialog button,
+.summary-screen button {
+    border: 0;
+    border-radius: 8px;
+    background: linear-gradient(#5f513c, #3b3125 60%, #30281e);
+    box-shadow: var(--raised);
+    transition:
+        filter 0.08s,
+        transform 0.08s;
+}
+
+.screen button:hover:not(:disabled),
+.pause button:hover:not(:disabled),
+.code-dialog button:hover:not(:disabled),
+.summary-screen button:hover:not(:disabled) {
+    background: linear-gradient(#6e5e46, #463a2b 60%, #382e22);
+}
+
+.screen button:active:not(:disabled),
+.pause button:active:not(:disabled),
+.code-dialog button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.screen button:disabled,
+.pause button:disabled {
+    filter: saturate(0.4) brightness(0.8);
+}
+
+.screen button.primary,
+.screen button.go,
+.pause button.primary,
+.code-dialog button.primary,
+.summary-screen button.primary {
+    color: var(--yellow);
+    background: linear-gradient(#6aa83a, #3c7420 60%, #2c5816);
+    box-shadow:
+        0 0 0 1px #0d1a06,
+        inset 0 1px 0 rgba(220, 255, 170, 0.45),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.35),
+        0 0 22px rgba(130, 220, 70, 0.3),
+        0 4px 8px rgba(0, 0, 0, 0.45);
+}
+
+.screen button.primary:hover:not(:disabled),
+.screen button.go:hover:not(:disabled),
+.pause button.primary:hover:not(:disabled),
+.summary-screen button.primary:hover:not(:disabled) {
+    color: #fff;
+    background: linear-gradient(#78b844, #448226 60%, #31621a);
+}
+
+/* A way in that's shut (a locked map): plain, not green */
+.screen button.primary:disabled,
+.screen button.go:disabled,
+.pause button.primary:disabled {
+    color: var(--dim);
+    background: linear-gradient(#4a3f30, #2e261d);
+    box-shadow: var(--raised);
+    filter: none;
+}
+
+.screen button.quiet {
+    color: var(--muted);
+}
+
+/* The rooms: cards with the icon in a sunk well */
+.screen .room {
+    border-radius: 12px;
+    background:
+        radial-gradient(ellipse at 30% -40%, rgba(255, 196, 110, 0.16), transparent 60%),
+        linear-gradient(rgba(66, 56, 43, 0.95), rgba(38, 31, 23, 0.95));
+    box-shadow:
+        0 0 0 1px #15100a,
+        0 0 0 2px rgba(130, 106, 70, 0.95),
+        0 0 0 3px #15100a,
+        0 10px 24px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 228, 170, 0.22);
+}
+
+.screen .room:hover:not(:disabled) {
+    background:
+        radial-gradient(ellipse at 30% -40%, rgba(255, 196, 110, 0.24), transparent 60%),
+        linear-gradient(rgba(84, 71, 54, 0.95), rgba(48, 39, 29, 0.95));
+}
+
+.screen .room.primary {
+    color: var(--yellow);
+    background:
+        radial-gradient(ellipse at 30% -40%, rgba(255, 210, 120, 0.28), transparent 60%),
+        linear-gradient(rgba(84, 70, 50, 0.97), rgba(46, 37, 26, 0.97));
+    box-shadow:
+        0 0 0 1px #15100a,
+        0 0 0 2px #d8b060,
+        0 0 0 3px #15100a,
+        0 0 22px rgba(255, 190, 80, 0.25),
+        0 10px 24px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 228, 170, 0.3);
+}
+
+/* A room's icon in a sunk well. The well is the icon's wrapper: an icon is
+   a cell of one sheet, so it takes no padding, background or transform of
+   its own (they'd show its neighbours on the sheet, or blur it) */
+.room-well {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+}
+
+.screen .room .room-well {
+    width: 44px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    box-shadow: var(--well);
+}
+
+.screen .room .room-icon,
+.screen .room.primary .room-icon {
+    transform: none;
+    margin: 0;
+}
+
+/* The desktop title's rooms: taller cards, the icon in a bigger well */
+.osrs-rooms .room {
+    height: 64px;
+}
+
+.osrs-rooms .room.primary {
+    height: 82px;
+}
+
+.screen .osrs-rooms .room .room-well {
+    width: 48px;
+    height: 44px;
+}
+
+.screen .osrs-rooms .room.primary .room-well {
+    width: 58px;
+    height: 54px;
+}
+
+/* Scaled as a whole, so still the one cell, pixel for pixel */
+.screen .osrs-rooms .room.primary .room-icon {
+    transform: scale(1.3);
+}
+
+/* A phone's rooms (style.css draws their icons smaller): a smaller well */
+@media (pointer: coarse) {
+    .screen .room .room-well {
+        width: 36px;
+        height: 32px;
+        border-radius: 6px;
+    }
+
+    .screen .room.primary .room-well {
+        width: 42px;
+        height: 37px;
+    }
+}
+
+/* A phone on its side: seven rooms (a crowned player's) fit the height */
+@media (pointer: coarse) and (max-height: 450px) {
+    .rail {
+        gap: 5px;
+    }
+
+    .screen .rail .room:not(.primary) {
+        height: 42px;
+    }
+}
+
+.screen .room-sub {
+    font-size: 14px;
+}
+
+/* Rows of things, and inputs, sunk into the stone */
+.screen .item-row,
+.pause .item-row {
+    border: 0;
+    border-radius: 8px;
+    padding: 5px 8px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow:
+        inset 0 1px 3px rgba(0, 0, 0, 0.5),
+        0 1px 0 rgba(255, 224, 160, 0.07);
+}
+
+.screen .item-row:hover,
+.pause .item-row:hover {
+    background: rgba(0, 0, 0, 0.34);
+}
+
+.screen .item-list {
+    gap: 5px;
+}
+
+.screen input[type="text"],
+.screen input[type="search"],
+.code-dialog textarea {
+    border: 0;
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.45);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        0 0 0 1px rgba(130, 106, 70, 0.7);
+}
+
+.screen input[type="search"] {
+    font: inherit;
+    font-size: 16px;
+    color: var(--text);
+    text-shadow: var(--shadow);
+    padding: 6px 10px;
+}
+
+.screen input::placeholder {
+    color: var(--dim);
+}
+
+/* Settings rows: the label, its note and the control */
+.screen .setting {
+    border-bottom: 0;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.screen .setting:nth-child(even) {
+    background: rgba(0, 0, 0, 0.16);
+}
+
+.screen .setting label {
+    color: var(--text);
+}
+
+/* Slots, as the mockups have them: each its own sunk cell */
+.screen .slots {
+    gap: 6px;
+    padding: 8px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: var(--well);
+}
+
+.screen .slot {
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        0 1px 0 rgba(255, 224, 160, 0.07);
+}
+
+.screen .slot.empty {
+    background: rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.screen .slot:hover:not(.empty) {
+    background: rgba(255, 200, 90, 0.12);
+}
+
+.screen .equipment {
+    gap: 8px;
+}
+
+.screen .equip-slot {
+    border: 0;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: var(--well);
+}
+
+.screen .equip-slot:hover {
+    box-shadow:
+        inset 0 0 0 2px #ffd36a,
+        0 0 12px rgba(255, 200, 90, 0.5);
+}
+
+/* The bank: tabs like the client's, a sunk grid, a picked thing ringed gold */
+.screen .bank-tabs {
+    gap: 6px;
+}
+
+.screen .bank-tab {
+    border-radius: 8px 8px 4px 4px;
+    background: linear-gradient(#54473a, #33291f);
+    box-shadow:
+        0 0 0 1px #120d08,
+        inset 0 1px 0 rgba(255, 228, 170, 0.22);
+}
+
+.screen .bank-tab.active {
+    background: linear-gradient(#8a3a22, #5a2312);
+    box-shadow:
+        0 0 0 1px #120d08,
+        inset 0 0 0 1px #ff9a5a,
+        0 0 10px rgba(255, 120, 60, 0.45);
+}
+
+.screen .bank-grid {
+    gap: 6px;
+    padding: 10px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: var(--well);
+}
+
+.screen .bank-slot {
+    border: 0;
+    border-radius: 7px;
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        0 1px 0 rgba(255, 224, 160, 0.07);
+    transition: none;
+}
+
+.screen .bank-slot:hover:not(:disabled) {
+    background: rgba(255, 200, 90, 0.12);
+}
+
+.screen .bank-slot:active:not(:disabled) {
+    transform: none;
+}
+
+.screen .bank-slot.selected {
+    background: rgba(255, 200, 90, 0.12);
+    box-shadow:
+        inset 0 0 0 2px #ffd36a,
+        0 0 12px rgba(255, 200, 90, 0.6),
+        inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.screen .bank-slot.exclusive {
+    background: radial-gradient(circle, rgba(200, 130, 255, 0.4), rgba(0, 0, 0, 0.2) 70%);
+}
+
+.screen .bank-detail {
+    border: 0;
+    border-radius: 10px;
+    background: linear-gradient(rgba(58, 49, 37, 0.98), rgba(36, 30, 22, 0.98));
+    box-shadow:
+        0 0 0 1px #15100a,
+        0 0 0 2px rgba(130, 106, 70, 0.95),
+        0 0 0 3px #15100a,
+        0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* Map choice: a row a map, the way in green */
+.screen .map-row {
+    padding: 8px 10px;
+}
+
+.screen .map-row .map-name {
+    font-size: 18px;
+}
+
+/* Swatches and chips */
+.screen .swatch {
+    border-radius: 7px;
+}
+
+.screen .chip {
+    border-radius: 10px;
+}
+
+/* Co-op: the party code big and yellow, members as cards, ready in green */
+.screen .party-code .code {
+    color: var(--yellow);
+    letter-spacing: 4px;
+}
+
+.screen .member .ready.on {
+    color: #00ff00;
+    text-shadow:
+        1px 1px 0 #000,
+        0 0 8px rgba(0, 255, 0, 0.5);
+}
+
+/* The end of a run: its box a panel like the rest */
+.summary-box {
+    padding: 18px 24px;
+}
+
+/* ----------------------------------------------------------------------
+   The OSRS-styled title screen (layout-osrs): the card left, the rooms right,
+   the way in along the bottom */
+
+.screen.title.layout-osrs {
+    background:
+        radial-gradient(ellipse at 50% 30%, rgba(255, 170, 80, 0.08), transparent 45%),
+        linear-gradient(90deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0) 66%, rgba(0, 0, 0, 0.55) 100%),
+        linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 20%, rgba(0, 0, 0, 0) 74%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+.osrs-title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 22px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.osrs-title h1 {
+    font-size: clamp(38px, 4.6vw, 64px);
+}
+
+.osrs-title .tagline {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 16px;
+}
+
+.osrs-card {
+    position: absolute;
+    left: 32px;
+    top: 120px;
+    width: min(330px, 28vw);
+    max-height: calc(100vh - 210px);
+    overflow: auto;
+    padding: 16px 16px 14px;
+    border-radius: 12px;
+    background:
+        radial-gradient(ellipse at 50% -20%, rgba(255, 196, 110, 0.2), transparent 55%),
+        url(../ui/interface-bg.png) #3e3529;
+    box-shadow:
+        var(--panel-ring),
+        0 18px 38px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 228, 170, 0.22),
+        inset 0 -24px 40px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--edge-light) transparent;
+}
+
+.card-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.card-portrait {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.7),
+        0 0 0 1px rgba(130, 106, 70, 0.8);
+    flex: none;
+}
+
+.card-who {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.card-who .record-name {
+    font-size: 20px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-sub {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.rule-head {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 16px;
+    color: var(--orange);
+}
+
+.worn-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 46px);
+    justify-content: center;
+    gap: 6px 10px;
+}
+
+.worn-slot {
+    width: 46px;
+    height: 42px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        0 1px 0 rgba(255, 224, 160, 0.07);
+}
+
+.worn-slot.none {
+    visibility: hidden;
+}
+
+.worn-slot.empty {
+    background: rgba(0, 0, 0, 0.12);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.worn-slot.worn {
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 120, 60, 0.85),
+        0 0 8px rgba(255, 110, 50, 0.45);
+}
+
+.big-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 10px 4px 8px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.22);
+    box-shadow: var(--well);
+}
+
+.big-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.big-value {
+    font-family: "OSRS Bold", sans-serif;
+    font-size: 26px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.big-value.green {
+    color: #00ff00;
+}
+
+.big-value.yellow {
+    color: var(--yellow);
+}
+
+.big-value.red {
+    color: #ff4040;
+}
+
+.big-label {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.card-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 15px;
+}
+
+.card-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.card-line .label {
+    color: var(--muted);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-line .value {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.card-line .value.yellow {
+    color: var(--yellow);
+}
+
+.card-line .value.green {
+    color: #00ff00;
+}
+
+.card-line .value.orange {
+    color: var(--orange);
+}
+
+.card-note {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 14px;
+    color: var(--muted);
+}
+
+.card-note.grave {
+    color: #c3b8ff;
+}
+
+.card-note.notice {
+    color: var(--yellow);
+}
+
+.card-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.card-buttons button {
+    flex: 1;
+    padding: 9px 8px;
+}
+
+.osrs-rooms {
+    position: absolute;
+    right: 32px;
+    top: 120px;
+    width: min(400px, 32vw);
+    max-height: calc(100vh - 210px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.osrs-play {
+    position: absolute;
+    left: 50%;
+    bottom: 64px;
+    transform: translateX(-50%);
+    width: min(560px, 34vw);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.osrs-play .go {
+    height: 66px;
+    font-size: 24px;
+    border-radius: 10px;
+}
+
+.osrs-hint {
+    font-family: "OSRS Small", sans-serif;
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.osrs-build {
+    position: absolute;
+    left: 32px;
+    bottom: 24px;
+    font-family: "OSRS Small", sans-serif;
+    color: var(--dim);
+}
+
+.osrs-utility {
+    position: absolute;
+    right: 32px;
+    bottom: 20px;
+    display: flex;
+    gap: 8px;
+}
+
+.osrs-utility button {
+    font-size: 15px;
+    padding: 7px 14px;
+}
+
+/* A short window: the card scrolls, and the way in sits lower */
+@media (max-height: 760px) {
+    .osrs-card,
+    .osrs-rooms {
+        top: 96px;
+        max-height: calc(100vh - 170px);
+    }
+
+    .osrs-rooms {
+        gap: 8px;
+    }
+
+    .osrs-rooms .room {
+        height: 54px;
+    }
+
+    .osrs-rooms .room.primary {
+        height: 68px;
+    }
+
+    .osrs-play {
+        bottom: 52px;
+    }
+}
+
+/* A narrow window: the play button wider, between the two */
+@media (max-width: 1100px) {
+    .osrs-play {
+        width: min(420px, 30vw);
+    }
+
+    .osrs-hint {
+        display: none;
+    }
+}

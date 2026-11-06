@@ -26,9 +26,15 @@ export type Settings = {
     hotbarSize: number;
     // The chat box (version 105) open, or folded to its bar
     chatOpen: boolean;
+    // The version whose title screens these settings have seen (114 on):
+    // before it, "rail" was only ever the default, never a choice
+    layoutVersion: number;
 };
 
-export type MenuLayout = "rail" | "card";
+// "osrs" (version 114, the default): the character's card with what they wear
+// on the left, the rooms down the right, the way back in along the bottom
+export type MenuLayout = "osrs" | "rail" | "card";
+export const MENU_LAYOUTS: MenuLayout[] = ["osrs", "rail", "card"];
 
 // How far the camera goes in and out
 export const ZOOM_MIN = 0.7;
@@ -83,11 +89,12 @@ function defaults(): Settings {
         zoom: 1,
         healthBars: true,
         brightness: 1.3,
-        menuLayout: "rail",
+        menuLayout: "osrs",
         fixedStick: false,
         hotbarSize: defaultHotbar(),
         // Open on a computer; folded on a phone, where the screen is small
         chatOpen: !coarsePointer(),
+        layoutVersion: 114,
     };
 }
 
@@ -116,7 +123,10 @@ function load(): Settings {
                 s[key] = data[key];
             }
         }
-        if (data.menuLayout === "rail" || data.menuLayout === "card") {
+        // A "rail" saved before version 114 was the old default, so it moves
+        // to the new one once; the card was picked, and stays
+        const old = typeof data.layoutVersion !== "number" && data.menuLayout === "rail";
+        if (data.menuLayout && MENU_LAYOUTS.includes(data.menuLayout) && !old) {
             s.menuLayout = data.menuLayout;
         }
     } catch {

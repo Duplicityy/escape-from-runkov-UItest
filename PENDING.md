@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 114 (built 6 November 2026, not deployed): the playtest's OSRS-styled menus and room
+icons (`src/skin.css`, the "Card and rooms" title screen, now the default on a computer) and the
+night torchlight (`src/game/torch.ts`) brought onto main from the playtest branch's 807a70a and
+1f4398c. The playtest's every-item kit and 250 runes a kind stay on the playtest only. The title
+screen's build line no longer says "playtest". `GAME_BUILD` 114.
+
 Version 113 (built 6 November 2026, not deployed): on a computer the chat box is at the bottom
 left, left of the hotbar, opening upward (README's "Chat"); a phone keeps it at the top. Only
 `style.css` changed. Checked at 1600 by 900: open and folded it stays clear of the hotbar, and the

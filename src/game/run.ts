@@ -4,6 +4,7 @@
 import * as THREE from "three";
 
 import { PLAYER_SOUND_NPC } from "../content/bodies";
+import { TORCHES, addTorchTo, flicker, setTorch, setTorchNight, torchesOut } from "./torch";
 import { EnemyDef } from "../content/enemies";
 import {
     BOLT,
@@ -586,6 +587,15 @@ const NIGHT_LIGHT = new THREE.Color(0.35, 0.41, 0.68);
 const NIGHT_SKY = 0x0f1424;
 const NIGHT_FOG: [number, number] = [12, 34];
 const NIGHT_AGGRO = 0.6;
+// How often a night run gives new things in the scene the torchlight
+const TORCH_SWEEP = 0.5;
+const FORCE_NIGHT = (() => {
+    try {
+        return new URLSearchParams(location.search).has("night");
+    } catch {
+        return false;
+    }
+})();
 const DAY_LIGHT = new THREE.Color(1, 1, 1);
 const WHITE = new THREE.Color(1, 1, 1);
 // The boss stands where the fight has room: at least this many open tiles
@@ -883,8 +893,10 @@ export class Run {
         this.spellbook = carry.spellbook === "ancient" ? "ancient" : "standard";
         this.coop = coop;
         this.hostLeft = this.closeSeconds();
-        // The first draw, so every browser in a party gets the same night
-        this.night = this.rng() < NIGHT_CHANCE;
+        // The first draw, so every browser in a party gets the same night;
+        // alone, ?night in the address makes every run a night (a way to
+        // try the torchlight)
+        this.night = this.rng() < NIGHT_CHANCE || (!coop && FORCE_NIGHT);
         this.inventory = carry.inventory.map((s) => ({ ...s }));
         this.equipment = { ...carry.equipment };
         this.coins = carry.coins;
@@ -984,6 +996,7 @@ export class Run {
         this.scene.background = new THREE.Color(NIGHT_SKY);
         this.scene.fog = new THREE.Fog(NIGHT_SKY, NIGHT_FOG[0], NIGHT_FOG[1]);
         setWorldLight(NIGHT_LIGHT);
+        setTorchNight(NIGHT_LIGHT);
         this.nightApplied = true;
         this.applyNightTo(this.map);
     }
@@ -2321,6 +2334,7 @@ export class Run {
         }
         this.nightMaterials = [];
         setWorldLight(DAY_LIGHT);
+        torchesOut();
         for (const d of this.disposables) {
             d.dispose();
         }
@@ -2631,6 +2645,35 @@ export class Run {
         return special;
     }
 
+    // Torchlight on a night run (version 114, torch.ts): a torch with
+    // this player and each mate still in it. What's come into the scene
+    // since (the map's far squares, enemies, drops) takes the light every
+    // TORCH_SWEEP seconds.
+    private torchSweep = 0;
+
+    private updateTorches(dt: number): void {
+        if (!this.night) {
+            return;
+        }
+        this.torchSweep -= dt;
+        if (this.torchSweep <= 0) {
+            this.torchSweep = TORCH_SWEEP;
+            addTorchTo(this.scene);
+        }
+        const heroes: { x: number; z: number; out: boolean }[] = [
+            { x: this.px, z: this.pz, out: this.dead },
+            ...[...this.mates.values()].map((m) => ({ x: m.x, z: m.z, out: m.dead || m.done })),
+        ];
+        for (let i = 0; i < TORCHES; i++) {
+            const h = heroes[i];
+            if (!h || h.out) {
+                setTorch(i, 0, -1000, 0, 0);
+            } else {
+                setTorch(i, h.x, this.groundY(h.x, h.z) + 1.1, h.z, flicker(this.time, i * 1.7));
+            }
+        }
+    }
+
     private update(dt: number): void {
         this.time += dt;
         if (!this.player) {
@@ -2652,6 +2695,7 @@ export class Run {
         this.updateHazards(dt);
         this.updateSplats(dt);
         this.updateEffects(dt);
+        this.updateTorches(dt);
         this.updatePickups(dt);
         this.updateInteractions(dt);
         this.player.update(dt);
