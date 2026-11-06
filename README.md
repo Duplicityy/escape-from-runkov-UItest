@@ -582,7 +582,14 @@ shows as a band round it), `item`/`player items 28937 --like 28937:28936 --inset
 --recolor 5223:41,5347:41,5210:33,5334:33,5202:24,5198:21939,6608:21939,4550:21939` (the first model
 the worn one, the second the inventory one; 5198 is the chest sun's points, green, its middle left
 as it was; `scripts/cache/dump-face-normals.ts <model> 6608`
-lists the faces). The chausses are as before. The relay is Run Escape's (`relay/coop-relay.mjs`, plain Node), hosted on
+lists the faces). The chausses' dark grey tassets have a green trim round them the same way:
+their own panel's faces (5198's faces above the knee guards: 315 to 324, 329 to 338, 342 to 345,
+359 to 364, 374 to 384 and 394 to 397) inset 3 units, the copies keeping their own colour and
+the faces underneath painted the trim, `player items 28940 --like 28940:28939 --inset
+"50855:<those faces>:-1:3:21939" --recolor 5347:41,5210:33,5334:33,5202:24,5198:24,6608:21939,4550:21939`
+(the cracked pattern is separate shards laid over the panel, and stays on top; the chausses' icon
+is as it was). `--inset` moves the patch's outline in as a whole, corner by corner, so a panel cut
+into thin slivers still gets an even band. The relay is Run Escape's (`relay/coop-relay.mjs`, plain Node), hosted on
 Fly.io in Dallas; `relay/README.md` has the steps, and `src/game/coop.ts` the address it's built
 with (`VITE_COOP_URL`, or `DEFAULT_RELAY`). A room only takes players on the same build of the game
 (`GAME_BUILD` in `coop.ts`, raised with every push).
