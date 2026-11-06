@@ -313,9 +313,10 @@ browsers.
   spell and nothing else, for the runes a charge costs, at the staff's own max hit: the
   tridents of the seas and the swamp (venom one hit in four), the Sanguinesti staff (heals
   half a hit one in five), Tumeken's shadow, the warped sceptre, the bone staff, the Eye of
-  Ayak and the lithic sceptre (body runes, new, and earth). Six weapons that aren't magic
+  Ayak and the lithic sceptre (body runes, new, and earth). Five weapons that aren't magic
   weapons in OSRS are swung now: the mjolnirs, Pharaoh's sceptre, the Dramen staff, the
-  Merfolk trident, the skull sceptre and the demonic sceptre.
+  Merfolk trident and the demonic sceptre. The skull sceptre casts like a staff (build 126),
+  though the unimbued one can't in OSRS.
 - Every hit shows its number as a hitsplat, the client's red square, floating up off whoever
   took it. An enemy shows a health bar over its head, the client's way, while it's fighting and
   for six seconds after it's hurt. The boss has the bar at the top of the screen instead.

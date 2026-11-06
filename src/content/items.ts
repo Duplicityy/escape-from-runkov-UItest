@@ -1109,11 +1109,11 @@ export const ITEMS: ItemDef[] = [
     // Magic weapons
     staff(28796, "Bone staff", 1, 9, 80),
     staff(1389, "Magic staff", 1, 10, 300),
-    // Not magic weapons in OSRS (version 110), so swung: the skull sceptre
-    // (unimbued, it casts no combat spell), the mjolnirs and Pharaoh's
-    // sceptre (polestaves), the Dramen staff (blunt), the Merfolk trident (a
-    // spear) and the demonic sceptre (spiked)
-    weapon(9013, "Skull sceptre", 1, 10, 0.9, 500),
+    // Casts like a staff, though the unimbued one doesn't in OSRS
+    staff(9013, "Skull sceptre", 1, 10, 500),
+    // Not magic weapons in OSRS (version 110), so swung: the mjolnirs and
+    // Pharaoh's sceptre (polestaves), the Dramen staff (blunt), the Merfolk
+    // trident (a spear) and the demonic sceptre (spiked)
     staff(6603, "White magic staff", 2, 12, 800),
     weapon(6760, "Guthix mjolnir", 2, 18, 1.2, 3000, { stance: "staff" }),
     weapon(6762, "Saradomin mjolnir", 2, 18, 1.2, 3000, { stance: "staff" }),

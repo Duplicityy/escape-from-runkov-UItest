@@ -1,6 +1,10 @@
 # Pending for the next push
 
-Version 125 (built 6 November 2026): a finger on the world swings as it lands again, as the user
+Version 126 (built 6 November 2026): the skull sceptre is a magic weapon, cast like the magic
+staff (tier 1, max hit 10, range 6, runes or a picked spell) in place of a swung club, as the
+user asked. `GAME_BUILD` 126.
+
+Version 125 (built 6 November 2026; on the main site as 105.8, the playtest with 117.3): a finger on the world swings as it lands again, as the user
 asked, not as it lifts (124's change taken back); dragging still turns the camera. `GAME_BUILD`
 125.
 
