@@ -5,6 +5,7 @@
 // (PET_BUFFS; run.ts applies them).
 import * as THREE from "three";
 
+import { CROWN_PETS } from "../content/crownpets";
 import { getWorld } from "../content/worlds";
 import { Actor, createActor, play, tint } from "./assets";
 import { GearStats } from "./inventory";
@@ -15,8 +16,15 @@ export const PET_ONE_IN = 8;
 // How tall a pet stands, in tiles
 const PET_HEIGHT = 0.9;
 
+export { isBossPet } from "../content/crownpets";
+
 export function petName(worldId: string): string {
-    return `Little ${getWorld(worldId).boss.name.toLowerCase()}`;
+    return CROWN_PETS[worldId]?.name ?? `Little ${getWorld(worldId).boss.name.toLowerCase()}`;
+}
+
+// Where a pet's from, for the Tasks screen
+export function petFrom(id: string): string {
+    return CROWN_PETS[id] ? CROWN_PETS[id].from : `from ${getWorld(id).name}`;
 }
 
 // What a pet does for you while it follows, one small thing each, after
@@ -77,7 +85,7 @@ export const PET_BUFFS: Record<string, PetBuff> = {
 };
 
 export function petBuff(worldId: string | undefined): PetBuff | undefined {
-    return worldId !== undefined ? PET_BUFFS[worldId] : undefined;
+    return worldId !== undefined ? (PET_BUFFS[worldId] ?? CROWN_PETS[worldId]?.buff) : undefined;
 }
 
 // The buff's part in the gear's numbers (the rest is run.ts's, as the
@@ -99,9 +107,9 @@ export function applyPetStats(stats: GearStats, buff: PetBuff | undefined): void
     stats.prayer += buff.prayer ?? 0;
 }
 
-// The boss's own model, shrunk to a pet, standing idle
+// The boss's own model (or a crown pet's own), shrunk to a pet, standing idle
 export async function createPet(worldId: string): Promise<Actor> {
-    const actor = await createActor("npcs", getWorld(worldId).boss.npcId);
+    const actor = await createActor("npcs", CROWN_PETS[worldId]?.npcId ?? getWorld(worldId).boss.npcId);
     const scale = petScale(actor);
     actor.root.scale.setScalar(scale);
     tint(actor, new THREE.Color(1, 1, 1));

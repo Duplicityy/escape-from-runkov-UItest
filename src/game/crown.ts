@@ -136,6 +136,13 @@ export function crownVerified(key: string | undefined, then?: () => void): Crown
     return undefined;
 }
 
+// Whether a key's check is done (or there's no key): only then is "no
+// crown" known to mean none (version 118: a crown pet isn't taken away
+// while its crown is still being checked)
+export function crownKnown(key: string | undefined): boolean {
+    return !key || checked.has(key);
+}
+
 async function hash(text: string): Promise<string> {
     try {
         const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));

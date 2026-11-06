@@ -1,9 +1,10 @@
 {
-    "_about": "What scripts/copy-assets.mjs copies from ../full-assets into public/assets, by cache id. Folders are renamed to the bare id: public/assets/npcs/3014/model.glb, public/assets/items/1333/icon.png and so on. Enemies and bosses come from src/content/worlds.json; the NPCs here are the player's sounds (3014), the wandering trader (6750) and the genie at the spawn (326).",
+    "_about": "What scripts/copy-assets.mjs copies from ../full-assets into public/assets, by cache id. Folders are renamed to the bare id: public/assets/npcs/3014/model.glb, public/assets/items/1333/icon.png and so on. Enemies and bosses come from src/content/worlds.json; the NPCs here are the player's sounds (3014), the wandering trader (6750), the genie at the spawn (326) and Yami, the owner's own pet (14203).",
     "npcs": [
         3014,
         6750,
-        326
+        326,
+        14203
     ],
     "items": [
         1205,

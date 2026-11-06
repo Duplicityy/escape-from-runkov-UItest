@@ -52,7 +52,7 @@ import {
     staffCasts,
 } from "../content/spells";
 import { TASKS, Task } from "../content/tasks";
-import { isKept } from "../game/kit";
+import { isKept, restoreCrownPets } from "../game/kit";
 import { Chat } from "./chat";
 import { FullMap } from "./fullmap";
 import { REGEN_DELAY, soak } from "../game/combat";
@@ -82,7 +82,7 @@ import {
 } from "../game/inventory";
 import { MenuScene } from "../game/menu";
 import { applyMusicVolume } from "../game/music";
-import { PET_ONE_IN, petBuff, petName } from "../game/pets";
+import { PET_ONE_IN, isBossPet, petBuff, petFrom, petName } from "../game/pets";
 import { BODY_PART_NAMES, COLOR_GROUP_NAMES, loadColorTables, loadKits } from "../game/player";
 import { Run, RunResult, TRADER_MARKUP } from "../game/run";
 import {
@@ -900,6 +900,8 @@ export class UI {
             this.replaceSave(parsed);
         }
         this.save.character.name = name;
+        // A crown's own pet (version 118) is this browser's crown's to give
+        restoreCrownPets(this.save);
         writeSave(this.save, true);
         this.accountChanged();
     }
@@ -4797,7 +4799,7 @@ export class UI {
                 "div",
                 { class: "item-row" + (following ? " done" : "") },
                 h("span", { class: "name" }, petName(id)),
-                h("span", { class: "stats" }, `from ${getWorld(id).name}: ${petBuff(id)?.text ?? ""}${following ? " (following you)" : ""}`),
+                h("span", { class: "stats" }, `${petFrom(id)}: ${petBuff(id)?.text ?? ""}${following ? " (following you)" : ""}`),
                 following
                     ? h("button", { onclick: () => choosePet(undefined) }, "Stay")
                     : h("button", { class: "primary", onclick: () => choosePet(id) }, "Follow"),

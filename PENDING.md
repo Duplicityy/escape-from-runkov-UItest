@@ -1,5 +1,12 @@
 # Pending for the next push
 
+Version 118 (built 6 November 2026, not deployed): Yami, the owner crown's own pet (README's
+"pet"). NPC 14203 exported from the cache with its idle (12140, 40 frames) and walk (12143, 20
+frames) into full-assets/npcs/14203-yami and packed to public/assets/npcs/14203.glb (2.3 MB);
+added to assets.json. Its buff: hits 6% harder. Checked on the dev server with the owner crown:
+given on load and following, idle on the title screen, walking after the player in a run, its
+buff in the run. `GAME_BUILD` 118.
+
 Version 117 (built 6 November 2026, playtest only): Log out to switch accounts or make another
 (README's "Accounts"): on the title screen and in Settings; what's changed is sent first, then
 the device starts clean. Checked locally: Fish One made with 4,242 coins, logged out, Fish Two

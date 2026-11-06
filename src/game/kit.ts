@@ -9,7 +9,8 @@
 // of it; it can't be sold, and it stays out of gravestones so coming back
 // doesn't make two.
 import { AMMO_LIMITS, COINS, FOOD_LIMIT, GILDED, GUTHIX_SUNFIRE, ITEMS, ItemDef } from "../content/items";
-import { crownKey, crownVerified } from "./crown";
+import { CROWN_PETS } from "../content/crownpets";
+import { crownKey, crownKnown, crownVerified } from "./crown";
 import { addItem, countOf } from "./inventory";
 import { SaveData, loadedSlot } from "./save";
 
@@ -56,6 +57,36 @@ function kitHere(): { id: number; count: number }[] {
 // Whether a piece is one this character keeps (and so can't sell)
 export function isKept(id: number): boolean {
     return kitHere().some((k) => k.id === id);
+}
+
+// A crown's own pet (version 118, content/crownpets.ts): every character of
+// a browser holding that crown has it, following unless another pet was
+// picked; a save without the crown has it taken away (once the crown's check
+// is done, so it isn't taken from its owner while that's still going). True
+// if anything changed (the caller saves).
+export function restoreCrownPets(save: SaveData): boolean {
+    const key = crownKey();
+    if (!crownKnown(key)) {
+        return false;
+    }
+    const crown = crownVerified(key);
+    let changed = false;
+    for (const [id, pet] of Object.entries(CROWN_PETS)) {
+        const theirs = crown?.alt === pet.crown;
+        const has = save.pets.includes(id);
+        if (theirs && !has) {
+            save.pets.push(id);
+            save.pet ??= id;
+            changed = true;
+        } else if (!theirs && has) {
+            save.pets = save.pets.filter((p) => p !== id);
+            if (save.pet === id) {
+                save.pet = undefined;
+            }
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 // Tops the stash back up with whatever of the kit is short; true if anything

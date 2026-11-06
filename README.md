@@ -180,7 +180,13 @@ browsers.
   five taking no ammunition, TzTok-Jad's 8 hitpoints, Skotizo's 1 off every hit taken, the
   Javelin Colossus's 5% faster walking, Sotetseg's breath caught twice as fast, K'ril's hits 5%
   harder, the Hunllef's 15% more coins from kills (the host's pet, for a party's drops), and
-  JalTok-Jad's burning floor at half.
+  JalTok-Jad's burning floor at half. A crown's **own pet** (version 118,
+  `content/crownpets.ts`) is no boss's: the owner's crown has **Yami**, Yama's pet (NPC 14203,
+  model 10339, its idle 12140 and walk 12143, exported with `export-assets.ts npc 14203` and in
+  `assets.json`), whose hits land 6% harder. Every character of a browser holding that crown has
+  it, following unless another pet's picked (`restoreCrownPets` in `kit.ts`, once the crown's
+  check is done); a save without the crown has it taken away. It counts for none of the pet tasks,
+  and the party sees it like any pet.
 - One run in four is at **night**: the sky and fog close in, the map and everything on it go
   down to a blue dark (the map's materials are darkened in place and put back when the run
   stops, since the menu shares the model; `worldLight` in `assets.ts` is the light on everything

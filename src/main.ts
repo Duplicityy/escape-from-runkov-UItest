@@ -9,7 +9,7 @@ import { GameStart, Session } from "./game/coop";
 import { crownKey, crownVerified, takeCrownFromUrl } from "./game/crown";
 import { addItem, countOf } from "./game/inventory";
 import { loadIconSheet } from "./game/icons";
-import { restoreKit } from "./game/kit";
+import { restoreCrownPets, restoreKit } from "./game/kit";
 import { MenuScene } from "./game/menu";
 import { PlayerLook } from "./game/player";
 import { CoopSetup, Run, RunCarry, RunResult } from "./game/run";
@@ -57,8 +57,10 @@ crownVerified(crownKey(), () => {
         location.reload();
         return;
     }
-    // The crown's known now, so the owner's kept kit can be put back
-    if (restoreKit(save)) {
+    // The crown's known now, so the owner's kept kit can be put back, and a
+    // crown's own pet (version 118) given, or taken from a save without it
+    const kit = restoreKit(save);
+    if (restoreCrownPets(save) || kit) {
         writeSave(save);
     }
     ui.onSessionChange();
@@ -333,8 +335,10 @@ async function onRunEnd(result: RunResult): Promise<void> {
     }
     // Insurance is for one run, whichever way it went
     save.insured = undefined;
-    // The owner's kept kit comes home whatever happened (kit.ts)
+    // The owner's kept kit comes home whatever happened (kit.ts), and a
+    // crown's pet stays its own
     restoreKit(save);
+    restoreCrownPets(save);
     // Wear is only kept for gear still owned somewhere
     const owned = new Set<number>([
         ...save.stash.map((s) => s.id),
