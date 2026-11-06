@@ -1,19 +1,30 @@
-// The spellbook (version 106): the standard spellbook's twenty combat spells,
-// OSRS's own, with OSRS's rune costs and spot animations. A staff casts them
-// (any weapon that uses runes); which ones it can is its tier, as the game
-// has no Magic level: a tier 1 staff casts strikes, tier 2 bolts too, then
-// blasts, waves, and at tier 5 surges. A spell hits what the staff's max hit
-// says when it is the staff's own tier's fire spell, a little less for the
-// other elements, and less again for a lower family (spellScale), the way
-// arrows did a bow before. Elemental staffs, battlestaves, mystic staves and
-// the tomes give their element's runes for nothing, as in OSRS.
+// The spellbooks: the standard spellbook's twenty combat spells (version 106)
+// and Ancient Magicks' sixteen (version 107), OSRS's own, with OSRS's rune
+// costs and spot animations. A staff casts them (any weapon that uses
+// runes); which ones it can is its tier, as the game has no Magic level: a
+// tier 1 staff casts strikes, tier 2 bolts too, then blasts, waves, and at
+// tier 5 surges. Ancient Magicks also need a staff that can cast them, OSRS's
+// list (ANCIENT_STAVES): rushes at tier 3, bursts and blitzes at 4, barrages
+// at 5. A standard spell hits what the staff's max hit says when it is the
+// staff's own tier's fire spell, a little less for the other elements, and
+// less again for a lower family (spellScale), the way arrows did a bow
+// before. Elemental staffs, battlestaves, mystic staves and the tomes give
+// their element's runes for nothing, as in OSRS.
 import { ItemDef, MATCH_POWER } from "./items";
+
+export type Book = "standard" | "ancient";
+export const BOOKS: Book[] = ["standard", "ancient"];
 
 export type Element = "wind" | "water" | "earth" | "fire";
 export type SpellFamily = "strike" | "bolt" | "blast" | "wave" | "surge";
+export type AncientElement = "smoke" | "shadow" | "blood" | "ice";
+export type AncientFamily = "rush" | "burst" | "blitz" | "barrage";
 
 export const ELEMENTS: Element[] = ["wind", "water", "earth", "fire"];
 export const FAMILIES: SpellFamily[] = ["strike", "bolt", "blast", "wave", "surge"];
+// Across the Ancient page by level, as OSRS lists them; down by family
+export const ANCIENT_ELEMENTS: AncientElement[] = ["smoke", "shadow", "blood", "ice"];
+export const ANCIENT_FAMILIES: AncientFamily[] = ["rush", "burst", "blitz", "barrage"];
 
 // The runes
 export const AIR = 556;
@@ -24,24 +35,46 @@ export const MIND = 558;
 export const CHAOS = 562;
 export const DEATH = 560;
 export const BLOOD = 565;
+export const SOUL = 566;
 export const WRATH = 21880;
 
 export type RuneCost = { id: number; n: number };
 
+// What an Ancient spell does besides its hit (version 107), OSRS's way:
+// smoke poisons (a share of the spell's max hit every POISON_EVERY seconds,
+// POISON_HITS times), shadow takes a share off the target's hits for
+// WEAKEN_SECONDS, blood heals the caster a share of what it dealt, and ice
+// freezes the target in place (bosses shrug it off)
+export type SpellEffect =
+    | { kind: "poison"; share: number }
+    | { kind: "weaken"; share: number }
+    | { kind: "heal"; share: number }
+    | { kind: "freeze"; seconds: number };
+export const POISON_EVERY = 3;
+export const POISON_HITS = 5;
+export const WEAKEN_SECONDS = 30;
+
 export type SpellDef = {
     id: string;
     name: string;
-    family: SpellFamily;
-    element: Element;
+    book: Book;
+    family: SpellFamily | AncientFamily;
+    element: Element | AncientElement;
     // The staff tier that casts it (a family's tier)
     tier: number;
     // Its share of the staff's max hit against MATCH_POWER (spellScale)
     power: number;
     runes: RuneCost[];
-    // Spot animations: on the caster, flying, and where it lands
-    cast: number;
-    projectile: number;
+    // Spot animations: on the caster, flying, and where it lands. A spell
+    // with no flight (a burst, a barrage but ice's) lands on the target as
+    // it's cast.
+    cast?: number;
+    projectile?: number;
     impact: number;
+    // A burst or barrage: everything within a tile of the target (OSRS's
+    // three by three) takes it too, up to nine in all
+    area?: boolean;
+    effect?: SpellEffect;
     // The spellbook's icon (public/ui/spells/<id>.png, the cache's sprite)
     icon: string;
 };
@@ -74,7 +107,7 @@ const LOOKS: Record<SpellFamily, Record<Element, [number, number, number]>> = {
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
-export const SPELLS: SpellDef[] = FAMILIES.flatMap((family) =>
+const STANDARD: SpellDef[] = FAMILIES.flatMap((family) =>
     ELEMENTS.map((element) => {
         const tier = FAMILY_TIER[family];
         const [own, air] = COSTS[family][element];
@@ -90,6 +123,7 @@ export const SPELLS: SpellDef[] = FAMILIES.flatMap((family) =>
         return {
             id,
             name: `${cap(element)} ${cap(family)}`,
+            book: "standard" as const,
             family,
             element,
             tier,
@@ -103,7 +137,109 @@ export const SPELLS: SpellDef[] = FAMILIES.flatMap((family) =>
     }),
 );
 
+// An Ancient spell's power from its OSRS max hit, on the line the standard
+// fire spells draw through theirs (OSRS 8, 12, 16, 20, 24 are the game's
+// 0.8, 1.0, 1.2, 1.3, 1.45), carried on past 24 at the surge's slope
+function powerOfMaxHit(max: number): number {
+    const points: [number, number][] = [
+        [8, MATCH_POWER[1]],
+        [12, MATCH_POWER[2]],
+        [16, MATCH_POWER[3]],
+        [20, MATCH_POWER[4]],
+        [24, MATCH_POWER[5]],
+    ];
+    for (let i = 1; i < points.length; i++) {
+        const [x0, y0] = points[i - 1];
+        const [x1, y1] = points[i];
+        if (max <= x1 || i === points.length - 1) {
+            return Math.round((y0 + ((max - x0) * (y1 - y0)) / (x1 - x0)) * 1000) / 1000;
+        }
+    }
+    return MATCH_POWER[5];
+}
+
+const ANCIENT_TIER: Record<AncientFamily, number> = { rush: 3, burst: 4, blitz: 4, barrage: 5 };
+
+// OSRS's Ancient Magicks (the wiki's numbers): max hit, runes, and the look
+// [cast, projectile, impact] (0 for none)
+type AncientRow = { max: number; runes: [number, number][]; look: [number, number, number] };
+const ANCIENT: Record<AncientFamily, Record<AncientElement, AncientRow>> = {
+    rush: {
+        smoke: { max: 13, runes: [[AIR, 1], [FIRE, 1], [CHAOS, 2], [DEATH, 2]], look: [0, 384, 385] },
+        shadow: { max: 14, runes: [[AIR, 1], [SOUL, 1], [CHAOS, 2], [DEATH, 2]], look: [0, 378, 379] },
+        blood: { max: 15, runes: [[BLOOD, 1], [CHAOS, 2], [DEATH, 2]], look: [0, 372, 373] },
+        ice: { max: 16, runes: [[WATER, 2], [CHAOS, 2], [DEATH, 2]], look: [0, 360, 361] },
+    },
+    burst: {
+        smoke: { max: 17, runes: [[AIR, 2], [FIRE, 2], [CHAOS, 4], [DEATH, 2]], look: [0, 0, 389] },
+        shadow: { max: 18, runes: [[AIR, 1], [SOUL, 2], [CHAOS, 4], [DEATH, 2]], look: [0, 0, 382] },
+        blood: { max: 21, runes: [[BLOOD, 2], [CHAOS, 4], [DEATH, 2]], look: [0, 0, 376] },
+        ice: { max: 22, runes: [[WATER, 4], [CHAOS, 4], [DEATH, 2]], look: [0, 0, 363] },
+    },
+    blitz: {
+        smoke: { max: 23, runes: [[AIR, 2], [FIRE, 2], [BLOOD, 2], [DEATH, 2]], look: [0, 386, 387] },
+        shadow: { max: 24, runes: [[AIR, 2], [SOUL, 2], [BLOOD, 2], [DEATH, 2]], look: [0, 380, 381] },
+        blood: { max: 25, runes: [[BLOOD, 4], [DEATH, 2]], look: [0, 374, 375] },
+        ice: { max: 26, runes: [[WATER, 3], [BLOOD, 2], [DEATH, 2]], look: [366, 0, 367] },
+    },
+    barrage: {
+        smoke: { max: 27, runes: [[AIR, 4], [FIRE, 4], [BLOOD, 2], [DEATH, 4]], look: [0, 0, 391] },
+        shadow: { max: 28, runes: [[AIR, 4], [SOUL, 3], [BLOOD, 2], [DEATH, 4]], look: [0, 0, 383] },
+        blood: { max: 29, runes: [[BLOOD, 4], [DEATH, 4], [SOUL, 1]], look: [0, 0, 377] },
+        ice: { max: 30, runes: [[WATER, 6], [BLOOD, 2], [DEATH, 4]], look: [0, 368, 369] },
+    },
+};
+
+// OSRS's freezes: 4.8, 9.6, 14.4 and 19.2 seconds
+const FREEZE_SECONDS: Record<AncientFamily, number> = { rush: 4.8, burst: 9.6, blitz: 14.4, barrage: 19.2 };
+
+function ancientEffect(family: AncientFamily, element: AncientElement): SpellEffect {
+    const strong = family === "blitz" || family === "barrage";
+    switch (element) {
+        case "smoke":
+            // OSRS starts the poison at 2 (rush, burst) or 4 (blitz, barrage)
+            return { kind: "poison", share: strong ? 0.17 : 0.15 };
+        case "shadow":
+            return { kind: "weaken", share: strong ? 0.15 : 0.1 };
+        case "blood":
+            return { kind: "heal", share: 0.25 };
+        case "ice":
+            return { kind: "freeze", seconds: FREEZE_SECONDS[family] };
+    }
+}
+
+const ANCIENT_SPELLS: SpellDef[] = ANCIENT_FAMILIES.flatMap((family) =>
+    ANCIENT_ELEMENTS.map((element) => {
+        const row = ANCIENT[family][element];
+        const [cast, projectile, impact] = row.look;
+        const id = `${element}_${family}`;
+        return {
+            id,
+            name: `${cap(element)} ${cap(family)}`,
+            book: "ancient" as const,
+            family,
+            element,
+            tier: ANCIENT_TIER[family],
+            power: powerOfMaxHit(row.max),
+            runes: row.runes.map(([rune, n]) => ({ id: rune, n })),
+            cast: cast || undefined,
+            projectile: projectile || undefined,
+            impact,
+            area: family === "burst" || family === "barrage",
+            effect: ancientEffect(family, element),
+            icon: id,
+        };
+    }),
+);
+
+export const SPELLS: SpellDef[] = [...STANDARD, ...ANCIENT_SPELLS];
 export const SPELL_BY_ID = new Map(SPELLS.map((s) => [s.id, s]));
+
+// The staves that cast Ancient Magicks, OSRS's list: the ancient staff and
+// sceptres, the master, Kodai and dragon hunter wands, the nightmare staves,
+// Thammaron's and the accursed sceptre; Ahrim's staff with Ahrim's whole set
+export const ANCIENT_STAVES = new Set([4675, 27624, 25489, 25490, 25491, 25492, 6914, 21006, 30070, 24422, 24424, 24425, 22555, 27665]);
+export const AHRIMS_STAFF = 4710;
 
 // Staves (and the tomes, held in the shield hand) that give runes, by the
 // runes they give: OSRS's elemental staves, battlestaves and mystic staves,
@@ -137,9 +273,15 @@ export function spellCost(spell: SpellDef, given: Set<number>): RuneCost[] {
     return spell.runes.filter((r) => !given.has(r.id));
 }
 
-// Whether a staff can cast a spell at all (its tier is enough)
-export function staffCasts(weapon: ItemDef | undefined, spell: SpellDef): boolean {
-    return weapon?.uses === "runes" && weapon.tier >= spell.tier;
+// Whether a staff casts Ancient Magicks at all (Ahrim's only with its set)
+export function castsAncients(weapon: ItemDef | undefined, ahrimSet = false): boolean {
+    return !!weapon && (ANCIENT_STAVES.has(weapon.id) || (weapon.id === AHRIMS_STAFF && ahrimSet));
+}
+
+// Whether a staff can cast a spell at all: its tier is enough, and for an
+// Ancient spell it's a staff that casts them
+export function staffCasts(weapon: ItemDef | undefined, spell: SpellDef, ahrimSet = false): boolean {
+    return weapon?.uses === "runes" && weapon.tier >= spell.tier && (spell.book === "standard" || castsAncients(weapon, ahrimSet));
 }
 
 // A spell's share of the staff's max hit: its power against the staff's own
@@ -157,24 +299,29 @@ export function castsLeft(spell: SpellDef, given: Set<number>, count: (id: numbe
     return casts;
 }
 
-// The spell a staff casts on its own (autocast unset): the strongest it can,
-// with the runes for it (the highest family, fire before earth, water, wind)
-export function bestSpell(weapon: ItemDef | undefined, given: Set<number>, count: (id: number) => number): SpellDef | undefined {
+// The spell a staff casts on its own (autocast unset): the strongest of the
+// book open it can cast, with the runes for it
+export function bestSpell(weapon: ItemDef | undefined, given: Set<number>, count: (id: number) => number, book: Book = "standard", ahrimSet = false): SpellDef | undefined {
     let best: SpellDef | undefined;
     for (const spell of SPELLS) {
-        if (staffCasts(weapon, spell) && castsLeft(spell, given, count) > 0 && (!best || spell.power > best.power)) {
+        if (spell.book === book && staffCasts(weapon, spell, ahrimSet) && castsLeft(spell, given, count) > 0 && (!best || spell.power > best.power)) {
             best = spell;
         }
     }
     return best;
 }
 
-// A kill's runes (version 106): an elemental rune's handful, or a few of the
-// map tier's catalyst, so a pack can keep up with OSRS's costs
+// A kill's runes (version 106): an elemental rune's handful, or a few of a
+// catalyst: half the time the map tier's own, else one of the tiers below
+// that Ancient Magicks also want (chaos, death, and from tier 4 soul runes)
 export function runeDrop(tier: number, roll: number, roll2: number, randInt: (lo: number, hi: number) => number): { id: number; count: number } {
     if (roll < 0.6) {
         const element = [AIR, WATER, EARTH, FIRE][Math.min(3, Math.floor(roll2 * 4))];
         return { id: element, count: randInt(15, 30) };
+    }
+    const lower = [...(tier >= 3 ? [CHAOS] : []), ...(tier >= 4 ? [DEATH, SOUL] : [])];
+    if (roll < 0.8 && lower.length > 0) {
+        return { id: lower[Math.min(lower.length - 1, Math.floor(roll2 * lower.length))], count: randInt(4, 8) };
     }
     return { id: catalystOfTier(tier), count: randInt(4, 8) };
 }

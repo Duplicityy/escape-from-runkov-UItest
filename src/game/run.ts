@@ -26,7 +26,22 @@ import {
     rollGear,
     specialOf,
 } from "../content/items";
-import { SPELL_BY_ID, SpellDef, bestSpell, castsLeft, runeDrop, runesGiven, spellCost, spellScale, staffCasts } from "../content/spells";
+import {
+    Book,
+    POISON_EVERY,
+    POISON_HITS,
+    SPELL_BY_ID,
+    SpellDef,
+    WEAKEN_SECONDS,
+    bestSpell,
+    castsAncients,
+    castsLeft,
+    runeDrop,
+    runesGiven,
+    spellCost,
+    spellScale,
+    staffCasts,
+} from "../content/spells";
 import { WorldDef } from "../content/worlds";
 import { GameStart } from "./coop";
 import { Hero, Mate } from "./mates";
@@ -124,8 +139,10 @@ export type RunCarry = {
     // and comes back with the gear
     wear?: Wear;
     // The spell picked to autocast (content/spells.ts; version 106), or
-    // none: a staff then casts the strongest it can
+    // none: a staff then casts the strongest it can of the book open
+    // (standard or Ancient Magicks, version 107)
     autocast?: string;
+    spellbook?: Book;
 };
 
 // A style to protect from: enemies hit with it do half while the prayer
@@ -253,6 +270,16 @@ type Enemy = {
     floorIn: number;
     // Seconds of crawling, from Ahrim's set
     slow: number;
+    // Ancient Magicks (version 107): seconds frozen in place (ice); a share
+    // off its hits and for how long (shadow); poison (smoke): what each
+    // hit of it does, how many are left, seconds to the next, and whose
+    frozen: number;
+    weak: number;
+    weakLeft: number;
+    poisonHit: number;
+    poisonLeft: number;
+    poisonNext: number;
+    poisonBy?: Hero;
     // A shooter that alternates: what the next shot is
     style?: "magic" | "ranged";
     // A second form, once it's fallen the first time
@@ -360,6 +387,12 @@ type Projectile = {
     impact?: number;
     // A chinchompa's: what's beside the target takes half too
     splash?: boolean;
+    // The player's spell, and its max hit (an Ancient spell's area and
+    // effect go by them); an enemy's shot's share of its hit (shadow
+    // spells take some off)
+    spell?: SpellDef;
+    maxHit?: number;
+    scale?: number;
 };
 
 type Effect = { actor: Actor; left: number };
@@ -521,8 +554,14 @@ const AMMO_DROP_CHANCE = 0.25;
 // How far a chinchompa's burst reaches past what it hit, in tiles
 const SPLASH_TILES = 1.5;
 
-// How a shot looks: the spot animation flying, and the one where it lands
-type Look = { projectile?: number; impact?: number };
+// What a hit does besides its damage: Ahrim's slow, Torag's stall, and an
+// Ancient spell's freeze (seconds), weaken (a share off its hits) and poison
+// (what each poison hit does); poisoned marks a poison hit itself
+type HitEffects = { slow?: boolean; stall?: boolean; freeze?: number; weaken?: number; poison?: number; poisoned?: boolean };
+
+// How a shot looks: the spot animation flying, and the one where it lands;
+// and, cast, the spell and its max hit (an Ancient spell's area and effect)
+type Look = { projectile?: number; impact?: number; spell?: SpellDef; maxHit?: number };
 // A kill drops a prayer potion this often, and a clue scroll this often
 // (one a run); the scroll's spot is this many steps off, and digging works
 // this close to it
@@ -677,8 +716,9 @@ export class Run {
     private champions = new Map<EnemyDef, EnemyDef>();
     private ammoMessageAt = -10;
     // The spell picked to autocast (the spellbook sets it), or none for the
-    // strongest the staff can cast with the runes packed
+    // strongest the staff can cast with the runes packed; and the book open
     autocast?: string;
+    spellbook: Book = "standard";
     private slamRing?: THREE.RingGeometry;
     private hazards: Hazard[] = [];
     // A ring under the enemy being hit, where there's no cursor to show it
@@ -835,6 +875,7 @@ export class Run {
         this.rng = makeRng(seed);
         this.carry = carry;
         this.autocast = carry.autocast && SPELL_BY_ID.has(carry.autocast) ? carry.autocast : undefined;
+        this.spellbook = carry.spellbook === "ancient" ? "ancient" : "standard";
         this.coop = coop;
         this.hostLeft = this.closeSeconds();
         // The first draw, so every browser in a party gets the same night
@@ -1675,6 +1716,12 @@ export class Run {
             slamIn: SLAM_SECONDS,
             floorIn: FLOOR_SECONDS,
             slow: 0,
+            frozen: 0,
+            weak: 0,
+            weakLeft: 0,
+            poisonHit: 0,
+            poisonLeft: 0,
+            poisonNext: 0,
             routeAt: 0,
             stuck: 0,
             trait,
@@ -2077,9 +2124,14 @@ export class Run {
             return {};
         }
         const given = this.runesGiven();
+        const ahrim = this.stats.set === "ahrim";
         const picked = this.autocast ? SPELL_BY_ID.get(this.autocast) : undefined;
+        const ancientsBarred = `Your ${weapon.name.toLowerCase()} can't cast Ancient Magicks${weapon.id === 4710 ? " without the rest of Ahrim's set" : ""}.`;
         if (picked) {
-            if (!staffCasts(weapon, picked)) {
+            if (picked.book === "ancient" && !castsAncients(weapon, ahrim)) {
+                return { why: ancientsBarred };
+            }
+            if (!staffCasts(weapon, picked, ahrim)) {
                 return { why: `Your ${weapon.name.toLowerCase()} can't cast ${picked.name}: it takes a tier ${picked.tier} staff.` };
             }
             if (castsLeft(picked, given, this.count) <= 0) {
@@ -2087,7 +2139,10 @@ export class Run {
             }
             return { spell: picked };
         }
-        const best = bestSpell(weapon, given, this.count);
+        if (this.spellbook === "ancient" && !castsAncients(weapon, ahrim)) {
+            return { why: ancientsBarred };
+        }
+        const best = bestSpell(weapon, given, this.count, this.spellbook, ahrim);
         return best ? { spell: best } : { why: "You don't have the runes for any spell your staff can cast." };
     }
 
@@ -2941,7 +2996,7 @@ export class Run {
             playSound(`sounds/${stats.sound}`, 0.4);
         }
         // A spell's own light on the caster as it's cast
-        if (casting?.spell && target) {
+        if (casting?.spell?.cast !== undefined && target) {
             void this.burst(casting.spell.cast, this.px, this.pz);
         }
     }
@@ -2982,7 +3037,7 @@ export class Run {
                         return;
                     }
                     scale = spellScale(stats.weapon, spell);
-                    look = { projectile: spell.projectile, impact: spell.impact };
+                    look = { projectile: spell.projectile, impact: spell.impact, spell, maxHit: Math.max(1, Math.round(stats.damage * scale)) };
                     if (!(this.petBuff?.ammoSave && this.rng() < this.petBuff.ammoSave)) {
                         for (const rune of spellCost(spell, this.runesGiven())) {
                             removeItem(this.inventory, rune.id, rune.n);
@@ -3047,10 +3102,10 @@ export class Run {
     }
 
     // A hitsplat: the client's red square with the number, over whoever
-    // took the hit, drifting up and fading
-    private splat(x: number, z: number, height: number, value: number): void {
+    // took the hit, drifting up and fading; the client's green for poison
+    private splat(x: number, z: number, height: number, value: number, poison = false): void {
         const material = new THREE.SpriteMaterial({
-            map: this.splatTexture(value),
+            map: this.splatTexture(value, poison),
             transparent: true,
             depthTest: false,
             toneMapped: false,
@@ -3065,8 +3120,8 @@ export class Run {
         this.splats.push({ sprite, left: 1, baseY });
     }
 
-    private splatTexture(value: number): THREE.CanvasTexture {
-        const key = String(value);
+    private splatTexture(value: number, poison = false): THREE.CanvasTexture {
+        const key = poison ? `p${value}` : String(value);
         let texture = this.splatTextures.get(key);
         if (!texture) {
             const canvas = document.createElement("canvas");
@@ -3094,10 +3149,10 @@ export class Run {
                 }
                 ctx.closePath();
             };
-            ctx.fillStyle = "#4a0000";
+            ctx.fillStyle = poison ? "#0a3a0a" : "#4a0000";
             outline(1.08);
             ctx.fill();
-            ctx.fillStyle = "#c01010";
+            ctx.fillStyle = poison ? "#2a9a1a" : "#c01010";
             outline(1);
             ctx.fill();
             for (const [dx, dy, r] of [
@@ -3117,8 +3172,8 @@ export class Run {
             ctx.textBaseline = "middle";
             ctx.strokeStyle = "#000";
             ctx.lineWidth = 3;
-            ctx.strokeText(key, cx, cy + 1);
-            ctx.fillText(key, cx, cy + 1);
+            ctx.strokeText(String(value), cx, cy + 1);
+            ctx.fillText(String(value), cx, cy + 1);
             texture = new THREE.CanvasTexture(canvas);
             texture.colorSpace = THREE.SRGBColorSpace;
             this.splatTextures.set(key, texture);
@@ -3152,7 +3207,7 @@ export class Run {
         } else if (this.coop?.role === "guest") {
             this.coop.send({ k: "shot", u: target.uid, p: look.projectile, i: look.impact } satisfies UpMessage);
         }
-        return this.launch(this.px, this.pz, y, look.projectile, { target, damage, impact: look.impact, splash: weapon?.splash });
+        return this.launch(this.px, this.pz, y, look.projectile, { target, damage, impact: look.impact, splash: weapon?.splash, spell: look.spell, maxHit: look.maxHit });
     }
 
     private ballProjectile(): THREE.Object3D {
@@ -3178,7 +3233,13 @@ export class Run {
         if (this.coop?.role === "host") {
             this.coop.send({ k: "shot", x: round2(e.x), z: round2(e.z), y: round2(y), to: t.id, p: projectile, i: impact, c: castAnim } satisfies DownMessage);
         }
-        await this.launch(e.x, e.z, y, projectile, { hero: t, from: e.def, style, impact, cast: castAnim });
+        // A shadow spell takes a share off what it throws (version 107)
+        await this.launch(e.x, e.z, y, projectile, { hero: t, from: e.def, style, impact, cast: castAnim, scale: this.weakScale(e) });
+    }
+
+    // What a shadow spell leaves of an enemy's hits (version 107)
+    private weakScale(e: Enemy): number {
+        return e.weakLeft > 0 ? 1 - e.weak : 1;
     }
 
     // Something flying from here: a spot animation (or a plain ball when
@@ -3188,7 +3249,20 @@ export class Run {
         z: number,
         y: number,
         projectile: number | undefined,
-        at: { target?: Enemy; hero?: Hero; from?: EnemyDef; style?: ProtectStyle; damage?: number; impact?: number; cast?: number; visual?: boolean; splash?: boolean },
+        at: {
+            target?: Enemy;
+            hero?: Hero;
+            from?: EnemyDef;
+            style?: ProtectStyle;
+            damage?: number;
+            impact?: number;
+            cast?: number;
+            visual?: boolean;
+            splash?: boolean;
+            spell?: SpellDef;
+            maxHit?: number;
+            scale?: number;
+        },
     ): Promise<void> {
         if (at.cast !== undefined) {
             void this.burst(at.cast, x, z);
@@ -3204,6 +3278,10 @@ export class Run {
                 play(actor, "play");
                 this.effects.push({ actor, left: 60 });
             }
+        } else if (projectile === undefined && at.impact !== undefined) {
+            // A spell with no flight (a burst, a barrage): nothing to see on
+            // the way, only where it lands (version 107)
+            root = new THREE.Group();
         } else {
             root = this.ballProjectile();
         }
@@ -3222,6 +3300,9 @@ export class Run {
             impact: at.impact,
             visual: at.visual,
             splash: at.splash,
+            spell: at.spell,
+            maxHit: at.maxHit,
+            scale: at.scale,
         });
     }
 
@@ -3229,12 +3310,21 @@ export class Run {
     // host decides: the hit goes up to it, and shows here meanwhile. Set
     // effects: Ahrim's slows what a spell hits, Torag's puts another half
     // second between its attacks.
-    private damageEnemy(e: Enemy, damage: number, by: Hero = this.self, effects: { slow?: boolean; stall?: boolean } = {}): void {
-        if (by.me) {
-            effects = { slow: effects.slow, stall: this.stats.set === "torag" };
+    private damageEnemy(e: Enemy, damage: number, by: Hero = this.self, effects: HitEffects = {}): void {
+        if (by.me && !effects.poisoned) {
+            effects = { ...effects, stall: this.stats.set === "torag" };
         }
         if (this.coop?.role === "guest") {
-            this.coop.send({ k: "hit", u: e.uid, d: damage, slow: effects.slow ? 1 : undefined, stall: effects.stall ? 1 : undefined } satisfies UpMessage);
+            this.coop.send({
+                k: "hit",
+                u: e.uid,
+                d: damage,
+                slow: effects.slow ? 1 : undefined,
+                stall: effects.stall ? 1 : undefined,
+                frz: effects.freeze,
+                wk: effects.weaken,
+                psn: effects.poison,
+            } satisfies UpMessage);
             e.myHitAt = this.time;
         }
         // An armoured elite shrugs off some of it
@@ -3246,7 +3336,7 @@ export class Run {
         e.barShown = BAR_SECONDS;
         e.lastHurtAt = this.time;
         tint(e.actor, new THREE.Color(1.6, 0.6, 0.6));
-        this.splat(e.x, e.z, e.actor.height * (e.def.scale ?? 1) * 0.7, damage);
+        this.splat(e.x, e.z, e.actor.height * (e.def.scale ?? 1) * 0.7, damage, effects.poisoned);
         if (this.coop?.role === "guest") {
             // Its fall is the host's to call
             this.hear(npcSound(e.def.npcId, "hit"), e.x, e.z, 0.4);
@@ -3258,6 +3348,22 @@ export class Run {
         }
         if (effects.slow) {
             e.slow = 4;
+        }
+        // Ancient Magicks (version 107): ice holds it (a boss shrugs that
+        // off), shadow weakens its hits, smoke poisons it (a fresh poison
+        // only if it's stronger than what's in it)
+        if (effects.freeze && !e.def.boss) {
+            e.frozen = Math.max(e.frozen, effects.freeze);
+        }
+        if (effects.weaken) {
+            e.weak = Math.max(e.weakLeft > 0 ? e.weak : 0, effects.weaken);
+            e.weakLeft = WEAKEN_SECONDS;
+        }
+        if (effects.poison && (e.poisonLeft <= 0 || effects.poison >= e.poisonHit)) {
+            e.poisonHit = effects.poison;
+            e.poisonLeft = POISON_HITS;
+            e.poisonNext = POISON_EVERY;
+            e.poisonBy = by;
         }
         if (e.hp <= 0) {
             this.killEnemy(e, by);
@@ -3433,6 +3539,22 @@ export class Run {
             if (e.slow > 0) {
                 e.slow -= dt;
             }
+            // Ancient Magicks' holds (version 107): a freeze and a weakening
+            // wear off, and a poison hits every few seconds until it's done
+            if (e.frozen > 0) {
+                e.frozen -= dt;
+            }
+            if (e.weakLeft > 0) {
+                e.weakLeft -= dt;
+            }
+            if (e.poisonLeft > 0 && e.state !== "dead") {
+                e.poisonNext -= dt;
+                if (e.poisonNext <= 0) {
+                    e.poisonNext = POISON_EVERY;
+                    e.poisonLeft--;
+                    this.damageEnemy(e, e.poisonHit, e.poisonBy ?? this.self, { poisoned: true });
+                }
+            }
             if (e.state === "dead") {
                 e.deadFor += dt;
                 if (e.deadFor > 4) {
@@ -3489,7 +3611,7 @@ export class Run {
                             if (e.def.shoots) {
                                 void this.cast(e, t);
                             } else {
-                                this.hurtHero(t, e.def, 1, "melee", e.def.pierce, undefined, e.trait === "venomous");
+                                this.hurtHero(t, e.def, this.weakScale(e), "melee", e.def.pierce, undefined, e.trait === "venomous");
                             }
                         }
                     }
@@ -3589,6 +3711,10 @@ export class Run {
         // are, so it can't be shot at from a walk backwards for ever (one
         // that shoots back has no need)
         const base = e.def.boss && !e.def.shoots && e.state !== "idle" ? Math.max(e.def.speed, BOSS_CHASE_SPEED) : e.def.speed;
+        // Frozen by an ice spell, it stands where it is (version 107)
+        if (e.frozen > 0) {
+            return 0;
+        }
         return base * (e.trait === "fast" ? 1.5 : 1) * (e.slow > 0 ? 0.5 : 1);
     }
 
@@ -3742,7 +3868,7 @@ export class Run {
                 e.z,
                 SLAM_RANGE,
                 1.2,
-                (hero) => this.hurtHero(hero, e.def, 1.5, "melee", e.def.pierce),
+                (hero) => this.hurtHero(hero, e.def, 1.5 * this.weakScale(e), "melee", e.def.pierce),
                 () => {
                     play(e.actor, "attack", { once: true });
                     e.attacks++;
@@ -4154,6 +4280,43 @@ export class Run {
         }
     }
 
+    // The player's spell landing (version 107): on the target, and for a
+    // burst or barrage on up to eight more within a tile of it (OSRS's three
+    // by three), each with the spell's effect; a blood spell heals a quarter
+    // of what it dealt in all
+    private landSpell(p: Projectile, target: Enemy, slow: boolean): void {
+        const spell = p.spell!;
+        const effect = spell.effect;
+        const effects: HitEffects = { slow };
+        if (effect?.kind === "freeze") {
+            effects.freeze = effect.seconds;
+        } else if (effect?.kind === "weaken") {
+            effects.weaken = effect.share;
+        } else if (effect?.kind === "poison") {
+            effects.poison = Math.max(1, Math.round((p.maxHit ?? p.damage) * effect.share));
+        }
+        const hit = [target];
+        if (spell.area) {
+            const near = this.enemies
+                .filter((e) => e !== target && e.state !== "dead" && Math.max(Math.abs(e.x - target.x), Math.abs(e.z - target.z)) <= 1.5)
+                .sort((a, b) => Math.hypot(a.x - target.x, a.z - target.z) - Math.hypot(b.x - target.x, b.z - target.z));
+            hit.push(...near.slice(0, 8));
+        }
+        let dealt = 0;
+        for (const e of hit) {
+            // The others roll their own hit, from a little under the target's
+            const damage = e === target ? p.damage : Math.max(1, Math.round(p.damage * (0.75 + this.rng() * 0.25)));
+            dealt += Math.min(damage, e.hp);
+            this.damageEnemy(e, damage, this.self, effects);
+            if (e !== target) {
+                void this.burst(spell.impact, e.x, e.z);
+            }
+        }
+        if (effect?.kind === "heal" && dealt > 0) {
+            this.hp = Math.min(this.maxHp, this.hp + Math.round(dealt * effect.share));
+        }
+    }
+
     private updateProjectiles(dt: number): void {
         for (let i = this.projectiles.length - 1; i >= 0; i--) {
             const p = this.projectiles[i];
@@ -4173,7 +4336,11 @@ export class Run {
                     } else if (p.target) {
                         // Ahrim's: what a spell hits crawls
                         const slow = this.stats.set === "ahrim" && this.stats.weapon?.uses === "runes";
-                        this.damageEnemy(p.target, p.damage, this.self, { slow });
+                        if (p.spell) {
+                            this.landSpell(p, p.target, slow);
+                        } else {
+                            this.damageEnemy(p.target, p.damage, this.self, { slow });
+                        }
                         // A chinchompa: everything beside what it hit takes half
                         if (p.splash) {
                             for (const e of this.enemies) {
@@ -4183,7 +4350,7 @@ export class Run {
                             }
                         }
                     } else if (p.from && p.hero) {
-                        this.hurtHero(p.hero, p.from, 1, p.style ?? styleOf(p.from), p.from.pierce);
+                        this.hurtHero(p.hero, p.from, p.scale ?? 1, p.style ?? styleOf(p.from), p.from.pierce);
                     }
                     if (p.impact !== undefined) {
                         void this.burst(p.impact, tx, tz);
@@ -5378,7 +5545,13 @@ export class Run {
             case "hit": {
                 const e = this.enemies.find((x) => x.uid === message.u);
                 if (e && e.state !== "dead") {
-                    this.damageEnemy(e, message.d, mate, { slow: !!message.slow, stall: !!message.stall });
+                    this.damageEnemy(e, message.d, mate, {
+                        slow: !!message.slow,
+                        stall: !!message.stall,
+                        freeze: typeof message.frz === "number" ? Math.min(20, message.frz) : undefined,
+                        weaken: typeof message.wk === "number" ? Math.min(0.15, message.wk) : undefined,
+                        poison: typeof message.psn === "number" ? Math.min(30, message.psn) : undefined,
+                    });
                 }
                 break;
             }

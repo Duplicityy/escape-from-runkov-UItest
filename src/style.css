@@ -2600,6 +2600,22 @@ body.chat-shown .screen {
     border-color: var(--yellow);
 }
 
+/* Which spellbook is open: standard or Ancient Magicks (version 107) */
+.book-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+.book-tabs button {
+    flex: 1;
+}
+
+.book-tabs button.on {
+    color: var(--yellow);
+    border-color: var(--yellow);
+}
+
 /* The spellbook's page keeps the pack's width, so its words wrap */
 .spell-page {
     width: 312px;

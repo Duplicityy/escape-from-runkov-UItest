@@ -91,6 +91,7 @@ function packUp(worldId: string): RunCarry {
         pets: save.pets,
         wear: { ...save.wear },
         autocast: save.autocast,
+        spellbook: save.spellbook,
     };
 }
 

@@ -1483,6 +1483,8 @@ export const ITEMS: ItemDef[] = [
     ammo(562, "Chaos runes", "runes", 2, 1.2, 20, 130, 131),
     ammo(560, "Death runes", "runes", 3, 1.3, 60, 156, 157),
     ammo(565, "Blood runes", "runes", 4, 1.45, 100, 156, 375),
+    // Ancient Magicks' (version 107): shadow spells and Blood Barrage
+    ammo(566, "Soul runes", "runes", 4, 1.5, 120, 378, 379),
     ammo(21880, "Wrath runes", "runes", 5, 1.6, 150, 1465, 1466),
 ];
 

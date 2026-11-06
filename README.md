@@ -239,6 +239,25 @@ browsers.
   chaos bolts, death blasts, blood waves and wrath surges. The shop sells elemental runes by the
   hundred and the catalysts by twenty-five, and the trader the map's catalyst and air runes. A
   staff's special attack is called Power surge, so it isn't taken for a Surge spell.
+- **Ancient Magicks** (version 107, the spellbook's Ancient page; the open book is kept in the
+  save as `spellbook`, and opening the other one stops a spell picked from this one being
+  autocast, as in OSRS): Smoke, Shadow, Blood and Ice Rush, Burst, Blitz and Barrage, the
+  sixteen with OSRS's rune costs (Ice Barrage is 6 water, 2 blood and 4 death runes) and
+  animations. Only OSRS's staves cast them (`ANCIENT_STAVES`: the ancient staff and sceptres,
+  the master, Kodai and dragon hunter wands, the nightmare staves, Thammaron's and the accursed
+  sceptre; Ahrim's staff with Ahrim's whole set), rushes at tier 3, bursts and blitzes at 4,
+  barrages at 5. Their power follows their OSRS max hits along the line the standard fire spells
+  draw (`powerOfMaxHit`), so they hit about a seventh harder than a standard spell of the same
+  tier and cost more runes. Bursts and barrages hit everything within a tile of the target too,
+  up to nine (OSRS's three by three; the others roll 75% to 100% of the target's hit) and land
+  with no flight, as in OSRS. Smoke poisons (five green hits of 15% of the max, 17% for blitz
+  and barrage, three seconds apart), shadow takes 10% off the target's hits for 30 seconds (15%
+  for blitz and barrage; `weakScale`), blood heals the caster a quarter of what it dealt, and
+  ice freezes the target in place for OSRS's 4.8, 9.6, 14.4 or 19.2 seconds (a boss shrugs it
+  off; a frozen enemy still swings at what's beside it). Soul runes (566, tier 4) are new for
+  the shadow spells and Blood Barrage; tier 3 and up maps also drop chaos runes, and tier 4 and
+  up death and soul runes, beside their own catalyst. In co-op a guest's spell effects go up
+  with the hit (`frz`, `wk`, `psn`).
 - Every hit shows its number as a hitsplat, the client's red square, floating up off whoever
   took it. An enemy shows a health bar over its head, the client's way, while it's fighting and
   for six seconds after it's hurt. The boss has the bar at the top of the screen instead.

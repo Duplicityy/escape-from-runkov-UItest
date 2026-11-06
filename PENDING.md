@@ -1,5 +1,12 @@
 # Pending for the next push
 
+Version 107 (built 5 November 2026, not deployed): Ancient Magicks (README's "Ancient
+Magicks"): the sixteen combat spells on the spellbook's Ancient page, OSRS's costs, effects
+(smoke poison, shadow weaken, blood heal, ice freeze; bursts and barrages hit a 3x3), OSRS's
+autocasting staves only. 25 more spotanims (360-391) and the cache's icons 325-340 in
+`public/ui/spells/`; soul runes (566) added; `spellbook` in the save; `frz`/`wk`/`psn` on the
+co-op `hit` message. `GAME_BUILD` 107.
+
 Version 106 (built 5 November 2026, not deployed): the spellbook (README's "The spellbook";
 `src/content/spells.ts`). Staves cast the standard spellbook's twenty combat spells, strike to
 surge in wind, water, earth and fire, with OSRS's rune costs and spot animations (42 new

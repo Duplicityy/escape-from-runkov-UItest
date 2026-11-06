@@ -27,7 +27,28 @@ import {
 } from "../content/items";
 import { iconElement, setIcon } from "../game/icons";
 import { assetUrl } from "../game/paths";
-import { AIR as AIR_RUNE, EARTH, ELEMENTS, FAMILIES, FIRE, SPELL_BY_ID, SpellDef, WATER, castsLeft, catalystOfTier, spellScale, staffCasts } from "../content/spells";
+import {
+    AIR as AIR_RUNE,
+    ANCIENT_ELEMENTS,
+    ANCIENT_FAMILIES,
+    BOOKS,
+    Book,
+    EARTH,
+    ELEMENTS,
+    FAMILIES,
+    FIRE,
+    POISON_EVERY,
+    POISON_HITS,
+    SPELL_BY_ID,
+    SpellDef,
+    WATER,
+    WEAKEN_SECONDS,
+    castsAncients,
+    castsLeft,
+    catalystOfTier,
+    spellScale,
+    staffCasts,
+} from "../content/spells";
 import { TASKS, Task } from "../content/tasks";
 import { isKept } from "../game/kit";
 import { Chat } from "./chat";
@@ -2833,36 +2854,81 @@ export class UI {
         return h("div", { class: "pack-tabs" }, tab("pack", "Pack", "I"), tab("spells", "Spellbook", "B"));
     }
 
+    // Opens the other spellbook (version 107): as in OSRS, a spell picked
+    // from the old one stops being autocast; kept in the save
+    private openBook(run: Run, book: Book): void {
+        if (run.spellbook === book) {
+            return;
+        }
+        run.spellbook = book;
+        this.save.spellbook = book;
+        if (run.autocast && SPELL_BY_ID.get(run.autocast)?.book !== book) {
+            this.pickSpell(run, undefined);
+        } else {
+            this.persist();
+            if (this.hud) {
+                this.hud.signature = "";
+                this.updateHud();
+            }
+        }
+    }
+
     // The spellbook (version 106): the standard spellbook's twenty combat
-    // spells, strikes to surges down, wind, water, earth and fire across. A
-    // click picks one to autocast (again: back to the strongest the staff
-    // can); the staff's tier decides how high it casts, and the runes packed
-    // how often.
+    // spells, strikes to surges down, wind, water, earth and fire across; or
+    // (version 107) Ancient Magicks' sixteen, rushes to barrages down, smoke,
+    // shadow, blood and ice across. A click picks one to autocast (again:
+    // back to the strongest the staff can of the book open); the staff's tier
+    // decides how high it casts, and the runes packed how often.
     private renderSpellbook(run: Run): void {
         const hud = this.hud!;
         const weapon = run.stats.weapon;
         const staff = weapon?.uses === "runes";
+        const ahrim = run.stats.set === "ahrim";
+        const book = run.spellbook;
+        const ancients = castsAncients(weapon, ahrim);
         const given = run.runesGiven();
         const casting = run.castingSpell();
         const maxHit = (spell: SpellDef) => Math.max(1, Math.round(run.stats.damage * spellScale(weapon, spell)));
         const runeName = (id: number) => getItem(id).name.replace(/s$/, "").toLowerCase();
+        const effectText = (spell: SpellDef): string => {
+            const e = spell.effect;
+            const area = spell.area ? "Hits everything within a tile of the target too. " : "";
+            if (!e) {
+                return area;
+            }
+            switch (e.kind) {
+                case "poison":
+                    return area + `Poisons: ${POISON_HITS} hits of ${Math.round(e.share * 100)}% of its max hit, every ${POISON_EVERY}s. `;
+                case "weaken":
+                    return area + `Its target hits ${Math.round(e.share * 100)}% less for ${WEAKEN_SECONDS}s. `;
+                case "heal":
+                    return area + `Heals you ${Math.round(e.share * 100)}% of what it deals. `;
+                case "freeze":
+                    return area + `Freezes its target for ${e.seconds}s (not a boss). `;
+            }
+        };
         const status = (spell: SpellDef): string => {
             if (!staff) {
                 return "Wield a staff to cast it.";
             }
-            if (!staffCasts(weapon, spell)) {
+            if (spell.book === "ancient" && !ancients) {
+                return "Your staff can't cast Ancient Magicks.";
+            }
+            if (!staffCasts(weapon, spell, ahrim)) {
                 return `It takes a tier ${spell.tier} staff; yours is tier ${weapon!.tier}.`;
             }
             const casts = castsLeft(spell, given, run.count);
             return casts <= 0 ? "Not enough runes packed." : `Max hit ${maxHit(spell)}, ${casts === Infinity ? "no runes needed" : `${casts} cast${casts === 1 ? "" : "s"} packed`}.`;
         };
+        const rows: string[] = book === "ancient" ? ANCIENT_FAMILIES : FAMILIES;
+        const columns: string[] = book === "ancient" ? ANCIENT_ELEMENTS : ELEMENTS;
         const grid = h(
             "div",
             { class: "spellbook" },
-            ...FAMILIES.flatMap((family) =>
-                ELEMENTS.map((element) => {
+            ...rows.flatMap((family) =>
+                columns.map((element) => {
                     const spell = SPELL_BY_ID.get(`${element}_${family}`)!;
-                    const usable = staff && staffCasts(weapon, spell) && castsLeft(spell, given, run.count) > 0;
+                    const usable = staff && staffCasts(weapon, spell, ahrim) && castsLeft(spell, given, run.count) > 0;
                     const picked = run.autocast === spell.id;
                     const cost = spell.runes.map((r) => `${r.n} ${runeName(r.id)}${given.has(r.id) ? " (your staff gives these)" : ""}`).join(", ");
                     const img = document.createElement("img");
@@ -2873,7 +2939,7 @@ export class UI {
                         "div",
                         {
                             class: "spell" + (usable ? "" : " off") + (picked ? " on" : "") + (casting.spell?.id === spell.id ? " now" : ""),
-                            title: `${spell.name} (tier ${spell.tier}): ${cost}. ${status(spell)} ${picked ? "Click again to cast the strongest you can." : "Click to autocast it."}`,
+                            title: `${spell.name} (tier ${spell.tier}): ${cost}. ${effectText(spell)}${status(spell)} ${picked ? "Click again to cast the strongest you can." : "Click to autocast it."}`,
                             onclick: () => this.pickSpell(run, picked ? undefined : spell.id),
                         },
                         img,
@@ -2888,6 +2954,7 @@ export class UI {
                   "div",
                   { class: "spell-detail" },
                   h("div", { class: "spell-name" }, shown.name, h("span", { class: "stats" }, ` · ${status(shown)}`)),
+                  shown.effect || shown.area ? h("div", { class: "stats" }, effectText(shown)) : null,
                   h(
                       "div",
                       { class: "spell-runes" },
@@ -2921,10 +2988,28 @@ export class UI {
             "div",
             { class: "hint" },
             !staff ? "Wield a staff, wand or sceptre to cast these. " : casting.why ? casting.why + " " : "",
-            `Your staff's tier is how high it casts: strikes at 1 up to surges at 5. Elemental staffs and tomes give their runes. Enemies here drop elemental and ${getItem(catalystOfTier(run.world.tier)).name.toLowerCase()}.`,
+            book === "ancient"
+                ? "Needs an ancient staff or sceptre, a master, Kodai or dragon hunter wand, a nightmare staff, or Ahrim's with its set. Rushes at tier 3, bursts and blitzes 4, barrages 5."
+                : `Your staff's tier is how high it casts: strikes at 1 up to surges at 5. Elemental staffs and tomes give their runes. Enemies here drop elemental and ${getItem(catalystOfTier(run.world.tier)).name.toLowerCase()}.`,
+        );
+        // Which book is open: the standard spellbook or Ancient Magicks
+        const books = h(
+            "div",
+            { class: "book-tabs" },
+            ...BOOKS.map((b) =>
+                h(
+                    "button",
+                    {
+                        class: "quiet" + (book === b ? " on" : ""),
+                        title: b === "ancient" ? "Ancient Magicks: smoke, shadow, blood and ice" : "The standard spellbook: wind, water, earth and fire",
+                        onclick: () => this.openBook(run, b),
+                    },
+                    b === "ancient" ? "Ancient" : "Standard",
+                ),
+            ),
         );
         // One page the pack's width, so the words wrap
-        hud.inventory.replaceChildren(h("div", { class: "spell-page" }, this.packTabs(), head, grid, ...(detail ? [detail] : []), hint));
+        hud.inventory.replaceChildren(h("div", { class: "spell-page" }, this.packTabs(), books, head, grid, ...(detail ? [detail] : []), hint));
     }
 
     // -----------------------------------------------------------------------

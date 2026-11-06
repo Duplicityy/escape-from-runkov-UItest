@@ -151,8 +151,10 @@ export type UpMessage =
     // defence against melee, ranged and magic, dead
     // p: the protection prayer on (version 103)
     | { k: "move"; x: number; z: number; f: number; hp: number; mh: number; a: HeroAnim; ac: number; d: [number, number, number]; dead: 0 | 1; p?: PrayCode }
-    // A hit on an enemy; slow and stall are Ahrim's and Torag's
-    | { k: "hit"; u: number; d: number; slow?: 1; stall?: 1 }
+    // A hit on an enemy; slow and stall are Ahrim's and Torag's; frz, wk and
+    // psn an Ancient spell's freeze seconds, weaken share and poison per hit
+    // (version 107)
+    | { k: "hit"; u: number; d: number; slow?: 1; stall?: 1; frz?: number; wk?: number; psn?: number }
     | { k: "shot"; u: number; p?: number; i?: number }
     // n: as many as the guest has room for, when that's not all of it
     | { k: "take"; u: number; n?: number }
