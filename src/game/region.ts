@@ -27,6 +27,10 @@ type RegionJson = {
     // The map's model as one file per 64 tile map square (the exporter's
     // --tiles), by map square; without it the map is one <id>.glb
     squares?: [number, number][];
+    // What blocks on a solid object tile that blocks less than all of it
+    // (the exporter's collision, version 109): [tile, x0, y0, x1, y1] each,
+    // the box in hundredths of a tile from its south-west corner
+    boxes?: number[];
 };
 
 // Per tile bits from the exporter
@@ -35,6 +39,21 @@ const WALL_NORTH = 2;
 const WALL_EAST = 4;
 const WALL_SOUTH = 8;
 const WALL_WEST = 16;
+// (version 109) floor the cache blocks that isn't water, and an object or
+// floor decoration on the tile
+const GROUND = 64;
+const OBJECT = 128;
+// Any wall flag at all on the tile, a side's or a corner post's
+const ANY_WALL = 32;
+
+// Hills (version 109): blocked ground that slopes at least HILL_MIN and at
+// most HILL_MAX (its corners' heights apart, in tiles) is run over; steeper
+// is a cliff and stays. Flat blocked ground (a mountain top, the map's edge)
+// stays too, unless it's a pocket of no more than HILL_POCKET tiles among
+// the hills.
+const HILL_MIN = 0.25;
+const HILL_MAX = 3;
+const HILL_POCKET = 6;
 // tileFlags bits: a bridge's deck, and under a roof (a building's inside,
 // or beneath a walkway)
 const BRIDGE = 1;
@@ -73,6 +92,15 @@ export class Region {
     // tiles stay solid for pathing and sight.
     private readonly obstacles: { x: number; z: number; r: number }[] = [];
     private readonly obstacleAt: Int32Array;
+    // The box that blocks on each solid tile, x0, y0, x1, y1 in tiles from
+    // its south-west corner (y north): all of it but where the export says
+    // less (version 109: a signpost by its post, a crate a little in from
+    // its open sides)
+    private readonly boxes: Float32Array;
+    // The hillsides opened (version 109), which don't count as more ground
+    // for the map's chests and enemies
+    readonly hills: Uint8Array;
+    readonly hillTiles: number;
 
     constructor(json: RegionJson) {
         this.id = json.id;
@@ -95,9 +123,100 @@ export class Region {
             }
         }
         this.openTiles = open;
+        this.hills = new Uint8Array(this.sizeX * this.sizeY);
+        this.hillTiles = this.openHills();
+        this.boxes = new Float32Array(this.sizeX * this.sizeY * 4);
+        for (let i = 0; i < this.sizeX * this.sizeY; i++) {
+            this.boxes[i * 4 + 2] = 1;
+            this.boxes[i * 4 + 3] = 1;
+        }
+        const b = json.boxes ?? [];
+        for (let k = 0; k + 4 < b.length; k += 5) {
+            const i = b[k];
+            this.boxes.set([b[k + 1] / 100, b[k + 2] / 100, b[k + 3] / 100, b[k + 4] / 100], i * 4);
+        }
         this.obstacleAt = new Int32Array(this.sizeX * this.sizeY).fill(-1);
         this.findObstacles();
         this.spawn = this.standable(this.spawn);
+    }
+
+    // The hillsides (HILL_MIN to HILL_MAX) and the small flat pockets among
+    // them, made open ground; how many
+    private openHills(): number {
+        const { sizeX, sizeY, tiles } = this;
+        // Blocked ground in the open: not under a roof or anything over it,
+        // and with no wall on it (a building's log walls stand on blocked
+        // floor that slopes, Rellekka's longhall's do)
+        const blockedGround = (i: number) =>
+            (tiles[i] & (SOLID | GROUND | OBJECT | ANY_WALL)) === (SOLID | GROUND) &&
+            (this.tileFlags[i] & INSIDE) === 0 &&
+            this.cover[i] === 0;
+        const slope = (i: number) => {
+            const x = i % sizeX;
+            const y = Math.floor(i / sizeX);
+            const stride = sizeX + 1;
+            const c = x + y * stride;
+            const h = [this.heights[c], this.heights[c + 1], this.heights[c + stride], this.heights[c + stride + 1]];
+            return (Math.max(...h) - Math.min(...h)) / 128;
+        };
+        let opened = 0;
+        const open = (i: number) => {
+            tiles[i] &= ~SOLID;
+            this.hills[i] = 1;
+            opened++;
+        };
+        const flat: number[] = [];
+        for (let i = 0; i < tiles.length; i++) {
+            if (!blockedGround(i)) {
+                continue;
+            }
+            const s = slope(i);
+            if (s >= HILL_MIN && s <= HILL_MAX) {
+                open(i);
+            } else if (s < HILL_MIN) {
+                flat.push(i);
+            }
+        }
+        // A flat patch of blocked ground small enough to be a step in a hill
+        const seen = new Uint8Array(tiles.length);
+        for (const start of flat) {
+            if (seen[start] || !blockedGround(start)) {
+                continue;
+            }
+            const patch = [start];
+            seen[start] = 1;
+            for (let head = 0; head < patch.length; head++) {
+                const i = patch[head];
+                const x = i % sizeX;
+                const y = Math.floor(i / sizeX);
+                for (const [dx, dy] of [
+                    [1, 0],
+                    [-1, 0],
+                    [0, 1],
+                    [0, -1],
+                ]) {
+                    const nx = x + dx;
+                    const ny = y + dy;
+                    if (nx < 0 || ny < 0 || nx >= sizeX || ny >= sizeY) {
+                        continue;
+                    }
+                    const n = nx + ny * sizeX;
+                    if (!seen[n] && blockedGround(n) && slope(n) < HILL_MIN) {
+                        seen[n] = 1;
+                        patch.push(n);
+                    }
+                }
+            }
+            if (patch.length <= HILL_POCKET) {
+                patch.forEach(open);
+            }
+        }
+        return opened;
+    }
+
+    // Whether a region tile index is a hillside opened (version 109)
+    isHill(i: number): boolean {
+        return this.hills[i] === 1;
     }
 
     // The spawn as the map gives it can be inside something (Karamja's is
@@ -250,19 +369,31 @@ export class Region {
         return this.isOpenTile(this.tileX(x), this.tileY(z));
     }
 
-    // Can a circle of this radius sit here? Off solid tiles, unless they're
-    // a round obstacle's, and then off its circle
+    // Can a circle of this radius sit here? Clear of what blocks on each
+    // solid tile it reaches (version 109: the tile's box, all of it but for
+    // an object that stands on less), unless the tile is a round obstacle's,
+    // and then off its circle
     fits(x: number, z: number, radius: number): boolean {
-        for (const [cx, cz] of [
-            [x - radius, z - radius],
-            [x + radius, z - radius],
-            [x - radius, z + radius],
-            [x + radius, z + radius],
-        ]) {
-            const tx = this.tileX(cx);
-            const ty = this.tileY(cz);
-            if (!this.isOpenTile(tx, ty) && !this.isRound(tx, ty)) {
-                return false;
+        const north = -z;
+        const r2 = radius * radius;
+        for (let ty = Math.floor(north - radius); ty <= Math.floor(north + radius); ty++) {
+            for (let tx = Math.floor(x - radius); tx <= Math.floor(x + radius); tx++) {
+                if (this.isOpenTile(tx, ty) || this.isRound(tx, ty)) {
+                    continue;
+                }
+                const lx = tx - this.baseX;
+                const ly = ty - this.baseY;
+                const inside = lx >= 0 && ly >= 0 && lx < this.sizeX && ly < this.sizeY;
+                const b = inside ? (lx + ly * this.sizeX) * 4 : -1;
+                const x0 = tx + (b >= 0 ? this.boxes[b] : 0);
+                const y0 = ty + (b >= 0 ? this.boxes[b + 1] : 0);
+                const x1 = tx + (b >= 0 ? this.boxes[b + 2] : 1);
+                const y1 = ty + (b >= 0 ? this.boxes[b + 3] : 1);
+                const dx = x - Math.min(Math.max(x, x0), x1);
+                const dy = north - Math.min(Math.max(north, y0), y1);
+                if (dx * dx + dy * dy < r2) {
+                    return false;
+                }
             }
         }
         // An obstacle's circle lies within its own tiles, so any that could

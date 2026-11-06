@@ -1499,9 +1499,11 @@ export class Run {
         // 77): the share's cap had left the widest maps (the Wilderness,
         // Lumbridge, the desert) with a third of the chests a smaller map has
         // for its ground. Never fewer than before.
+        // The hillsides run over since version 109 aren't more ground for
+        // chests and enemies: the maps keep the counts they had
         let reachable = 0;
-        for (const steps of reach) {
-            if (steps >= 0) {
+        for (let i = 0; i < reach.length; i++) {
+            if (reach[i] >= 0 && !region.isHill(i)) {
                 reachable++;
             }
         }

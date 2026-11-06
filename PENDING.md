@@ -1,5 +1,15 @@
 # Pending for the next push
 
+Version 109 (built 6 November 2026, not deployed): hills and objects (README's "Hills and
+objects"). The twelve maps' region.json re-exported with Run Escape's new `collision` command
+(object boxes, blocked-ground and object bits) and copied to public/assets/maps; region.ts
+opens hillsides of a quarter to three tiles of slope (not under a roof, no wall) and checks
+the body's circle against each tile's box. Hills opened per map: Lumbridge 924, Barrows 1898,
+Wilderness 363, desert 2335, Fremennik 4342, Karamja 390, Kourend 3479, Varlamore 3134,
+Morytania 1223, God Wars 31, Prifddinas 395, Inferno 1; they don't count toward chests and
+enemies, though ground they lead to does (Lumbridge +2210 tiles, Fremennik +3211). The old
+region files are in the scratchpad's region-backup. `GAME_BUILD` 109.
+
 Version 108 (built 6 November 2026, not deployed): spells cast as OSRS casts them (README's
 "Casting as OSRS casts"). Five new player clips in Run Escape's PLAYER_CLIPS (cast_staff 1162,
 cast_wave 1167, cast_surge 7855, cast_ancient 1978, cast_ancient_area 1979), so every player

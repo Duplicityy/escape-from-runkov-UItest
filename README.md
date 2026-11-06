@@ -75,6 +75,17 @@ browsers.
   or a spell, only its trunk does; an enemy under a canopy steps off it onto the flow field
   instead of standing there; and an enemy close by with a clear straight walk takes it, so one
   no longer circles a tree while you shoot it from under the leaves.
+- **Hills and objects** (version 109; `openHills` and `fits` in `region.ts`, the exporter's
+  `collision` command): the cache blocks a lot of hillside by its floor, not by anything on
+  it, so a dune ridge or a mountainside stopped you like a wall. Blocked ground that slopes a
+  quarter of a tile to three tiles across one is run over now; steeper is a cliff and stays,
+  and so do water, flat blocked ground (a mountain top, the map's edge, but for small flat
+  pockets among the hills) and anything under a roof or with a wall on it (Rellekka's longhall
+  stands on sloping blocked floor). The hills opened don't count as more ground for a map's
+  chests and enemies (`isHill`). Objects block where they stand, as in Run Escape
+  (`ArenaGrid`): a free standing one by its model's base (a signpost by its post), one beside
+  open ground a fifth of a tile in from that side, and one that draws nothing not at all; the
+  body's circle is checked against each box it reaches, so it slides round corners too.
 - One enemy in twenty is a champion: gilded, a third bigger, two and a half times the hitpoints,
   twice the damage, four times the coins, and always carrying a piece of gear. On four and five
   star maps champions come in pairs. One enemy in twelve is an elite, shown by its tint (`TRAITS`
@@ -665,7 +676,11 @@ lining up on it. A tree blocks its whole footprint in the cache, two or three ti
 its trunk is a stride across, so every free standing block of solid tiles up to three a side,
 outdoors and without a wall on it, is a round obstacle at its middle for movement (`region.ts`):
 the ground under the canopy can be walked and only the trunk stops you. The tiles stay solid for
-pathing and sight. A map is Run Escape's whole arena (version 68; 3 by 3 map squares of 64
+pathing and sight. Since version 109 the exporter's `collision <ids> --out ../full-assets`
+rewrites just a map's `region.json` collision (no models, about a minute for all twelve): the
+tile bits from Run Escape's `ArenaGrid`, bit 6 for blocked ground that isn't water and bit 7
+for an object on the tile, and `boxes`, what blocks on an object tile that blocks less than all
+of it. Copy the region files to `public/assets/maps/<id>.json` with the dev server stopped. A map is Run Escape's whole arena (version 68; 3 by 3 map squares of 64
 tiles for most, 3 by 4 for Lumbridge, 2 by 2 for God Wars, Prifddinas and the Inferno), which
 runs to 90 MB for the fullest, so it comes a square at a time (`mapload.ts`): a run starts once
 the squares round the spawn are in and the rest arrive nearest first, two at a time, joining the
