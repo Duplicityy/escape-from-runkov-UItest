@@ -86,6 +86,15 @@ browsers.
   (`ArenaGrid`): a free standing one by its model's base (a signpost by its post), one beside
   open ground a fifth of a tile in from that side, and one that draws nothing not at all; the
   body's circle is checked against each box it reaches, so it slides round corners too.
+- **Water** (version 112; `WATER_TEXTURES` in `region.ts`, the exporter's `collision` writes
+  each textured overlay's texture as `overlayTextures`): the cache blocks deep water but not
+  all of it, since in OSRS the banks keep you out, and with the hills open heroes and enemies
+  waded out over rivers and the sea (Lumbridge's river, 609 tiles of it, could be walked on).
+  Every tile of a water texture (1, 130 to 133, 135, 140, 141, 150 to 154, 175, 176) is
+  solid now on every map; swamp (25), lava (31) and the paved and planked overlays are as the
+  cache has them. Water stops a body but not sight: arrows, spells and a look still go across
+  it, and a pond is never taken for a tree. Three tiles of land, cut off by water, went with
+  it (one on Fremennik, two on Varlamore).
 - One enemy in twenty is a champion: gilded, a third bigger, two and a half times the hitpoints,
   twice the damage, four times the coins, and always carrying a piece of gear. On four and five
   star maps champions come in pairs. One enemy in twelve is an elite, shown by its tint (`TRAITS`

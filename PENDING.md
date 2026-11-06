@@ -1,5 +1,13 @@
 # Pending for the next push
 
+Version 112 (built 6 November 2026, not deployed): no walking on water (README's "Water"). Run
+Escape's `collision` command now also writes `overlayTextures`; the twelve maps' region.json
+re-exported with it and copied to public/assets/maps (tiles unchanged). Water tiles newly made
+solid: Lumbridge 4487, Varlamore 8151, Morytania 5683, Karamja 5589, Fremennik 4918, desert
+2048, Kourend 141, Barrows 64. Checked headless on Lumbridge: pushed into the river from six
+shore tiles the player stops on the bank, and none of 201 enemies stood on water. `GAME_BUILD`
+112.
+
 Version 111 (built 6 November 2026, not deployed): characters drawn on every graphics card
 (README's "How the character is drawn"). Builds 108 and 110's cast clips put 399 to 459 morph
 targets in every player piece, past WebGL2's promised 256, and on cards with no more the

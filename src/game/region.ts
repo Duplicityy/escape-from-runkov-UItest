@@ -31,7 +31,18 @@ type RegionJson = {
     // (the exporter's collision, version 109): [tile, x0, y0, x1, y1] each,
     // the box in hundredths of a tile from its south-west corner
     boxes?: number[];
+    // Each textured overlay's tile and texture: [tile, texture] each
+    // (version 112)
+    overlayTextures?: number[];
 };
+
+// The cache's water textures: sea, river and pond in their shades (the
+// rest of the textured overlays are swamp, lava, planks and paving). The
+// cache blocks deep water but not all of it, since in OSRS its banks keep
+// you out; with the hills open (version 109) the banks no longer did, and
+// heroes and enemies walked out over rivers and the sea. Water is solid to
+// walk on since version 112, and seen and shot across as before.
+const WATER_TEXTURES = new Set([1, 130, 131, 132, 133, 135, 140, 141, 150, 151, 152, 153, 154, 175, 176]);
 
 // Per tile bits from the exporter
 const SOLID = 1;
@@ -101,6 +112,8 @@ export class Region {
     // for the map's chests and enemies
     readonly hills: Uint8Array;
     readonly hillTiles: number;
+    // Water tiles (version 112): solid, but nothing to sight or a shot
+    private readonly water: Uint8Array;
 
     constructor(json: RegionJson) {
         this.id = json.id;
@@ -116,6 +129,15 @@ export class Region {
         this.heights = Int32Array.from(json.heights);
         this.bridgeHeights = Int32Array.from(json.bridgeHeights ?? json.heights);
         this.spawn = { x: json.spawn.x, z: -json.spawn.y };
+        this.water = new Uint8Array(json.sizeX * json.sizeY);
+        const textures = json.overlayTextures ?? [];
+        for (let k = 0; k + 1 < textures.length; k += 2) {
+            const i = textures[k];
+            if (WATER_TEXTURES.has(textures[k + 1]) && (this.tileFlags[i] & BRIDGE) === 0) {
+                this.water[i] = 1;
+                this.tiles[i] |= SOLID;
+            }
+        }
         let open = 0;
         for (const t of this.tiles) {
             if ((t & SOLID) === 0) {
@@ -269,7 +291,8 @@ export class Region {
                 maxX = Math.max(maxX, x);
                 minY = Math.min(minY, y);
                 maxY = Math.max(maxY, y);
-                if ((tiles[i] & walls) !== 0 || (this.tileFlags[i] & INSIDE) !== 0) {
+                // (a pond is no tree)
+                if ((tiles[i] & walls) !== 0 || (this.tileFlags[i] & INSIDE) !== 0 || this.water[i] === 1) {
                     plain = false;
                 }
                 for (const [dx, dy] of [
@@ -486,7 +509,7 @@ export class Region {
             if (this.crossesWall(tx, ty, nx, ny)) {
                 return false;
             }
-            if (!this.isOpenTile(nx, ny) && !(nx === ex && ny === ey)) {
+            if (!this.isOpenTile(nx, ny) && !this.isWaterTile(nx, ny) && !(nx === ex && ny === ey)) {
                 // A tree's tile: the line goes on, and its trunk is checked
                 const o = this.obstacleAtTile(nx, ny);
                 if (o === -1) {
@@ -535,6 +558,17 @@ export class Region {
             py = ty;
         }
         return true;
+    }
+
+    // Whether a world tile is water, which blocks a body but not a look or
+    // a shot (version 112)
+    private isWaterTile(tileX: number, tileY: number): boolean {
+        const x = tileX - this.baseX;
+        const y = tileY - this.baseY;
+        if (x < 0 || y < 0 || x >= this.sizeX || y >= this.sizeY) {
+            return false;
+        }
+        return this.water[x + y * this.sizeX] === 1 && (this.tiles[x + y * this.sizeX] & OBJECT) === 0;
     }
 
     // The round obstacle a tile is part of, or -1
