@@ -151,10 +151,15 @@ export function touchControls(run: Run, hooks: TouchHooks): TouchControls {
     let pointer: number | undefined;
     let originX = 0;
     let originY = 0;
+    // Where the stick's finger is now, for a twist it becomes part of
+    let atX = 0;
+    let atY = 0;
     const place = (x: number, y: number) => {
         knob.style.transform = `translate(${x}px, ${y}px)`;
     };
     const steer = (clientX: number, clientY: number) => {
+        atX = clientX;
+        atY = clientY;
         const dx = clientX - originX;
         const dy = clientY - originY;
         const len = Math.hypot(dx, dy);
@@ -171,6 +176,19 @@ export function touchControls(run: Run, hooks: TouchHooks): TouchControls {
     };
     zone.onpointerdown = (e) => {
         if (pointer !== undefined) {
+            // A second finger on the stick's side: the two twist the camera
+            // round (version 123), and the stick lets go
+            e.preventDefault();
+            capture(zone, e);
+            run.twist([
+                { id: pointer, x: atX, y: atY },
+                { id: e.pointerId, x: e.clientX, y: e.clientY },
+            ]);
+            pointer = undefined;
+            base.hidden = true;
+            rest.hidden = false;
+            run.stick.x = 0;
+            run.stick.z = 0;
             return;
         }
         e.preventDefault();

@@ -1,5 +1,9 @@
 # Pending for the next push
 
+Version 123 (built 6 November 2026): the camera turns round you in a run, with a middle-button
+drag on a desktop or a two-finger twist on a touch screen (README's minimap and camera lines);
+the keys, the stick and the roof check turn with it. `GAME_BUILD` 123.
+
 Version 122 (built 6 November 2026; on the main site as 105.5): a red Staff of the dead and a red
 Spirit shield (magic armour) for the owner's own first character, beside the red ghostly robes
 (README's two characters section): the cache's spare copies 23613 and 23599, packed to

@@ -344,7 +344,12 @@ browsers.
   enemies yellow, the boss red, chests orange, the golden chest gold, the way out green. It's
   drawn from one render of the map from straight above when a run starts, under fog that clears
   twelve tiles round you as you walk; what hasn't been seen isn't shown, enemies and chests
-  included. The **mouse wheel** takes the camera a little in and out.
+  included. The **mouse wheel** takes the camera a little in and out. A **middle-button drag**
+  across the world turns the camera round you, and on a touch screen so does a **two-finger
+  twist**: two fingers on the world, or a second finger on the stick's side, which lets the stick
+  go (version 123; the stick's finger and a tap on the world are still a walk and a swing). The
+  keys and the stick turn with it, so up is always away from the camera; the minimap stays north
+  up. Each run starts looking north again.
 - The **full map** (version 91; `src/ui/fullmap.ts`, `drawFullMap` in `run.ts`): **M**, a click on
   the minimap or a phone's Map button (between Pack and Pause) puts the whole map over the
   screen, opened on you. Drag it about with the mouse or a finger, zoom with the wheel, a pinch

@@ -632,6 +632,9 @@ const PRIZE_FULL = 1 / 6;
 const PRIZE_BOSS_CHEST = 1 / 15;
 const PRIZE_CASKET = 1 / 32;
 const CAMERA_OFFSET = new THREE.Vector3(0, 13, 9);
+const UP = new THREE.Vector3(0, 1, 0);
+// How far round the camera goes for a pixel of a middle-button drag
+const TURN_PER_PIXEL = 0.008;
 const PROJECTILE_SPEED = 14;
 // The minimap shows this many tiles across its circle
 const MINIMAP_TILES = 40;
@@ -833,6 +836,18 @@ export class Run {
     // How far off the camera stands: the settings' distance, and the wheel's
     private zoom = settings.zoom;
     private readonly cameraOffset = new THREE.Vector3();
+    // How far the camera's been turned round you from the south, in radians
+    // (version 123): a middle-button drag on a desktop, a two-finger twist on
+    // a touch screen. The keys and the stick turn with it, so up is always
+    // away from the camera.
+    private cameraYaw = 0;
+    // The middle button held down for turning, and where it was
+    private turnPointer?: number;
+    private turnX = 0;
+    // The fingers on the world (not a button, nor the stick's while it
+    // steers), for the twist; two on the stick's side come by twist()
+    private readonly fingers = new Map<number, { x: number; y: number }>();
+    private twistAngle?: number;
 
     private keys = new Set<string>();
     private wantAttack = false;
@@ -1960,6 +1975,10 @@ export class Run {
         // A pointer, not a mouse: a phone's tap is one straight away, where
         // its mouse event comes late or not at all
         window.addEventListener("pointerdown", this.onMouseDown);
+        window.addEventListener("pointermove", this.onPointerMove);
+        window.addEventListener("pointerup", this.onPointerUp);
+        window.addEventListener("pointercancel", this.onPointerUp);
+        window.addEventListener("mousedown", this.onMiddleDown);
         window.addEventListener("wheel", this.onWheel, { passive: true });
         window.addEventListener("resize", this.onResize);
         this.onResize();
@@ -2336,6 +2355,10 @@ export class Run {
         window.removeEventListener("keydown", this.onKeyDown);
         window.removeEventListener("keyup", this.onKeyUp);
         window.removeEventListener("pointerdown", this.onMouseDown);
+        window.removeEventListener("pointermove", this.onPointerMove);
+        window.removeEventListener("pointerup", this.onPointerUp);
+        window.removeEventListener("pointercancel", this.onPointerUp);
+        window.removeEventListener("mousedown", this.onMiddleDown);
         window.removeEventListener("wheel", this.onWheel);
         window.removeEventListener("resize", this.onResize);
         // No more of the map, and its colours back, for the menu and the
@@ -2397,10 +2420,87 @@ export class Run {
     };
 
     private onMouseDown = (e: PointerEvent): void => {
-        if (e.button === 0 && !this.paused && !this.menuOpen && (e.target as HTMLElement).tagName === "CANVAS") {
+        const onWorld = (e.target as HTMLElement).tagName === "CANVAS";
+        if (e.pointerType === "touch" && onWorld) {
+            this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            this.twistAngle = this.fingerAngle();
+            // A second finger down makes it a twist, not a second swing
+            if (this.fingers.size > 1) {
+                return;
+            }
+        }
+        if (e.button === 1 && onWorld) {
+            e.preventDefault();
+            this.turnPointer = e.pointerId;
+            this.turnX = e.clientX;
+            // Its moves and its letting go still come once it's off the page
+            try {
+                (e.target as HTMLElement).setPointerCapture(e.pointerId);
+            } catch {
+                // Not a live pointer
+            }
+            return;
+        }
+        if (e.button === 0 && !this.paused && !this.menuOpen && onWorld) {
             this.wantAttack = true;
         }
     };
+
+    // The browser's own middle-button scrolling stays off the world
+    private onMiddleDown = (e: MouseEvent): void => {
+        if (e.button === 1 && (e.target as HTMLElement).tagName === "CANVAS") {
+            e.preventDefault();
+        }
+    };
+
+    // A middle-button drag across turns the camera round you; two fingers
+    // on the world twisting turn it with them
+    private onPointerMove = (e: PointerEvent): void => {
+        if (e.pointerId === this.turnPointer) {
+            this.cameraYaw -= (e.clientX - this.turnX) * TURN_PER_PIXEL;
+            this.turnX = e.clientX;
+            return;
+        }
+        const finger = this.fingers.get(e.pointerId);
+        if (!finger) {
+            return;
+        }
+        finger.x = e.clientX;
+        finger.y = e.clientY;
+        const angle = this.fingerAngle();
+        if (angle !== undefined && this.twistAngle !== undefined) {
+            // The shorter way round, so crossing straight up isn't a whole turn
+            let by = angle - this.twistAngle;
+            by = Math.atan2(Math.sin(by), Math.cos(by));
+            this.cameraYaw += by;
+        }
+        this.twistAngle = angle;
+    };
+
+    private onPointerUp = (e: PointerEvent): void => {
+        if (e.pointerId === this.turnPointer) {
+            this.turnPointer = undefined;
+        }
+        if (this.fingers.delete(e.pointerId)) {
+            this.twistAngle = this.fingerAngle();
+        }
+    };
+
+    // Fingers the touch controls hand over for twisting (two on the stick's
+    // side of the screen); their moves and lifting come here like the world's
+    twist(fingers: { id: number; x: number; y: number }[]): void {
+        for (const f of fingers) {
+            this.fingers.set(f.id, { x: f.x, y: f.y });
+        }
+        this.twistAngle = this.fingerAngle();
+    }
+
+    // The angle on the screen from the first finger on the world to the
+    // second; nothing with fewer than two down
+    private fingerAngle(): number | undefined {
+        const [a, b] = this.fingers.values();
+        return a && b ? Math.atan2(b.y - a.y, b.x - a.x) : undefined;
+    }
 
     // The wheel takes the camera a little in and out, and the next run
     // starts where it's left
@@ -2827,7 +2927,7 @@ export class Run {
             }
         }
         const py = this.groundY(x, z);
-        this.cameraOffset.copy(CAMERA_OFFSET).multiplyScalar(this.zoom);
+        this.cameraOffset.copy(CAMERA_OFFSET).multiplyScalar(this.zoom).applyAxisAngle(UP, this.cameraYaw);
         this.camera.position.set(x, py, z).add(this.cameraOffset);
         this.camera.lookAt(x, py + 0.6, z);
     }
@@ -2883,16 +2983,19 @@ export class Run {
 
     // The storeys and roofs above the plane go while anything up there hangs
     // over you (a roof, the way the client takes roofs off indoors, or an
-    // eave or walkway), and while one a few tiles south would stand between
-    // you and the camera. They go at once and come back only after you've
-    // been clear for a moment, so a walk along a wall doesn't flick them.
+    // eave or walkway), and while one a few tiles toward the camera (south,
+    // unless it's been turned) would stand between you and it. They go at
+    // once and come back only after you've been clear for a moment, so a walk
+    // along a wall doesn't flick them.
     private updateFloors(dt: number): void {
         if (this.upperFloors.length === 0) {
             return;
         }
         let covered = false;
-        for (let south = 0; south <= 4 && !covered; south++) {
-            covered = this.region.isCovered(this.px, this.pz + south);
+        const towardX = Math.sin(this.cameraYaw);
+        const towardZ = Math.cos(this.cameraYaw);
+        for (let tiles = 0; tiles <= 4 && !covered; tiles++) {
+            covered = this.region.isCovered(this.px + towardX * tiles, this.pz + towardZ * tiles);
         }
         this.roofClearFor = covered ? 0 : this.roofClearFor + dt;
         const show = !covered && this.roofClearFor >= ROOF_RETURN_SECONDS;
@@ -2941,6 +3044,13 @@ export class Run {
         if (this.keys.has("KeyD") || this.keys.has("ArrowRight")) dx += 1;
         dx += this.stick.x;
         dz += this.stick.z;
+        // Up on the keys or the stick is away from the camera, however it's
+        // turned (the turn of the camera's offset, done to the way)
+        if (this.cameraYaw !== 0) {
+            const cos = Math.cos(this.cameraYaw);
+            const sin = Math.sin(this.cameraYaw);
+            [dx, dz] = [dx * cos + dz * sin, dz * cos - dx * sin];
+        }
         const moving = dx !== 0 || dz !== 0;
         const swinging = this.swingIn >= 0;
 
