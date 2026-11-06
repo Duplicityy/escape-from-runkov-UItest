@@ -575,8 +575,9 @@ items 28934 --like 28934:28933 --recolor
 green edge, the pads' faces that face up, forward and back painted grey and those facing down or
 out (the edge) left green, `item`/`player items 28937 --like 28937:28936 --paint
 "50889:2,4,5,6,16,17,18,19,177,178,179,181,182,183,184,185,198,199,200,201,202,203,204,205,206,207,208,209,247,248,249,250,258,259,260,261,262,263,264,265,266,267,273,274:24;52237:1,2,4,5,6,14,16,17,18,19,92,99,100,108,109,118,119,120,122,123,124,125,126,137,138,143,144,145,146,147,148,149,150,198,199,206,246,260,261,262,273,274,275:24"
---recolor 5223:41,5347:41,5210:33,5334:33,5202:24,5198:24,6608:21939,4550:21939` (the first model
-the worn one, the second the inventory one; `scripts/cache/dump-face-normals.ts <model> 6608`
+--recolor 5223:41,5347:41,5210:33,5334:33,5202:24,5198:21939,6608:21939,4550:21939` (the first model
+the worn one, the second the inventory one; 5198 is the chest sun's points, green, its middle left
+as it was; `scripts/cache/dump-face-normals.ts <model> 6608`
 lists the faces). The chausses are as before. The relay is Run Escape's (`relay/coop-relay.mjs`, plain Node), hosted on
 Fly.io in Dallas; `relay/README.md` has the steps, and `src/game/coop.ts` the address it's built
 with (`VITE_COOP_URL`, or `DEFAULT_RELAY`). A room only takes players on the same build of the game
