@@ -568,10 +568,12 @@ fanatic helm, cuirass and chausses (the Sunfire pieces' twins, on the cache's un
 wraps in Guthix's green (21939), exported with `--like 28934:28933,28937:28936,28940:28939
 --recolor 5223:41,5347:41,5210:33,5334:33,5202:24,5198:24,7872:33,7989:24,7987:24,7975:16,7969:16,6608:21939,4550:21939`.
 Since 6 November 2026 (asked for by the user) the helm and cuirass are exported each on their
-own: the mask green (its points 7987 and 7969, its face 7989) with dark grey details (the points'
-sides 7975, the face's marks 7872, the eyes and mouth 5656) and the hood dark grey, `item`/`player
-items 28934 --like 28934:28933 --recolor
-7987:21939,7969:21939,7989:21939,7975:16,7872:16,5656:16,6608:24`; the shoulders dark grey with a
+own: the mask light grey (its points 7987 and 7969, its face 7989) with the points' thin sides
+(7975) green as their edge, the face's marks (7872) and the chin piece (the rest of 5656) dark
+grey, the eyes and mouth green (5656's faces 23, 24, 40, 41, 61, 65 and 92, on both the worn
+model 50791 and the inventory one 52235), and the hood dark grey: `item`/`player items 28934
+--like 28934:28933 --paint "50791:23,24,40,41,61,65,92:21939;52235:23,24,40,41,61,65,92:21939"
+--recolor 7987:41,7969:41,7975:21939,7989:41,7872:16,5656:16,6608:24`; the shoulders dark grey with a
 green edge, the pads' faces that face up, forward and back painted grey and those facing down or
 out (the edge) left green, `item`/`player items 28937 --like 28937:28936 --paint
 "50889:2,4,5,6,16,17,18,19,177,178,179,181,182,183,184,185,198,199,200,201,202,203,204,205,206,207,208,209,247,248,249,250,258,259,260,261,262,263,264,265,266,267,273,274:24;52237:1,2,4,5,6,14,16,17,18,19,92,99,100,108,109,118,119,120,122,123,124,125,126,137,138,143,144,145,146,147,148,149,150,198,199,206,246,260,261,262,273,274,275:24"
