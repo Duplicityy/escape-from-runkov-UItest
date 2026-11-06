@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 119 (built 6 November 2026; on the main site as 105.3): Vorki, Salmon Dev's crown's own
+pet (README's "pet"). NPC 8025 exported with every animation its definition has (idle 7948, 16
+frames; walk 7959, 22 frames) into full-assets/npcs/8025-vorki, packed to
+public/assets/npcs/8025.glb (1.2 MB), added to assets.json. Checked on the dev server: its model
+and idle drawn as a pet; the owner crown's save doesn't get it. `GAME_BUILD` 119.
+
 Version 118 (built 6 November 2026, not deployed): Yami, the owner crown's own pet (README's
 "pet"). NPC 14203 exported from the cache with its idle (12140, 40 frames) and walk (12143, 20
 frames) into full-assets/npcs/14203-yami and packed to public/assets/npcs/14203.glb (2.3 MB);

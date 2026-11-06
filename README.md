@@ -183,7 +183,9 @@ browsers.
   JalTok-Jad's burning floor at half. A crown's **own pet** (version 118,
   `content/crownpets.ts`) is no boss's: the owner's crown has **Yami**, Yama's pet (NPC 14203,
   model 10339, its idle 12140 and walk 12143, exported with `export-assets.ts npc 14203` and in
-  `assets.json`), whose hits land 6% harder. Every character of a browser holding that crown has
+  `assets.json`), whose hits land 6% harder; Salmon Dev's (the playtester's) crown has **Vorki**,
+  Vorkath's pet (version 119: NPC 8025, model 35023 at the pet's own size, its idle 7948 and walk
+  7959; the other sequences on that skeleton are the boss's own), the same 6%. Every character of a browser holding that crown has
   it, following unless another pet's picked (`restoreCrownPets` in `kit.ts`, once the crown's
   check is done); a save without the crown has it taken away. It counts for none of the pet tasks,
   and the party sees it like any pet.
