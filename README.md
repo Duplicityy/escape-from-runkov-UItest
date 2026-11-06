@@ -575,10 +575,11 @@ model 50791 and the inventory one 52235), and the hood dark grey: `item`/`player
 --like 28934:28933 --paint "50791:23,24,40,41,61,65,92:21939;52235:23,24,40,41,61,65,92:21939"
 --recolor 7987:41,7969:41,7975:21939,7989:41,7872:16,5656:16,6608:24`; the spiked shoulder pads dark grey
 with a green trim round the whole pad, zigzags and collar: the pads' faces that face up, forward
-and back (the lists below) get a smaller dark grey copy laid over them by Run Escape's `--inset`
-(added for this: each copy moved in 2.5 units along the pad's own edges, so the pad's green
-shows as a band round it), `item`/`player items 28937 --like 28937:28936 --inset
-"50889:2,4,5,6,16,17,18,19,177,178,179,181,182,183,184,185,198,199,200,201,202,203,204,205,206,207,208,209,247,248,249,250,258,259,260,261,262,263,264,265,266,267,273,274:24:2.5;52237:1,2,4,5,6,14,16,17,18,19,92,99,100,108,109,118,119,120,122,123,124,125,126,137,138,143,144,145,146,147,148,149,150,198,199,206,246,260,261,262,273,274,275:24:2.5"
+and back (the lists below) get a smaller dark grey copy laid over them by Run Escape's
+`--inset-each` (added for this: each face's copy moved in 2.5 units from the pad's outline, so the
+pad's green shows as a band round it, with fine lines where the pad's faces meet at an angle; the
+user preferred this to `--inset`'s plainer band), `item`/`player items 28937 --like 28937:28936
+--inset-each "50889:2,4,5,6,16,17,18,19,177,178,179,181,182,183,184,185,198,199,200,201,202,203,204,205,206,207,208,209,247,248,249,250,258,259,260,261,262,263,264,265,266,267,273,274:24:2.5;52237:1,2,4,5,6,14,16,17,18,19,92,99,100,108,109,118,119,120,122,123,124,125,126,137,138,143,144,145,146,147,148,149,150,198,199,206,246,260,261,262,273,274,275:24:2.5"
 --recolor 5223:41,5347:41,5210:33,5334:33,5202:24,5198:21939,6608:21939,4550:21939` (the first model
 the worn one, the second the inventory one; 5198 is the chest sun's points, green, its middle left
 as it was; `scripts/cache/dump-face-normals.ts <model> 6608`
