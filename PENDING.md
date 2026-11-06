@@ -1,5 +1,13 @@
 # Pending for the next push
 
+Version 111 (built 6 November 2026, not deployed): characters drawn on every graphics card
+(README's "How the character is drawn"). Builds 108 and 110's cast clips put 399 to 459 morph
+targets in every player piece, past WebGL2's promised 256, and on cards with no more the
+character was drawn as nothing; `assets.ts` now gives each clip a geometry of its own frames
+(at most 24 a piece). Checked in headless Chrome with shaders of over 240 targets refused: the
+live build 110 showed only the shadow, this one the character, idle and running, and every clip's
+poses match the uncut model exactly. `GAME_BUILD` 111.
+
 Version 110 (built 6 November 2026, not deployed): what each staff casts by OSRS's rules, and
 the staves' own spells (README's "What each staff casts"). Seven more player clips in Run
 Escape's PLAYER_CLIPS (cast_god 811, cast_iban 708, cast_dart 1576, cast_trident 11430,

@@ -846,6 +846,13 @@ the first step.
 Every frame of every clip is a morph target in every piece, so a clip added there grows every
 piece: the three emote clips the exporter can add (`--no-emotes` leaves them out) were a quarter
 of each, and the game doesn't use them.
+A graphics card holds every morph target a mesh has at once, and WebGL2 promises only 256 (many
+phones and older cards give no more). The spells' cast clips took the pieces from 234 targets to
+459, and on those cards characters were drawn as nothing but their shadow. Since version 111
+`assets.ts` cuts any model of more than 128 targets up as it loads (`MORPH_SPLIT`): each clip gets
+a geometry holding only its own frames, padded to one count so every clip draws with the same
+shader (24 for a body kit, 19 for most items, 51 for the biggest NPC), and `play()` swaps the
+clip's geometry in. The files are unchanged, and the poses come out exactly as before.
 Every piece is cut from a full player model posed by the same animations, so the pieces move in
 step when played together. The game stacks the pieces for the slots in use: a worn item's piece in
 its slot, the body kit's piece where nothing is worn, and nothing where a worn item hides the part

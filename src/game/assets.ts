@@ -203,11 +203,122 @@ function trimSinkFrame(gltf: GLTF, clip: THREE.AnimationClip): void {
     }
 }
 
+// Each animation frame is a morph target, and a graphics card holds every
+// target a mesh has at once: one influence each in the vertex shader, one
+// layer each of a texture. WebGL2 promises only 256 of both, and many
+// phones and older cards give no more. The player's pieces passed that
+// with the spells' cast animations (version 108, 459 targets), and on
+// those cards they were drawn as nothing. A model with more than
+// MORPH_SPLIT targets is cut up (version 111): each clip gets a geometry
+// holding only its own frames, all padded to one count so every clip
+// draws with the same shader, and play() swaps the clip's geometry in.
+const MORPH_SPLIT = 128;
+
+// A cut-up model, made once per loaded file: the clips with their tracks
+// pointed at the cut targets, and each mesh's geometry for each clip
+type MorphSplit = {
+    clips: THREE.AnimationClip[];
+    size: number;
+    geometries: Map<string, Map<string, THREE.BufferGeometry>>;
+};
+
+const splits = new WeakMap<GLTF, MorphSplit | null>();
+
+function morphSplit(gltf: GLTF): MorphSplit | null {
+    let split = splits.get(gltf);
+    if (split === undefined) {
+        split = makeMorphSplit(gltf);
+        splits.set(gltf, split);
+    }
+    return split;
+}
+
+function makeMorphSplit(gltf: GLTF): MorphSplit | null {
+    const meshes = new Map<string, THREE.Mesh>();
+    let targets = 0;
+    gltf.scene.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        const morphs = mesh.isMesh ? mesh.geometry.morphAttributes.position : undefined;
+        if (morphs) {
+            meshes.set(mesh.name, mesh);
+            targets = Math.max(targets, morphs.length);
+        }
+    });
+    if (targets <= MORPH_SPLIT || gltf.animations.length < 2) {
+        return null;
+    }
+    // The targets each clip turns on, in order
+    const used = new Map<string, number[]>();
+    for (const clip of gltf.animations) {
+        const on = new Set<number>();
+        for (const track of clip.tracks) {
+            const { nodeName, propertyName } = THREE.PropertyBinding.parseTrackName(track.name);
+            if (propertyName !== "morphTargetInfluences" || !meshes.has(nodeName)) {
+                continue;
+            }
+            const width = track.values.length / track.times.length;
+            for (let i = 0; i < track.values.length; i++) {
+                if (track.values[i] !== 0) {
+                    on.add(i % width);
+                }
+            }
+        }
+        used.set(clip.name, [...on].sort((a, b) => a - b));
+    }
+    const size = Math.max(1, ...[...used.values()].map((u) => u.length));
+    const clips = gltf.animations.map((clip) => {
+        const keep = used.get(clip.name)!;
+        const tracks = clip.tracks.map((track) => {
+            const { nodeName, propertyName } = THREE.PropertyBinding.parseTrackName(track.name);
+            if (propertyName !== "morphTargetInfluences" || !meshes.has(nodeName)) {
+                return track;
+            }
+            const width = track.values.length / track.times.length;
+            const values = new Float32Array(track.times.length * size);
+            for (let k = 0; k < track.times.length; k++) {
+                keep.forEach((t, j) => (values[k * size + j] = track.values[k * width + t]));
+            }
+            const cut = new THREE.NumberKeyframeTrack(track.name, track.times, values);
+            cut.setInterpolation(track.getInterpolation());
+            return cut;
+        });
+        return new THREE.AnimationClip(clip.name, clip.duration, tracks, clip.blendMode);
+    });
+    const geometries = new Map<string, Map<string, THREE.BufferGeometry>>();
+    for (const [name, mesh] of meshes) {
+        const whole = mesh.geometry;
+        const byClip = new Map<string, THREE.BufferGeometry>();
+        for (const [clip, keep] of used) {
+            const geometry = new THREE.BufferGeometry();
+            for (const [key, attribute] of Object.entries(whole.attributes)) {
+                geometry.setAttribute(key, attribute);
+            }
+            geometry.setIndex(whole.index);
+            for (const g of whole.groups) {
+                geometry.addGroup(g.start, g.count, g.materialIndex);
+            }
+            geometry.boundingBox = whole.boundingBox;
+            geometry.boundingSphere = whole.boundingSphere;
+            geometry.morphTargetsRelative = whole.morphTargetsRelative;
+            // Padded with the first target, never turned on
+            const picked = Array.from({ length: size }, (_, j) => keep[j] ?? keep[0] ?? 0);
+            for (const [key, morphs] of Object.entries(whole.morphAttributes)) {
+                geometry.morphAttributes[key] = picked.map((t) => morphs[t]);
+            }
+            byClip.set(clip, geometry);
+        }
+        geometries.set(name, byClip);
+    }
+    return { clips, size, geometries };
+}
+
 export type Actor = {
     root: THREE.Group;
     mixer: THREE.AnimationMixer;
     clips: Map<string, THREE.AnimationClip>;
     materials: THREE.MeshBasicMaterial[];
+    // A cut-up model's meshes, and their geometry for each clip
+    poses?: { mesh: THREE.Mesh; byClip: Map<string, THREE.BufferGeometry> }[];
     current?: string;
     height: number;
     radius: number;
@@ -251,12 +362,31 @@ export async function createActorFromUrl(url: string): Promise<Actor> {
     });
     const size = bounds.getSize(new THREE.Vector3());
     const mixer = new THREE.AnimationMixer(root);
-    const clips = new Map(gltf.animations.map((c) => [c.name, c]));
+    // A cut-up model starts in its first clip's geometry, nothing turned on
+    // (the rest pose), and never draws the whole one
+    const split = morphSplit(gltf);
+    let poses: Actor["poses"];
+    if (split) {
+        const first = split.clips[0].name;
+        poses = [];
+        root.traverse((o) => {
+            const mesh = o as THREE.Mesh;
+            const byClip = mesh.isMesh ? split.geometries.get(mesh.name) : undefined;
+            if (byClip) {
+                mesh.geometry = byClip.get(first)!;
+                mesh.morphTargetInfluences = new Array<number>(split.size).fill(0);
+                mesh.morphTargetDictionary = {};
+                poses!.push({ mesh, byClip });
+            }
+        });
+    }
+    const clips = new Map((split?.clips ?? gltf.animations).map((c) => [c.name, c]));
     return {
         root,
         mixer,
         clips,
         materials,
+        poses,
         height: size.y,
         radius: Math.max(size.x, size.z) / 2,
     };
@@ -273,6 +403,9 @@ export function play(actor: Actor, name: string, options: { once?: boolean; spee
         return clip.duration;
     }
     actor.mixer.stopAllAction();
+    for (const pose of actor.poses ?? []) {
+        pose.mesh.geometry = pose.byClip.get(name) ?? pose.mesh.geometry;
+    }
     const action = actor.mixer.clipAction(clip);
     action.reset();
     action.timeScale = options.speed ?? 1;
