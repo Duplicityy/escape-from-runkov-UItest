@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 138 (built 7 November 2026, not deployed), as the user asked: every staff is a magic
+weapon, the mjolnirs (hit 14), Pharaoh's sceptre (30), the Dramen staff (9), the Merfolk trident
+(26) and the demonic sceptre (60) made with `staff()` where they were swung since version 110;
+and the playtester crown's first character keeps their Guthix sunfire set (`PLAYTESTER_MAIN_KIT`
+in kit.ts), restored and unsellable like the owner's own kit. `GAME_BUILD` 138.
+
 Version 137 (built 7 November 2026, not deployed): characters walk 30% faster, as the user asked
 (`PLAYER_SPEED` 4.2 → 5.46 tiles a second); a melee boss's chase stays at 95% of it
 (`BOSS_CHASE_SPEED`), and the run clip plays 1.3 times as fast (`RUN_CLIP_SPEED` in player.ts,

@@ -48,13 +48,17 @@ const PLAYTESTER_KIT = [...KIT, ...GUTHIX_SUNFIRE.map((id) => ({ id, count: 1 })
 // Ankou outfit, kept the same way, (version 121) the red ghostly robes and
 // (version 128) Sanguine torva
 const OWNER_MAIN_KIT = [...ANKOU, ...RED_GHOSTLY, ...SANGUINE_TORVA].map((id) => ({ id, count: 1 }));
+// The playtester's own character, the first (version 138, as the user
+// asked): their Guthix sunfire set, kept the same way
+const PLAYTESTER_MAIN_KIT = GUTHIX_SUNFIRE.map((id) => ({ id, count: 1 }));
 
 // The kit this page's character keeps: a test character's, or the owner's
-// first character's Ankou outfit, red ghostly robes and Sanguine torva
+// first character's Ankou outfit, red ghostly robes and Sanguine torva, or
+// the playtester's first character's Guthix sunfire set
 function kitHere(): { id: number; count: number }[] {
     const crown = crownVerified(crownKey());
     if (loadedSlot() !== TEST_SLOT) {
-        return crown?.alt === "owner" ? OWNER_MAIN_KIT : [];
+        return crown?.alt === "owner" ? OWNER_MAIN_KIT : crown?.alt === "developer" ? PLAYTESTER_MAIN_KIT : [];
     }
     return !crown ? [] : crown.alt === "owner" ? OWNER_KIT : crown.alt === "developer" ? PLAYTESTER_KIT : KIT;
 }

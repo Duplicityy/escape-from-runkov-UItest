@@ -1111,13 +1111,14 @@ export const ITEMS: ItemDef[] = [
     staff(1389, "Magic staff", 1, 10, 300),
     // Casts like a staff, though the unimbued one doesn't in OSRS
     staff(9013, "Skull sceptre", 1, 10, 500),
-    // Not magic weapons in OSRS (version 110), so swung: the mjolnirs and
-    // Pharaoh's sceptre (polestaves), the Dramen staff (blunt), the Merfolk
-    // trident (a spear) and the demonic sceptre (spiked)
+    // Every staff casts (version 138, as the user asked): the mjolnirs and
+    // Pharaoh's sceptre (polestaves), the Dramen staff, the Merfolk trident
+    // and the demonic sceptre were swung from version 110, as OSRS has them,
+    // and cast now at their tier's staff hits
     staff(6603, "White magic staff", 2, 12, 800),
-    weapon(6760, "Guthix mjolnir", 2, 18, 1.2, 3000, { stance: "staff" }),
-    weapon(6762, "Saradomin mjolnir", 2, 18, 1.2, 3000, { stance: "staff" }),
-    weapon(6764, "Zamorak mjolnir", 2, 18, 1.2, 3000, { stance: "staff" }),
+    staff(6760, "Guthix mjolnir", 2, 14, 3000),
+    staff(6762, "Saradomin mjolnir", 2, 14, 3000),
+    staff(6764, "Zamorak mjolnir", 2, 14, 3000),
     staff(2416, "Guthix staff", 3, 30, 80000),
     staff(2415, "Saradomin staff", 3, 30, 80000),
     staff(2417, "Zamorak staff", 3, 30, 80000),
@@ -1430,12 +1431,12 @@ export const ITEMS: ItemDef[] = [
     staff(6910, "Apprentice wand", 2, 16, 2000),
     staff(6912, "Teacher wand", 3, 26, 20000),
     staff(1379, "Staff", 1, 7, 50),
-    weapon(772, "Dramen staff", 1, 9, 1.2, 100, { stance: "staff" }),
+    staff(772, "Dramen staff", 1, 9, 100),
     staff(20733, "Mystic mist staff", 3, 28, 200000),
-    weapon(9044, "Pharaoh's sceptre", 3, 30, 1.2, 300000, { stance: "staff" }),
-    weapon(21649, "Merfolk trident", 3, 26, 1.0, 30000, { range: 1.8, attackClip: "attack_stab", stance: "staff" }),
+    staff(9044, "Pharaoh's sceptre", 3, 30, 300000),
+    staff(21649, "Merfolk trident", 3, 26, 30000),
     staff(33255, "Lithic sceptre", 4, 42, 2000000),
-    weapon(33296, "Demonic sceptre", 5, 62, 1.0, 50000000),
+    staff(33296, "Demonic sceptre", 5, 60, 50000000),
     // Magic robes the game lacked: the black wizard's, the Shade and Druid
     // robes, the ghostly and Moonclan sets, the dark squall robes
     armour(1017, "Wizard hat", "head", 1, 2, 20),
