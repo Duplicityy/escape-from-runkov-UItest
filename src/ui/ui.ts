@@ -1700,7 +1700,7 @@ export class UI {
             h(
                 "div",
                 { class: "osrs-build" },
-                `Build ${GAME_BUILD}`,
+                `Version ${GAME_BUILD}`,
                 live ? h("span", {}, " · ", h("span", { class: "green" }, String(live.raiders)), ` raider${live.raiders === 1 ? "" : "s"} below right now`) : null,
             ),
             h("div", { class: "osrs-utility" }, ...this.utilityButtons()),

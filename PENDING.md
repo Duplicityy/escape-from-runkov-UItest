@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 145 (7 November 2026): the game's version is the release's date, as the user asked:
+`GAME_BUILD` "2026.11.07" (year.month.day, .2 and on for more releases the same day), the title
+screen's "Version 2026.11.07" where it said "Build 144". The relay only compares the strings, so
+nothing there changes. These notes go on numbering versions from 145.
+
 Version 144 (built 7 November 2026, not deployed): the player throws as OSRS does, as the user
 asked. Run Escape's PLAYER_CLIPS gained attack_throw (929, knives, axes and javelins),
 attack_dart (6600), attack_chinchompa (2779) and attack_salamander (5247), 12 frames at most;
