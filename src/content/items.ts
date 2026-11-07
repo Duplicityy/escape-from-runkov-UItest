@@ -1695,6 +1695,27 @@ export const RED_GHOSTLY: number[] = [];
     }
 }
 
+// Sanguine torva (version 128), the blood red Torva, for the owner's own
+// first character alone too (kit.ts keeps it), as the user asked: OSRS's is
+// an ornament kit's look, so each piece is the twin of its Torva piece. The
+// cache's own ids and looks.
+export const SANGUINE_TORVA: number[] = [];
+{
+    const twins: [number, string, number][] = [
+        [28254, "Sanguine torva full helm", 26382],
+        [28256, "Sanguine torva platebody", 26384],
+        [28258, "Sanguine torva platelegs", 26386],
+    ];
+    for (const [id, name, twin] of twins) {
+        const base = ITEMS.find((i) => i.id === twin);
+        if (!base) {
+            throw new Error(`No ${twin} for ${name} to be the twin of`);
+        }
+        ITEMS.push({ ...base, id, name, exclusive: "owner" });
+        SANGUINE_TORVA.push(id);
+    }
+}
+
 export const ITEM_BY_ID: Map<number, ItemDef> = new Map(ITEMS.map((i) => [i.id, i]));
 
 export function getItem(id: number): ItemDef {
