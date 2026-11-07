@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 132 (built 7 November 2026, not deployed): the GitHub repo is public now, as the user
+asked, and a GitHub button sits beside Discord's (`GITHUB_URL` in ui.ts, `button.github` in
+skin.css). On a phone on its side (max-height 450px) the six buttons are a smaller row, clear
+of the way in and the build line. `GAME_BUILD` 132.
+
 Version 131 (built 7 November 2026, not deployed): a Discord button in the title screen's row of
 buttons (`DISCORD_URL` in ui.ts, https://discord.gg/DcCADFqG5n, opened in a new tab), in
 Discord's blurple (`button.discord` in skin.css), as the user asked. `GAME_BUILD` 131.

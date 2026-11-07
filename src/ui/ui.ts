@@ -143,8 +143,10 @@ type HotSlot = {
 // The minimap's circle, in pixels (style.css sizes it the same)
 const MINIMAP_SIZE = 176;
 
-// The game's Discord server (version 131), from the title screen's buttons
+// The game's Discord server (version 131) and its code on GitHub (version
+// 132), from the title screen's buttons
 const DISCORD_URL = "https://discord.gg/DcCADFqG5n";
+const GITHUB_URL = "https://github.com/OSRS-God/escape-from-runkov";
 
 // The pages over a paused run: the pause menu and its two pages, and the
 // trader's stall
@@ -1196,6 +1198,8 @@ export class UI {
         return [
             // The game's Discord server (version 131), in a new tab
             h("button", { class: "discord", title: "Join the game's Discord server", onclick: () => window.open(DISCORD_URL, "_blank", "noopener") }, "Discord"),
+            // And its code (version 132)
+            h("button", { class: "github", title: "The game's code on GitHub", onclick: () => window.open(GITHUB_URL, "_blank", "noopener") }, "GitHub"),
             // To switch accounts or make another (version 117)
             this.account?.name && loadedSlot() === 0
                 ? h("button", { title: `Logged in as ${this.account.name}: log out to switch accounts or make another`, onclick: () => void this.logOut() }, "Log out")

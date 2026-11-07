@@ -766,6 +766,20 @@
     padding: 7px 14px;
 }
 
+/* A phone on its side: six buttons in a smaller row, clear of the way in */
+@media (max-height: 450px) {
+    .osrs-utility {
+        right: 12px;
+        bottom: 6px;
+        gap: 4px;
+    }
+
+    .osrs-utility button {
+        font-size: 11px;
+        padding: 3px 7px;
+    }
+}
+
 /* The Discord button, in Discord's own blurple */
 button.discord {
     background: #5865f2;
@@ -775,6 +789,17 @@ button.discord {
 
 button.discord:hover {
     background: #4752c4;
+}
+
+/* The GitHub button, in GitHub's near-black */
+button.github {
+    background: #24292f;
+    border-color: #0d1117;
+    color: #fff;
+}
+
+button.github:hover {
+    background: #32383f;
 }
 
 /* A short window: the card scrolls, and the way in sits lower */
