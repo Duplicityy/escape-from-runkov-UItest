@@ -1,6 +1,6 @@
 # Pending for the next push
 
-Version 128 (built 6 November 2026): Sanguine torva (28254, 28256, 28258) for the owner's own
+Version 128 (built 6 November 2026; on the main site as 105.10): Sanguine torva (28254, 28256, 28258) for the owner's own
 first character alone, kept like the Ankou outfit (`SANGUINE_TORVA`, `OWNER_MAIN_KIT`), each the
 twin of its Torva piece, as the user asked. Worn pieces packed into public with the scratchpad's
 pack-player-items.mjs, the icon sheet rebuilt. `GAME_BUILD` 128.
