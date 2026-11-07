@@ -991,12 +991,20 @@ seventh, version 59, fills ranged and magic out with everything real the export 
 dart, knife and throwing axe from bronze to dragon, Morrigan's javelin and axe, the three
 chinchompas, the five salamanders, the phoenix crossbow, the three wands, the plain and Dramen
 staves, the mist staff, Pharaoh's, Lithic and Demonic sceptres, the Merfolk trident, the black
-wizard's, Shade, Druid's, ghostly, Moonclan and dark squall robes and the Book of the Dead).
-That leaves melee with about twice the weapons and armour of ranged or magic (195 melee weapons
+wizard's, Shade, Druid's, ghostly, Moonclan and dark squall robes and the Book of the Dead);
+the eighth, version 139, as the user asked, the real combat gear the cache still had, picked by
+its OSRS bonuses (the cosmetic leftovers have none): the dark dagger, the rapier and katana, the
+four Wilderness swords, the Ancient mjolnir and the six croziers (cast, as staves), the Staff of
+Balance, the Sunlight spear, the blazing and drygore blowpipes, the six gods' prayer vestments
+(robe top, robe legs and cloak each), the graahk, kyatt and larupia outfits, the four spiky
+vambraces, the Tyras helm and Helm of Raedwald, the Amulet of the monarchs, the necklaces of
+rupture and fangs, the five elemental amulets, the Salve amulet (ei) and the Thousand-dragon
+ward (59 pieces). That leaves melee with about twice the weapons and armour of ranged or magic (195 melee weapons
 to 84 ranged and 79 magic): OSRS itself has six metals in ten shapes for melee and nothing like
 it for the others, so the rest of the difference is the ammunition's sixteen kinds. What's
-left out on purpose: league and holiday cosmetics, skilling outfits, achievement capes and diary
-rewards, prayer vestments, and anything with a charge, an ornament kit or a colour in its name.
+left out on purpose: league and holiday cosmetics, skilling outfits, achievement capes and most
+diary rewards (the Wilderness swords are in since version 139, as are the prayer vestments), and
+anything with a charge, an ornament kit or a colour in its name.
 Nothing cosmetic is in: no piece worn for looks alone, and no trimmed, gilded or ornamented
 versions of pieces the game has. `GEAR-NOT-ADDED.md` lists every wearable in the cache export the game still lacks
 (a session script made it). Every player piece is exported without the client's emote clips

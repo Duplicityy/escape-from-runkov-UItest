@@ -1,10 +1,10 @@
 # Escape from Runkov: every weapon and piece of armour, by tier
 
-963 pieces. A tier is the map stars a piece comes from (and roughly OSRS's wear level: bronze to black is one star, mithril and adamant two, rune three, dragon four, Barrows and beyond five). A weapon's hit is its most; a swing lands 60 to 100% of it. Defence soaks a share of every hit (30 defence a third, 60 half, never more than three quarters). Prayer is the OSRS prayer bonus: each point makes the bar drain a thirtieth slower and refill a thirtieth faster. A bow or staff hits what its max hit says with the best arrows or runes of its own tier (the ammunition table at the end), more with better and less with worse; a thrown weapon needs no ammunition.
+1022 pieces. A tier is the map stars a piece comes from (and roughly OSRS's wear level: bronze to black is one star, mithril and adamant two, rune three, dragon four, Barrows and beyond five). A weapon's hit is its most; a swing lands 60 to 100% of it. Defence soaks a share of every hit (30 defence a third, 60 half, never more than three quarters). Prayer is the OSRS prayer bonus: each point makes the bar drain a thirtieth slower and refill a thirtieth faster. A bow or staff hits what its max hit says with the best arrows or runes of its own tier (the ammunition table at the end), more with better and less with worse; a thrown weapon needs no ammunition.
 
-## Tier 1 ★ (142 pieces)
+## Tier 1 ★ (147 pieces)
 
-### Weapons (60)
+### Weapons (63)
 
 | Weapon | Kind | Max hit | Swing (s) | Hit a second | Hands | Ammunition | Prayer |
 |---|---|---:|---:|---:|---|---|---:|
@@ -13,6 +13,7 @@
 | Iron scimitar | Melee | 10 | 0.75 | 13.3 | One |  |  |
 | Iron axe | Melee | 13 | 1 | 13.0 | One |  |  |
 | Iron battleaxe | Melee | 13 | 1 | 13.0 | One |  |  |
+| Wilderness sword 2 | Melee | 9 | 0.7 | 12.9 | One |  |  |
 | Iron warhammer | Melee | 12 | 0.95 | 12.6 | One |  |  |
 | Iron longsword | Melee | 10 | 0.8 | 12.5 | One |  |  |
 | Steel thrownaxe | Ranged | 11 | 0.9 | 12.2 | One | Thrown |  |
@@ -37,11 +38,13 @@
 | Iron knife | Ranged | 6 | 0.6 | 10.0 | One | Thrown |  |
 | Iron thrownaxe | Ranged | 9 | 0.9 | 10.0 | One | Thrown |  |
 | Swamp lizard | Ranged | 9 | 0.9 | 10.0 | Two | Thrown |  |
+| Wilderness sword 1 | Melee | 7 | 0.7 | 10.0 | One |  |  |
 | Bronze warhammer | Melee | 9 | 0.95 | 9.5 | One |  |  |
 | Bronze mace | Melee | 8 | 0.85 | 9.4 | One |  |  |
 | Bronze hasta | Melee | 8 | 0.85 | 9.4 | One |  |  |
 | Bone mace | Melee | 8 | 0.85 | 9.4 | One |  |  |
 | Oak longbow | Ranged | 10 | 1.1 | 9.1 | Two | Shoots arrows |  |
+| Dark dagger | Melee | 5 | 0.55 | 9.1 | One |  |  |
 | Iron crossbow | Ranged | 9 | 1 | 9.0 | One | Shoots arrows |  |
 | Bone club | Melee | 8 | 0.9 | 8.9 | One |  |  |
 | Bone spear | Melee | 8 | 0.9 | 8.9 | Two |  |  |
@@ -85,16 +88,18 @@
 | Bronze defender | 2 |  | Melee |  |
 | Wooden shield | 2 |  | Melee |  |
 
-### Head (13)
+### Head (15)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Iron full helm | 6 |  | Melee |  |
 | Shayzien helm (2) | 6 |  | Melee |  |
+| Helm of Raedwald | 6 |  | Melee |  |
 | Initiate sallet | 5 |  | Melee | +3 |
 | Shayzien helm (1) | 5 |  | Melee |  |
 | Bronze full helm | 4 |  | Melee |  |
 | Iron med helm | 4 |  | Melee |  |
+| Graahk headdress | 4 |  | Melee |  |
 | Bronze med helm | 3 |  | Melee |  |
 | Khazard helmet | 3 |  | Melee |  |
 | Fremennik helm | 3 |  | Melee |  |
@@ -191,9 +196,9 @@
 | Amulet of accuracy | 1 |  |  |  |
 | Amulet of magic | 1 |  |  |  |
 
-## Tier 2 ★★ (207 pieces)
+## Tier 2 ★★ (246 pieces)
 
-### Weapons (86)
+### Weapons (95)
 
 | Weapon | Kind | Max hit | Swing (s) | Hit a second | Hands | Ammunition | Prayer |
 |---|---|---:|---:|---:|---|---|---:|
@@ -206,6 +211,7 @@
 | Black scimitar | Melee | 14 | 0.65 | 21.5 | One |  |  |
 | White scimitar | Melee | 14 | 0.65 | 21.5 | One |  |  |
 | Hill giant club | Melee | 28 | 1.3 | 21.5 | Two |  |  |
+| Wilderness sword 4 | Melee | 15 | 0.7 | 21.4 | One |  |  |
 | Mithril axe | Melee | 21 | 1 | 21.0 | One |  |  |
 | Mithril mace | Melee | 17 | 0.85 | 20.0 | One |  |  |
 | Maple shortbow | Ranged | 18 | 0.9 | 20.0 | Two | Shoots arrows |  |
@@ -230,6 +236,7 @@
 | Maple longbow | Ranged | 19 | 1.1 | 17.3 | Two | Shoots arrows |  |
 | Black 2h sword | Melee | 24 | 1.4 | 17.1 | Two |  |  |
 | White 2h sword | Melee | 24 | 1.4 | 17.1 | Two |  |  |
+| Wilderness sword 3 | Melee | 12 | 0.7 | 17.1 | One |  |  |
 | Steel axe | Melee | 17 | 1 | 17.0 | One |  |  |
 | Mithril battleaxe | Melee | 17 | 1 | 17.0 | One |  |  |
 | Mithril warhammer | Melee | 16 | 0.95 | 16.8 | One |  |  |
@@ -276,11 +283,18 @@
 | Water battlestaff | Magic | 20 | 1.8 | 11.1 | One | Shoots runes |  |
 | Earth battlestaff | Magic | 20 | 1.8 | 11.1 | One | Shoots runes |  |
 | Battlestaff | Magic | 18 | 1.8 | 10.0 | One | Shoots runes |  |
-| Guthix mjolnir | Magic | 18 | 1.8 | 10.0 | One | Shoots runes |  |
-| Saradomin mjolnir | Magic | 18 | 1.8 | 10.0 | One | Shoots runes |  |
-| Zamorak mjolnir | Magic | 18 | 1.8 | 10.0 | One | Shoots runes |  |
 | Staff of fire | Magic | 16 | 1.8 | 8.9 | One | Shoots runes |  |
 | Apprentice wand | Magic | 16 | 1.8 | 8.9 | One | Shoots runes |  |
+| Guthix mjolnir | Magic | 14 | 1.8 | 7.8 | One | Shoots runes |  |
+| Saradomin mjolnir | Magic | 14 | 1.8 | 7.8 | One | Shoots runes |  |
+| Zamorak mjolnir | Magic | 14 | 1.8 | 7.8 | One | Shoots runes |  |
+| Ancient mjolnir | Magic | 14 | 1.8 | 7.8 | One | Shoots runes |  |
+| Ancient crozier | Magic | 14 | 1.8 | 7.8 | One | Shoots runes | +6 |
+| Armadyl crozier | Magic | 14 | 1.8 | 7.8 | One | Shoots runes | +6 |
+| Bandos crozier | Magic | 14 | 1.8 | 7.8 | One | Shoots runes | +6 |
+| Guthix crozier | Magic | 14 | 1.8 | 7.8 | One | Shoots runes | +6 |
+| Saradomin crozier | Magic | 14 | 1.8 | 7.8 | One | Shoots runes | +6 |
+| Zamorak crozier | Magic | 14 | 1.8 | 7.8 | One | Shoots runes | +6 |
 | Staff of earth | Magic | 12 | 1.8 | 6.7 | One | Shoots runes |  |
 | White magic staff | Magic | 12 | 1.8 | 6.7 | One | Shoots runes |  |
 
@@ -307,7 +321,7 @@
 | Steel defender | 5 |  | Melee |  |
 | Willow shield | 5 |  | Melee |  |
 
-### Head (24)
+### Head (25)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
@@ -320,6 +334,7 @@
 | Proselyte sallet | 8 |  | Melee | +4 |
 | White full helm | 8 |  | Melee |  |
 | Shayzien helm (4) | 8 |  | Melee |  |
+| Tyras helm | 8 |  | Melee |  |
 | Steel med helm | 7 |  | Melee |  |
 | Spiny helmet | 7 |  | Melee |  |
 | Gold helmet | 7 |  | Melee |  |
@@ -336,7 +351,7 @@
 | Black beret | 3 |  |  |  |
 | Ghostly hood | 3 |  | Magic |  |
 
-### Body (20)
+### Body (29)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
@@ -352,6 +367,9 @@
 | Shayzien platebody (4) | 15 |  | Melee |  |
 | Steel chainbody | 13 |  | Melee |  |
 | Shayzien platebody (3) | 13 |  | Melee |  |
+| Graahk top | 12 |  | Melee |  |
+| Kyatt top | 12 |  | Melee |  |
+| Larupia top | 12 |  | Melee |  |
 | Mixed hide top | 11 |  | Ranged |  |
 | Xerician top | 10 |  | Magic |  |
 | Frog-leather body | 10 |  | Ranged |  |
@@ -360,8 +378,14 @@
 | Moonclan armour | 8 |  | Magic |  |
 | Hardleather body | 6 |  | Ranged |  |
 | Ghostly robe top | 6 |  | Magic |  |
+| Ancient robe top | 4 |  | Magic | +6 |
+| Armadyl robe top | 4 |  | Magic | +6 |
+| Bandos robe top | 4 |  | Magic | +6 |
+| Guthix robe top | 4 |  | Magic | +6 |
+| Saradomin robe top | 4 |  | Magic | +6 |
+| Zamorak robe top | 4 |  | Magic | +6 |
 
-### Legs (20)
+### Legs (29)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
@@ -378,6 +402,9 @@
 | Steel platelegs | 11 |  | Melee |  |
 | Steel plateskirt | 11 |  | Melee |  |
 | Shayzien greaves (3) | 10 |  | Melee |  |
+| Graahk legs | 9 |  | Melee |  |
+| Kyatt legs | 9 |  | Melee |  |
+| Larupia legs | 9 |  | Melee |  |
 | Xerician robe | 8 |  | Magic |  |
 | Mixed hide legs | 8 |  | Ranged |  |
 | Snakeskin chaps | 7 |  | Ranged |  |
@@ -385,6 +412,12 @@
 | Zealot's robe bottom | 7 |  | Magic | +5 |
 | Moonclan skirt | 6 |  | Magic |  |
 | Ghostly robe bottom | 5 |  | Magic |  |
+| Ancient robe legs | 3 |  | Magic | +5 |
+| Armadyl robe legs | 3 |  | Magic | +5 |
+| Bandos robe legs | 3 |  | Magic | +5 |
+| Guthix robe legs | 3 |  | Magic | +5 |
+| Saradomin robe legs | 3 |  | Magic | +5 |
+| Zamorak robe legs | 3 |  | Magic | +5 |
 
 ### Feet (18)
 
@@ -426,7 +459,7 @@
 | Ghostly gloves | 2 |  | Magic |  |
 | Moonclan gloves | 2 |  | Magic |  |
 
-### Capes (5)
+### Capes (11)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
@@ -434,14 +467,25 @@
 | Ava's accumulator | 4 |  |  |  |
 | Mixed hide cape | 3 |  |  |  |
 | Moonclan cape | 3 |  |  |  |
+| Ancient cloak | 3 |  |  | +3 |
+| Armadyl cloak | 3 |  |  | +3 |
+| Bandos cloak | 3 |  |  | +3 |
+| Guthix cloak | 3 |  |  | +3 |
+| Saradomin cloak | 3 |  |  | +3 |
+| Zamorak cloak | 3 |  |  | +3 |
 | Ghostly cloak | 2 |  |  |  |
 
-### Necklaces and amulets (2)
+### Necklaces and amulets (7)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Amulet of defence | 3 |  |  |  |
 | Amulet of strength | 2 | +5 |  |  |
+| Necklace of Fangs | 2 |  |  |  |
+| Amulet of air | 2 |  |  |  |
+| Amulet of water | 2 |  |  |  |
+| Amulet of earth | 2 |  |  |  |
+| Amulet of fire | 2 |  |  |  |
 
 ### Rings (2)
 
@@ -450,15 +494,16 @@
 | Ring of recoil | 1 | +5 | Melee |  |
 | Ring of life | 0 | +20 |  |  |
 
-## Tier 3 ★★★ (239 pieces)
+## Tier 3 ★★★ (246 pieces)
 
-### Weapons (85)
+### Weapons (87)
 
 | Weapon | Kind | Max hit | Swing (s) | Hit a second | Hands | Ammunition | Prayer |
 |---|---|---:|---:|---:|---|---|---:|
 | Magic shortbow | Ranged | 30 | 0.75 | 40.0 | Two | Shoots arrows |  |
 | Toktz-xil-ul | Ranged | 24 | 0.6 | 40.0 | One | Shoots arrows |  |
 | Rune claws | Melee | 22 | 0.6 | 36.7 | One |  |  |
+| Rapier | Melee | 22 | 0.6 | 36.7 | One |  |  |
 | Rune 2h sword | Melee | 50 | 1.4 | 35.7 | Two |  |  |
 | Rune scimitar | Melee | 26 | 0.75 | 34.7 | One |  |  |
 | Toktz-xil-ak | Melee | 24 | 0.7 | 34.3 | One |  |  |
@@ -472,6 +517,7 @@
 | Zombie axe | Melee | 28 | 0.9 | 31.1 | One |  |  |
 | Rune mace | Melee | 26 | 0.85 | 30.6 | One |  |  |
 | Rune hasta | Melee | 26 | 0.85 | 30.6 | One |  |  |
+| Katana | Melee | 21 | 0.7 | 30.0 | One |  |  |
 | Tzhaar-ket-om | Melee | 45 | 1.5 | 30.0 | Two |  |  |
 | Leaf-bladed battleaxe | Melee | 30 | 1 | 30.0 | One |  |  |
 | Darklight | Melee | 24 | 0.8 | 30.0 | One |  |  |
@@ -695,16 +741,19 @@
 | Skeletal boots | 4 |  | Magic |  |
 | Boots of darkness | 4 |  | Magic |  |
 
-### Hands (16)
+### Hands (19)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Red d'hide vambraces | 7 |  | Ranged |  |
+| Red spiky vambraces | 7 |  | Ranged |  |
 | Blue d'hide vambraces | 6 |  | Ranged |  |
+| Blue spiky vambraces | 6 |  | Ranged |  |
 | Green d'hide vambraces | 5 |  | Ranged |  |
 | Rune gloves | 5 |  | Melee |  |
 | Granite gloves | 5 |  | Melee |  |
 | Penance gloves | 5 |  | Melee |  |
+| Green spiky vambraces | 5 |  | Ranged |  |
 | Combat bracelet | 4 | +5 | Melee |  |
 | Mystic gloves | 4 |  | Magic |  |
 | Splitbark gauntlets | 4 |  | Magic |  |
@@ -725,13 +774,15 @@
 | Guthix cape | 4 |  |  |  |
 | Zamorak cape | 4 |  |  |  |
 
-### Necklaces and amulets (5)
+### Necklaces and amulets (7)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Amulet of power | 4 | +10 |  | +1 |
 | Salve amulet | 4 | +10 |  |  |
 | Dragonbone necklace | 4 | +10 |  | +12 |
+| Elemental amulet | 3 |  |  |  |
+| Salve amulet(ei) | 3 |  |  | +3 |
 | Phoenix necklace | 2 | +15 |  |  |
 | Berserker necklace | 2 | +5 |  |  |
 
@@ -741,7 +792,7 @@
 |---|---:|---:|---|---:|
 | Ring of wealth | 2 | +5 | Melee |  |
 
-## Tier 4 ★★★★ (234 pieces)
+## Tier 4 ★★★★ (235 pieces)
 
 ### Weapons (68)
 
@@ -979,7 +1030,7 @@
 | Saradomin d'hide boots | 6 |  | Ranged | +1 |
 | Zamorak d'hide boots | 6 |  | Ranged | +1 |
 
-### Hands (17)
+### Hands (18)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
@@ -993,6 +1044,7 @@
 | Ranger gloves | 8 |  | Ranged |  |
 | Armadyl bracers | 8 |  | Ranged | +1 |
 | Bandos bracers | 8 |  | Melee | +1 |
+| Black spiky vambraces | 8 |  | Ranged |  |
 | Dragon gloves | 7 |  | Melee |  |
 | Dragonstone gauntlets | 7 |  | Melee |  |
 | Regen bracelet | 6 | +10 | Melee |  |
@@ -1027,15 +1079,17 @@
 | Treasonous ring | 4 | +10 | Melee |  |
 | Tyrannical ring | 4 | +10 | Melee |  |
 
-## Tier 5 ★★★★★ (141 pieces)
+## Tier 5 ★★★★★ (148 pieces)
 
-### Weapons (59)
+### Weapons (63)
 
 | Weapon | Kind | Max hit | Swing (s) | Hit a second | Hands | Ammunition | Prayer |
 |---|---|---:|---:|---:|---|---|---:|
 | Twisted bow | Ranged | 90 | 0.9 | 100.0 | Two | Shoots arrows |  |
+| Drygore blowpipe | Ranged | 46 | 0.5 | 92.0 | One | Shoots arrows |  |
 | Bow of faerdhinen | Ranged | 72 | 0.8 | 90.0 | Two | Shoots arrows |  |
 | Venator bow | Ranged | 62 | 0.7 | 88.6 | Two | Shoots arrows |  |
+| Blazing blowpipe | Ranged | 44 | 0.5 | 88.0 | One | Shoots arrows |  |
 | Inquisitor's mace | Melee | 52 | 0.6 | 86.7 | One |  |  |
 | Blade of saeldor | Melee | 50 | 0.6 | 83.3 | One |  |  |
 | Webweaver bow | Ranged | 75 | 0.9 | 83.3 | Two | Shoots arrows |  |
@@ -1056,6 +1110,7 @@
 | Zamorak godsword | Melee | 92 | 1.4 | 65.7 | Two |  | +8 |
 | Ancient godsword | Melee | 92 | 1.4 | 65.7 | Two |  | +8 |
 | Soulreaper axe | Melee | 85 | 1.3 | 65.4 | Two |  |  |
+| Sunlight spear | Melee | 58 | 0.9 | 64.4 | Two |  |  |
 | 3rd Age longsword | Melee | 48 | 0.75 | 64.0 | One |  |  |
 | Emberlight | Melee | 50 | 0.8 | 62.5 | One |  |  |
 | Crystal bow | Ranged | 55 | 0.9 | 61.1 | Two | Shoots arrows |  |
@@ -1087,17 +1142,19 @@
 | Nightmare staff | Magic | 66 | 1.8 | 36.7 | One | Shoots runes |  |
 | 3rd Age wand | Magic | 64 | 1.8 | 35.6 | One | Shoots runes |  |
 | Accursed sceptre | Magic | 62 | 1.8 | 34.4 | One | Shoots runes |  |
-| Demonic sceptre | Magic | 62 | 1.8 | 34.4 | One | Shoots runes |  |
+| Staff of Balance | Magic | 62 | 1.8 | 34.4 | One | Shoots runes |  |
 | Kodai wand | Magic | 60 | 1.8 | 33.3 | One | Shoots runes |  |
 | Twinflame staff | Magic | 60 | 1.8 | 33.3 | One | Shoots runes |  |
 | 3rd Age druidic staff | Magic | 60 | 1.8 | 33.3 | One | Shoots runes | +5 |
+| Demonic sceptre | Magic | 60 | 1.8 | 33.3 | One | Shoots runes |  |
 | Dragon hunter wand | Magic | 58 | 1.8 | 32.2 | One | Shoots runes |  |
 
-### Shields and off-hands (7)
+### Shields and off-hands (8)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Elysian spirit shield | 40 | +15 | Melee | +3 |
+| Thousand-dragon ward | 38 | +10 | Melee | +6 |
 | 3rd age kiteshield | 36 | +5 | Melee |  |
 | Spectral spirit shield | 30 | +10 | Magic | +3 |
 | Arcane spirit shield | 30 | +10 | Magic | +3 |
@@ -1196,10 +1253,11 @@
 | Blessed Dizana's quiver | 10 | +5 |  |  |
 | Ava's assembler | 8 |  |  |  |
 
-### Necklaces and amulets (7)
+### Necklaces and amulets (9)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
+| Amulet of the monarchs | 12 | +20 |  | +10 |
 | Amulet of fury | 10 | +25 |  | +5 |
 | Amulet of blood fury | 10 | +25 |  | +5 |
 | 3rd age amulet | 10 | +20 |  |  |
@@ -1207,6 +1265,7 @@
 | Necklace of anguish | 8 | +15 |  | +2 |
 | Amulet of torture | 8 | +15 |  | +2 |
 | Occult necklace | 6 | +10 |  | +2 |
+| Necklace of rupture | 6 | +10 |  | +3 |
 
 ### Rings (7)
 
@@ -1242,10 +1301,13 @@ Each kind has a tier (the maps whose enemies drop it; the shop sells it once a m
 | Kind | Tier | Power | On a ★ weapon | On ★★ | On ★★★ | On ★★★★ | On ★★★★★ | Price each |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
 | Mind runes | ★ | 0.7 | 87% | 70% | 58% | 54% | 48% | 3 |
-| Air runes | ★ | 0.8 | 100% | 80% | 67% | 62% | 55% | 5 |
-| Water runes | ★★ | 0.9 | 113% | 90% | 75% | 69% | 62% | 8 |
-| Earth runes | ★★ | 1 | 125% | 100% | 83% | 77% | 69% | 12 |
-| Fire runes | ★★★ | 1.1 | 138% | 110% | 92% | 85% | 76% | 20 |
-| Chaos runes | ★★★ | 1.2 | 150% | 120% | 100% | 92% | 83% | 35 |
-| Death runes | ★★★★ | 1.3 | 163% | 130% | 108% | 100% | 90% | 60 |
-| Blood runes | ★★★★★ | 1.45 | 181% | 145% | 121% | 112% | 100% | 100 |
+| Air runes | ★ | 0.8 | 100% | 80% | 67% | 62% | 55% | 4 |
+| Water runes | ★ | 0.9 | 113% | 90% | 75% | 69% | 62% | 4 |
+| Earth runes | ★ | 1 | 125% | 100% | 83% | 77% | 69% | 4 |
+| Fire runes | ★ | 1.1 | 138% | 110% | 92% | 85% | 76% | 4 |
+| Chaos runes | ★★ | 1.2 | 150% | 120% | 100% | 92% | 83% | 20 |
+| Death runes | ★★★ | 1.3 | 163% | 130% | 108% | 100% | 90% | 60 |
+| Blood runes | ★★★★ | 1.45 | 181% | 145% | 121% | 112% | 100% | 100 |
+| Soul runes | ★★★★ | 1.5 | 188% | 150% | 125% | 115% | 103% | 120 |
+| Wrath runes | ★★★★★ | 1.6 | 200% | 160% | 133% | 123% | 110% | 150 |
+| Body runes | ★ | 0.75 | 94% | 75% | 63% | 58% | 52% | 4 |

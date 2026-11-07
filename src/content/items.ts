@@ -1462,6 +1462,76 @@ export const ITEMS: ItemDef[] = [
     armour(29568, "Dark squall robe top", "body", 3, 16, 50000),
     armour(29570, "Dark squall robe bottom", "legs", 3, 12, 40000),
     armour(25818, "Book of the Dead", "shield", 3, 4, 50000),
+    // Batch 8 (version 139, as the user asked): the real combat gear the
+    // cache had that the game lacked, its tier by OSRS's wear level (or, with
+    // none, by its bonuses beside gear of the game's own), the cosmetic
+    // leftovers (no bonuses at all) still out. Weapons: a dagger, the rapier
+    // and katana, the Wilderness swords, the Ancient mjolnir and the six
+    // croziers (staves, so they cast), the Staff of Balance, the Sunlight
+    // spear and two blowpipes
+    weapon(746, "Dark dagger", 1, 5, 0.55, 200, { attackClip: "attack_stab" }),
+    weapon(7142, "Rapier", 3, 22, 0.6, 20000, { attackClip: "attack_stab" }),
+    weapon(12357, "Katana", 3, 21, 0.7, 20000),
+    weapon(13108, "Wilderness sword 1", 1, 7, 0.7, 500),
+    weapon(13109, "Wilderness sword 2", 1, 9, 0.7, 2000),
+    weapon(13110, "Wilderness sword 3", 2, 12, 0.7, 8000),
+    weapon(13111, "Wilderness sword 4", 2, 15, 0.7, 30000),
+    staff(7804, "Ancient mjolnir", 2, 14, 3000),
+    { ...staff(12199, "Ancient crozier", 2, 14, 5000), prayer: 6 },
+    { ...staff(12263, "Armadyl crozier", 2, 14, 5000), prayer: 6 },
+    { ...staff(12275, "Bandos crozier", 2, 14, 5000), prayer: 6 },
+    { ...staff(10442, "Guthix crozier", 2, 14, 5000), prayer: 6 },
+    { ...staff(10440, "Saradomin crozier", 2, 14, 5000), prayer: 6 },
+    { ...staff(10444, "Zamorak crozier", 2, 14, 5000), prayer: 6 },
+    staff(24144, "Staff of Balance", 5, 62, 30000000),
+    weapon(30369, "Sunlight spear", 5, 58, 0.9, 60000000, { twoHanded: true, range: 2.0, stance: "2h", attackClip: "attack_stab" }),
+    { ...bow(28688, "Blazing blowpipe", 5, 44, 0.5, 40000000, ARROW_RUNE), twoHanded: false },
+    { ...bow(30374, "Drygore blowpipe", 5, 46, 0.5, 60000000, ARROW_RUNE), twoHanded: false },
+    // Armour: the God Wars vestments (robe top, legs and cloak of each of
+    // the six gods, the prayer gear of their followers), the Hunter's
+    // graahk, kyatt and larupia outfits, the spiky vambraces, two helms, the
+    // amulets and necklaces, and the Thousand-dragon ward
+    armour(12193, "Ancient robe top", "body", 2, 4, 3000, { prayer: 6 }),
+    armour(12195, "Ancient robe legs", "legs", 2, 3, 2500, { prayer: 5 }),
+    armour(12197, "Ancient cloak", "cape", 2, 3, 2000, { prayer: 3 }),
+    armour(12253, "Armadyl robe top", "body", 2, 4, 3000, { prayer: 6, style: "magic" }),
+    armour(12255, "Armadyl robe legs", "legs", 2, 3, 2500, { prayer: 5, style: "magic" }),
+    armour(12261, "Armadyl cloak", "cape", 2, 3, 2000, { prayer: 3 }),
+    armour(12265, "Bandos robe top", "body", 2, 4, 3000, { prayer: 6 }),
+    armour(12267, "Bandos robe legs", "legs", 2, 3, 2500, { prayer: 5 }),
+    armour(12273, "Bandos cloak", "cape", 2, 3, 2000, { prayer: 3 }),
+    armour(10462, "Guthix robe top", "body", 2, 4, 3000, { prayer: 6 }),
+    armour(10466, "Guthix robe legs", "legs", 2, 3, 2500, { prayer: 5 }),
+    armour(10448, "Guthix cloak", "cape", 2, 3, 2000, { prayer: 3 }),
+    armour(10458, "Saradomin robe top", "body", 2, 4, 3000, { prayer: 6 }),
+    armour(10464, "Saradomin robe legs", "legs", 2, 3, 2500, { prayer: 5 }),
+    armour(10446, "Saradomin cloak", "cape", 2, 3, 2000, { prayer: 3 }),
+    armour(10460, "Zamorak robe top", "body", 2, 4, 3000, { prayer: 6 }),
+    armour(10468, "Zamorak robe legs", "legs", 2, 3, 2500, { prayer: 5 }),
+    armour(10450, "Zamorak cloak", "cape", 2, 3, 2000, { prayer: 3 }),
+    armour(10051, "Graahk headdress", "head", 1, 4, 800),
+    armour(10049, "Graahk top", "body", 2, 12, 3000),
+    armour(10047, "Graahk legs", "legs", 2, 9, 2500),
+    armour(10037, "Kyatt top", "body", 2, 12, 3000),
+    armour(10035, "Kyatt legs", "legs", 2, 9, 2500),
+    armour(10043, "Larupia top", "body", 2, 12, 3000),
+    armour(10041, "Larupia legs", "legs", 2, 9, 2500),
+    armour(10079, "Green spiky vambraces", "hands", 3, 5, 2500),
+    armour(10081, "Blue spiky vambraces", "hands", 3, 6, 3500),
+    armour(10083, "Red spiky vambraces", "hands", 3, 7, 4000),
+    armour(10085, "Black spiky vambraces", "hands", 4, 8, 6000),
+    armour(9629, "Tyras helm", "head", 2, 8, 5000),
+    armour(19687, "Helm of Raedwald", "head", 1, 6, 2000),
+    armour(30376, "Amulet of the monarchs", "neck", 5, 12, 60000000, { hp: 20, prayer: 10 }),
+    armour(33639, "Necklace of rupture", "neck", 5, 6, 20000000, { hp: 10, prayer: 3 }),
+    armour(34401, "Necklace of Fangs", "neck", 2, 2, 5000),
+    armour(34407, "Amulet of air", "neck", 2, 2, 2000),
+    armour(34413, "Amulet of water", "neck", 2, 2, 2000),
+    armour(34419, "Amulet of earth", "neck", 2, 2, 2000),
+    armour(34425, "Amulet of fire", "neck", 2, 2, 2000),
+    armour(34428, "Elemental amulet", "neck", 3, 3, 10000),
+    armour(12018, "Salve amulet(ei)", "neck", 3, 3, 200000, { prayer: 3 }),
+    armour(30382, "Thousand-dragon ward", "shield", 5, 38, 80000000, { hp: 10, prayer: 6 }),
     // Ammunition, in kinds from the weakest to the strongest (version 59; an
     // older save's arrows and runes are the bronze and mind kinds). A shot
     // from a bow or a staff takes one: the best kind in the pack. Enemies

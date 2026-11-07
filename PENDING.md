@@ -1,5 +1,13 @@
 # Pending for the next push
 
+Version 139 (built 7 November 2026, not deployed): gear batch 8, as the user asked, 59 pieces of
+the real combat gear the cache still had, picked by their OSRS bonuses (the new Run-Escape
+`scripts/cache/dump-obj-params.ts` prints an item's params: 0–4 attack, 5–9 defence, 10 melee
+strength, 11 prayer, 14 attack speed, 434/436 the first wear requirement's skill and level). See
+the README's gear batches. Worn pieces exported with `player items <ids> --no-emotes`, packed with
+the scratchpad's pack-player-items.mjs (vite stopped), the icon sheet rebuilt (1094 icons);
+GEAR-LIST.md and GEAR-NOT-ADDED.md regenerated. `GAME_BUILD` 139.
+
 Version 138 (built 7 November 2026, not deployed), as the user asked: every staff is a magic
 weapon, the mjolnirs (hit 14), Pharaoh's sceptre (30), the Dramen staff (9), the Merfolk trident
 (26) and the demonic sceptre (60) made with `staff()` where they were swung since version 110;
