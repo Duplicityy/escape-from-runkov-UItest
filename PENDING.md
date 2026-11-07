@@ -1,5 +1,15 @@
 # Pending for the next push
 
+Version 136 (built 7 November 2026, not deployed), as the user asked: every piece of gear glows
+its tier's colour (`TIER_COLOURS` in items.ts: common grey, uncommon green, rare blue, epic
+purple, legendary gold). In the interface `iconElement` gives gear icons a `tier-glow` drop
+shadow (style.css); on the ground a coloured additive glow sits behind the icon (`glow` on a
+Pickup), and the epic and legendary beams take the same colours. A right click on any item's
+icon opens a menu with View stats (`showItemMenu`/`showItemStats` in ui.ts: slot, max hit,
+speed, range, style, defence, armour style, hitpoints, prayer, heals, effect, special, worth);
+the run's pack menu also has Drop, where a right click dropped the item straight away before.
+`GAME_BUILD` 136.
+
 Version 135 (built 7 November 2026, not deployed): party balloons sit on the ground itself
 (`groundY`, the terrain's height at the spot) where `placeActor` put them on the tile's highest
 corner, up to half a tile above a slope; and each has a soft shadow (`BALLOON_SHADOW`), small

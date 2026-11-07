@@ -16,8 +16,11 @@ import {
     SHOP_POTIONS,
     SLOTS,
     Slot,
+    ITEM_BY_ID,
+    TIER_COLOURS,
     WEAK_TO,
     formatCoins,
+    tierGlows,
     getItem,
     isPrize,
     price,
@@ -329,6 +332,142 @@ function icon(item: ItemDef): HTMLElement {
     el.title = `${item.name}: ${describe(item)}`;
     return el;
 }
+
+// An item's stats as rows of a table, for the card a right click opens
+// (version 136)
+function statRows(item: ItemDef): [string, string][] {
+    const rows: [string, string][] = [];
+    if (item.slot) {
+        rows.push(["Slot", capitalize(item.slot) + (item.twoHanded ? " (two handed)" : "")]);
+    }
+    if (item.damage !== undefined) {
+        rows.push(["Max hit", String(item.damage)]);
+        rows.push(["Attack speed", `${item.speed}s`]);
+        rows.push([item.ranged ? "Range" : "Reach", `${item.range} tiles`]);
+        if (item.slot === "weapon") {
+            rows.push(["Style", capitalize(weaponStyle(item))]);
+        }
+    }
+    if (item.defence) {
+        rows.push(["Defence", String(item.defence)]);
+    }
+    if (item.style) {
+        rows.push(["Armour", `${capitalize(item.style)}: helps ${item.style} hits, half as good against ${WEAK_TO[item.style]}`]);
+    }
+    if (item.hp) {
+        rows.push(["Hitpoints", `+${item.hp}`]);
+    }
+    if (item.prayer) {
+        rows.push(["Prayer", `+${item.prayer} (the bar lasts ${Math.round((item.prayer / PRAYER_BONUS_SCALE) * 100)}% longer)`]);
+    }
+    if (item.heal) {
+        rows.push(["Heals", `${item.heal} hitpoints`]);
+    }
+    if (item.potion) {
+        rows.push(["Effect", POTION_EFFECT[item.potion]]);
+    }
+    if (item.uses) {
+        rows.push(["Shoots", `the best ${item.uses} packed`]);
+    }
+    if (item.ammo) {
+        rows.push(["For", item.ammo === "arrows" ? "bows, one a shot" : "staves, one a cast"]);
+    }
+    const special = item.slot === "weapon" ? specialOf(item) : undefined;
+    if (special) {
+        rows.push(["Special", special.name]);
+    }
+    if (item.slot) {
+        rows.push(["Worth", `${formatCoins(price(item))} coins`]);
+    }
+    return rows;
+}
+
+// The open right-click menu or stats card, closed by the next click
+// anywhere, Escape, or another one opening
+let itemPopup: HTMLElement | undefined;
+
+function closeItemPopup(): void {
+    itemPopup?.remove();
+    itemPopup = undefined;
+}
+
+// Somewhere on screen by the pointer, kept inside the window
+function placePopup(el: HTMLElement, x: number, y: number): void {
+    document.body.append(el);
+    const box = el.getBoundingClientRect();
+    el.style.left = `${Math.max(4, Math.min(x, innerWidth - box.width - 4))}px`;
+    el.style.top = `${Math.max(4, Math.min(y, innerHeight - box.height - 4))}px`;
+    itemPopup = el;
+}
+
+// An item's stats card: its name and tier in the tier's colour, then each
+// stat (version 136)
+function showItemStats(item: ItemDef, x: number, y: number): void {
+    closeItemPopup();
+    const card = h(
+        "div",
+        { class: "item-stats" },
+        h(
+            "div",
+            { class: "stats-head" },
+            iconElement(item.id, item.name),
+            h("div", {}, h("div", { class: "stats-name" }, item.name), h("div", { class: "stats-tier" }, `${"★".repeat(item.tier)} ${tierName(item.tier)}`)),
+        ),
+        h("table", {}, ...statRows(item).map(([label, value]) => h("tr", {}, h("td", {}, label), h("td", {}, value)))),
+        isPrize(item.id) ? h("div", { class: "stats-note" }, "The prize of its tier: only from a boss's chest, a vault, a champion or a clue.") : null,
+    );
+    if (tierGlows(item)) {
+        card.style.setProperty("--tier", TIER_COLOURS[item.tier]);
+    }
+    placePopup(card, x, y);
+}
+
+// The right-click menu on an item: View stats, and whatever else the place
+// it's in offers (the run's pack: Drop)
+function showItemMenu(item: ItemDef, x: number, y: number, extra: [string, () => void][] = []): void {
+    closeItemPopup();
+    const choose = (act: () => void) => (e: Event) => {
+        e.stopPropagation();
+        closeItemPopup();
+        act();
+    };
+    const menu = h(
+        "div",
+        { class: "item-menu" },
+        h("div", { class: "menu-title" }, item.name),
+        h("button", { onclick: choose(() => showItemStats(item, x, y)) }, "View stats"),
+        ...extra.map(([label, act]) => h("button", { onclick: choose(act) }, label)),
+    );
+    if (tierGlows(item)) {
+        (menu.firstChild as HTMLElement).style.color = TIER_COLOURS[item.tier];
+    }
+    placePopup(menu, x, y);
+}
+
+// A right click on any item's icon, anywhere a screen hasn't its own use
+// for one, opens the menu; any click elsewhere closes it
+document.addEventListener("contextmenu", (e) => {
+    if (e.defaultPrevented) {
+        return;
+    }
+    const el = (e.target as HTMLElement | null)?.closest<HTMLElement>("[data-item]");
+    const item = el && ITEM_BY_ID.get(Number(el.dataset.item));
+    if (!item) {
+        return;
+    }
+    e.preventDefault();
+    showItemMenu(item, e.clientX, e.clientY);
+});
+document.addEventListener("pointerdown", (e) => {
+    if (itemPopup && !itemPopup.contains(e.target as Node)) {
+        closeItemPopup();
+    }
+});
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        closeItemPopup();
+    }
+});
 
 function itemRow(item: ItemDef, count: number, ...buttons: HTMLElement[]): HTMLElement {
     return h(
@@ -4394,7 +4533,7 @@ export class UI {
                     "div",
                     {
                         class: "slot" + (hud.dropMode ? " dropping" : ""),
-                        title: `${item.name} (${tierName(item.tier)}): ${describe(item)}. ${action} Right-click drops it.`,
+                        title: `${item.name} (${tierName(item.tier)}): ${describe(item)}. ${action} Right-click for its stats, or to drop it.`,
                         onclick: () => {
                             if (hud.dropMode) {
                                 run.dropItem(stack.id, stack.count);
@@ -4412,10 +4551,11 @@ export class UI {
                     icon(item),
                     stack.count > 1 ? h("span", { class: "count" }, String(stack.count)) : null,
                 );
-                // A right click drops it, whatever the switch says
+                // A right click offers its stats, or to drop it (version 136;
+                // it dropped it straight away before)
                 slot.addEventListener("contextmenu", (e) => {
                     e.preventDefault();
-                    run.dropItem(stack.id, stack.count);
+                    showItemMenu(item, e.clientX, e.clientY, [["Drop", () => run.dropItem(stack.id, stack.count)]]);
                 });
                 return slot;
             }),

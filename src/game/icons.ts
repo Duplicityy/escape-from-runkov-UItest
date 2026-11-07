@@ -10,7 +10,7 @@
 // comes, the icons fall back to their own files, each lifted the same way.
 import * as THREE from "three";
 
-import { iconUrl } from "../content/items";
+import { ITEM_BY_ID, TIER_COLOURS, iconUrl, tierGlows } from "../content/items";
 import { loadTexture } from "./assets";
 import { assetUrl } from "./paths";
 
@@ -171,12 +171,21 @@ function placeIcon(el: HTMLElement): void {
     el.style.backgroundPosition = `${-(i % sheet.cols) * sheet.w}px ${-Math.floor(i / sheet.cols) * sheet.h}px`;
 }
 
-// An icon in the interface
+// An icon in the interface; a piece of gear glows its tier's colour
+// (version 136), and a right click on any item's opens its stats (ui.ts)
 export function iconElement(id: number, name = ""): HTMLElement {
     const el = document.createElement("span");
     el.className = "icon-sprite";
     el.setAttribute("role", "img");
     el.setAttribute("aria-label", name);
+    const item = ITEM_BY_ID.get(id);
+    if (item) {
+        el.dataset.item = String(id);
+    }
+    if (tierGlows(item)) {
+        el.classList.add("tier-glow");
+        el.style.setProperty("--tier", TIER_COLOURS[item.tier] ?? TIER_COLOURS[1]);
+    }
     setIcon(el, id);
     return el;
 }

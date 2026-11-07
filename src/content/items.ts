@@ -1726,6 +1726,16 @@ export function getItem(id: number): ItemDef {
     return item;
 }
 
+// Each tier's colour (version 136), a piece of gear's glow in the
+// interface and on the ground: common grey, uncommon green, rare blue, epic
+// purple, legendary gold
+export const TIER_COLOURS = ["#ffffff", "#c8c8c8", "#3ec44a", "#3d8bff", "#a35cff", "#ffb020"];
+
+// Whether an item glows its tier's colour: gear, which is what tiers rank
+export function tierGlows(item: ItemDef | undefined): item is ItemDef {
+    return !!item?.slot && item.tier >= 1;
+}
+
 export const COINS = 995;
 
 // The food the shop always has

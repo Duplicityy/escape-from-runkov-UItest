@@ -20,12 +20,14 @@ import {
     SHOP_POTIONS,
     SLOTS,
     Special,
+    TIER_COLOURS,
     VAULT_KEY,
     ammoOfTier,
     getItem,
     iconUrl,
     rollGear,
     specialOf,
+    tierGlows,
 } from "../content/items";
 import {
     AHRIMS_STAFF,
@@ -369,10 +371,34 @@ type Pickup = {
     sprite: THREE.Sprite;
     shadow: THREE.Mesh;
     beam?: THREE.Mesh;
+    // A piece of gear's glow, its tier's colour (version 136)
+    glow?: THREE.Sprite;
     x: number;
     z: number;
     age: number;
 };
+
+// The soft round light behind a piece of gear on the ground, drawn once in
+// white and coloured per tier by its material
+let glowMap: THREE.CanvasTexture | undefined;
+
+function glowTexture(): THREE.CanvasTexture {
+    if (!glowMap) {
+        const size = 64;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        const fade = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+        fade.addColorStop(0, "rgba(255, 255, 255, 0.9)");
+        fade.addColorStop(0.4, "rgba(255, 255, 255, 0.45)");
+        fade.addColorStop(1, "rgba(255, 255, 255, 0)");
+        ctx.fillStyle = fade;
+        ctx.fillRect(0, 0, size, size);
+        glowMap = new THREE.CanvasTexture(canvas);
+    }
+    return glowMap;
+}
 
 // A party balloon (version 129): where it lands, its colour, how long it's
 // been about, its model once loaded, and its shadow on the ground (version
@@ -4927,15 +4953,33 @@ export class Run {
         const shadow = groundShadow(0.28);
         shadow.position.set(x, y + 0.05, z);
         this.scene.add(shadow);
-        // Gear worth a shout stands under a shaft of light, with a chime
+        // Every piece of gear glows its tier's colour (version 136)
         const item = getItem(id);
+        let glow: THREE.Sprite | undefined;
+        if (tierGlows(item)) {
+            glow = new THREE.Sprite(
+                new THREE.SpriteMaterial({
+                    map: glowTexture(),
+                    color: TIER_COLOURS[item.tier],
+                    transparent: true,
+                    depthWrite: false,
+                    blending: THREE.AdditiveBlending,
+                    toneMapped: false,
+                }),
+            );
+            glow.scale.setScalar(1.15);
+            glow.position.copy(sprite.position);
+            sprite.renderOrder = 1;
+            this.scene.add(glow);
+        }
+        // Gear worth a shout stands under a shaft of light, with a chime
         let beam: THREE.Mesh | undefined;
         if (item.slot && item.tier >= BEAM_TIER) {
             const best = item.tier >= 5;
             beam = new THREE.Mesh(
                 new THREE.CylinderGeometry(0.16, 0.3, 7, 12, 1, true),
                 new THREE.MeshBasicMaterial({
-                    color: best ? 0xffd040 : 0xa060ff,
+                    color: TIER_COLOURS[item.tier],
                     transparent: true,
                     opacity: 0.35,
                     depthWrite: false,
@@ -4952,7 +4996,7 @@ export class Run {
             }
             this.hooks.onMessage(`${item.name} gleams on the ground.`);
         }
-        this.pickups.push({ uid, id, count, sprite, shadow, beam, x, z, age: 0 });
+        this.pickups.push({ uid, id, count, sprite, shadow, beam, glow, x, z, age: 0 });
     }
 
     // A pickup off the ground, whoever took it
@@ -4960,6 +5004,10 @@ export class Run {
         this.scene.remove(p.sprite, p.shadow);
         if (p.beam) {
             this.scene.remove(p.beam);
+        }
+        if (p.glow) {
+            this.scene.remove(p.glow);
+            p.glow.material.dispose();
         }
         p.sprite.material.dispose();
         const i = this.pickups.indexOf(p);
@@ -5034,6 +5082,10 @@ export class Run {
             const p = this.pickups[i];
             p.age += dt;
             p.sprite.position.y = this.groundY(p.x, p.z) + 0.5 + Math.sin(p.age * 3) * 0.06;
+            if (p.glow) {
+                p.glow.position.y = p.sprite.position.y;
+                p.glow.material.opacity = 0.75 + 0.25 * Math.sin(p.age * 2.5);
+            }
             if (p.beam) {
                 (p.beam.material as THREE.MeshBasicMaterial).opacity = 0.3 + 0.12 * Math.sin(p.age * 4);
                 p.beam.rotation.y += dt * 0.6;
