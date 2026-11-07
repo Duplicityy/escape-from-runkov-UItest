@@ -375,8 +375,9 @@ type Pickup = {
 };
 
 // A party balloon (version 129): where it lands, its colour, how long it's
-// been about, and its model once loaded
-type Balloon = { uid: number; x: number; z: number; colour: number; age: number; actor?: Actor; gone: boolean };
+// been about, its model once loaded, and its shadow on the ground (version
+// 135), which grows as it comes down
+type Balloon = { uid: number; x: number; z: number; colour: number; age: number; actor?: Actor; shadow?: THREE.Mesh; gone: boolean };
 
 // A friendly face on the map: the wandering trader, and whether he's been
 // pointed out yet (his model comes after his place is picked)
@@ -482,6 +483,8 @@ const BALLOON_SPREAD: [number, number] = [1.5, 5];
 // the map
 const BALLOON_SCALE = 3;
 const BALLOON_FALL = 2.5;
+// Its shadow's radius on the ground (tiles)
+const BALLOON_SHADOW = 0.28;
 const BALLOON_LIFE = 45;
 const BALLOON_REACH = 0.75;
 // What's in one: a piece of gear now and then, arrows or runes, food, or
@@ -2866,10 +2869,18 @@ export class Run {
             }
             if (b.actor) {
                 b.actor.mixer.update(dt);
-                // On the ground once its fall's played; off up into the sky
-                // at the end
+                // On the ground itself (not its tile's highest corner, which
+                // on a slope is half a tile up) once its fall's played; off
+                // up into the sky at the end
                 const off = Math.max(0, b.age - BALLOON_LIFE);
-                b.actor.root.position.y = this.region.topAt(b.x, b.z) + off * off * 2;
+                b.actor.root.position.y = this.groundY(b.x, b.z) + off * off * 2;
+            }
+            if (b.shadow) {
+                // Small while it's high, its own size on the ground, gone
+                // as it floats off
+                const down = Math.min(1, b.age / BALLOON_FALL);
+                const off = Math.max(0, 1 - (b.age - BALLOON_LIFE) / 1.5);
+                b.shadow.scale.setScalar(BALLOON_SHADOW * (0.35 + 0.65 * down * down) * Math.min(1, off));
             }
             if (!host || b.age < BALLOON_FALL || b.age > BALLOON_LIFE) {
                 continue;
@@ -2927,6 +2938,10 @@ export class Run {
             }
             b.actor = actor;
             this.placeActor(actor, x, z, this.rng() * Math.PI * 2, BALLOON_SCALE);
+            actor.root.position.y = this.groundY(x, z);
+            b.shadow = groundShadow(BALLOON_SHADOW);
+            b.shadow.position.set(x, this.groundY(x, z) + 0.05, z);
+            this.scene.add(b.shadow);
             // Its fall, once, as far along as the balloon is (a model that
             // loaded late, or a guest told late, doesn't start from the top)
             play(actor, "play", { once: true });
@@ -2938,6 +2953,9 @@ export class Run {
         b.gone = true;
         if (b.actor) {
             this.scene.remove(b.actor.root);
+        }
+        if (b.shadow) {
+            this.scene.remove(b.shadow);
         }
         const i = this.balloons.indexOf(b);
         if (i !== -1) {
@@ -2956,6 +2974,7 @@ export class Run {
                 return;
             }
             this.placeActor(actor, b.x, b.z, 0, BALLOON_SCALE);
+            actor.root.position.y = this.groundY(b.x, b.z);
             this.popping.push({ actor, left: Math.max(0.3, play(actor, "play", { once: true })) });
         });
         if (!by) {

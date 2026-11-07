@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 135 (built 7 November 2026, not deployed): party balloons sit on the ground itself
+(`groundY`, the terrain's height at the spot) where `placeActor` put them on the tile's highest
+corner, up to half a tile above a slope; and each has a soft shadow (`BALLOON_SHADOW`), small
+while it's high and full size as it lands, gone as it floats off. Bursts sit on the ground too.
+Measured in a run: every balloon's lowest point 0.05 above the terrain. `GAME_BUILD` 135.
+
 Version 134 (built 7 November 2026, not deployed): party balloons come all the way down. The
 balloon's own animation (seq 498, the "play" clip) is its fall, about seven tiles at the drawn
 scale to the ground in 2.5 seconds, not a bob: looped, it kept dropping them from on high, on
