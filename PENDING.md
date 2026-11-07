@@ -1,6 +1,7 @@
 # Pending for the next push
 
-Version 129 (built 7 November 2026, not deployed): party balloons, a random event, as the user
+Version 129 (built 7 November 2026; on the main site as 105.11, its runes from release's own
+`ammoOfTier` there): party balloons, a random event, as the user
 asked. Every three to five minutes (the first a minute or two in) six to nine of the Party Room's
 balloons drift down round someone; running into one bursts it for arrows or runes, food, now and
 then gear, or nothing (`updateBalloons` and friends in run.ts, `playPop` in assets.ts). Locs
