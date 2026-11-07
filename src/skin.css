@@ -1141,6 +1141,43 @@
     justify-content: center;
 }
 
+/* The starter kits (version 127): each a room button, its blurb wrapping and
+   what it wears and packs in a row under it */
+.starter-panel {
+    width: min(520px, 94vw);
+    max-height: calc(100vh - 110px);
+    max-height: calc(100dvh - 110px);
+    overflow-y: auto;
+}
+
+.starter-panel .room {
+    height: auto;
+    flex: none;
+    padding: 10px 16px;
+}
+
+.starter-panel .room-sub {
+    white-space: normal;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.starter-gear {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.starter-item {
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+}
+
 /* ---- The war room ---- */
 
 /* The client's small font has next to no line height of its own */

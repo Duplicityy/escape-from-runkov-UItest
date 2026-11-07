@@ -53,6 +53,7 @@ import {
 } from "../content/spells";
 import { TASKS, Task } from "../content/tasks";
 import { isKept, restoreCrownPets } from "../game/kit";
+import { STARTER_KITS, StarterKit, applyStarter } from "../game/starter";
 import { Chat } from "./chat";
 import { FullMap } from "./fullmap";
 import { REGEN_DELAY, soak } from "../game/combat";
@@ -583,12 +584,47 @@ export class UI {
     // the character's card with the way in along the bottom. A phone gets the
     // rail: it fits under a thumb.
     showMenu(): void {
+        if (this.save.pickStarter) {
+            this.showStarter();
+            return;
+        }
         const layout = isTouch ? "rail" : settings.menuLayout;
         this.showKeyed("menu", layout === "card" ? this.cardMenu() : layout === "osrs" ? this.osrsMenu() : this.railMenu());
         // The character stands clear of the rail, or above the play bar;
         // between the card and the rooms
         this.menu.focus = layout === "card" ? 0 : layout === "osrs" ? 0.02 : 0.12;
         this.menu.raise = layout === "card" ? 0.14 : layout === "osrs" ? 0.08 : 0.05;
+    }
+
+    // A new character's first screen (version 127): a starter kit for each
+    // combat style, each shown as what it wears and packs; the one picked is
+    // theirs, and on into the guild
+    private showStarter(): void {
+        const pick = (kit: StarterKit) => {
+            applyStarter(this.save, kit);
+            this.persist();
+            this.showMenu();
+        };
+        const card = (kit: StarterKit) => {
+            const ids = [...Object.values(kit.equipment), ...kit.backpack.map((s) => s.id)].filter((id): id is number => id !== undefined);
+            const gear = h("span", { class: "starter-gear" }, ...ids.map((id) => h("span", { class: "starter-item", title: getItem(id).name }, this.itemIcon(id))));
+            const sub = h("span", {}, kit.blurb, gear);
+            return this.roomButton(`${capitalize(kit.style)} · ${kit.name}`, sub, this.itemIcon(kit.equipment.weapon!), () => pick(kit));
+        };
+        this.showKeyed(
+            "starter",
+            h(
+                "div",
+                { class: "screen account" },
+                h("h1", {}, "Choose your style"),
+                h(
+                    "div",
+                    { class: "panel account-panel starter-panel" },
+                    h("div", { class: "subtitle" }, "The guild kits you out for one way of fighting. Whatever else you want, you'll find in runs or buy in the shop."),
+                    ...STARTER_KITS.map(card),
+                ),
+            ),
+        );
     }
 
     // What the title screen says about each room and the character
@@ -1698,7 +1734,7 @@ export class UI {
     joinFromLink(code: string): void {
         this.pendingCoop = { join: code };
         // Not over the account screen: it's joined, and shown once in
-        if (this.screenKey !== "account" && this.screenKey !== "welcome" && !this.loading) {
+        if (this.screenKey !== "account" && this.screenKey !== "welcome" && this.screenKey !== "starter" && !this.loading) {
             this.showCoop();
         }
     }

@@ -716,6 +716,15 @@ browser filter anywhere (the SVG filter `index.html` had drew some icons as plai
 Safari); an item on the ground gets its cell of the sheet as a texture, through
 the renderer's own curve.
 
+- **Choose your style** (version 127, `starter.ts`): a new character's first screen, before the
+  title screen. It picks one of three starter kits, each a combat style's matched tier 1 gear
+  with food: **Melee · Squire** (bronze longsword, bronze med helm, chainbody and plateskirt, a
+  wooden shield, 10 shrimps), **Ranged · Archer** (shortbow, 100 bronze arrows, leather cowl,
+  body, chaps and vambraces, 8 shrimps) and **Magic · Apprentice** (staff of air, which gives
+  air runes free so Wind Strike costs a mind rune, 150 mind runes, the blue wizard hat, robe and
+  skirt, 8 shrimps). The kit picked is worn and packed, in place of the old bronze sword,
+  leather body and shrimps. A save makes the choice once (`pickStarter`, set by `newSave`, kept
+  only by a save that had it and hasn't run yet), so one from before version 127 never sees it.
 - **Choose a map**: every map, its stars, what lives there and its boss. The maps open in order
   (`worlds.json`'s, by tier, Lumbridge first): a map is locked until the one before it is beaten,
   which means escaping from it in a run where its boss fell (`stats.mapsBeaten`, `mapUnlocked`

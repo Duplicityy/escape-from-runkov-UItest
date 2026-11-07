@@ -76,6 +76,9 @@ export type SaveData = {
     // Today's contract (contract.ts): which day it's for, the best a run
     // has done towards it, and whether it's been paid
     contract?: { day: number; map: string; best: number; done: boolean };
+    // A new character still to pick its starter kit (starter.ts, version
+    // 127); a save from before it never had the choice, and keeps its gear
+    pickStarter?: boolean;
 };
 
 export type Friend = { code: string; name: string };
@@ -216,6 +219,7 @@ export function newSave(): SaveData {
         loadouts: [],
         bankOrder: [],
         bankTabs: [],
+        pickStarter: true,
     };
 }
 
@@ -326,6 +330,11 @@ export function parseSave(raw: string): SaveData | undefined {
         }
         if (!save.contract || typeof save.contract.day !== "number" || typeof save.contract.map !== "string") {
             delete save.contract;
+        }
+        // Only a save made with the choice still to make has it (fresh's
+        // true isn't an older save's), and only before its first run
+        if (data.pickStarter !== true || save.stats.runs > 0) {
+            delete save.pickStarter;
         }
         save.friendKey ??= newFriendKey();
         return save;

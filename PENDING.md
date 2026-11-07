@@ -1,6 +1,12 @@
 # Pending for the next push
 
-Version 126 (built 6 November 2026): the skull sceptre is a magic weapon, cast like the magic
+Version 127 (built 6 November 2026): starter kits, as the user asked. A new character's first
+screen is "Choose your style": Melee · Squire (bronze longsword and armour, wooden shield),
+Ranged · Archer (shortbow, 100 bronze arrows, leather) or Magic · Apprentice (staff of air, 150
+mind runes, blue wizard robes), each with shrimps, worn and packed in place of the old bronze
+sword kit (`starter.ts`, the save's `pickStarter`). Older saves never see it. `GAME_BUILD` 127.
+
+Version 126 (built 6 November 2026; on the playtest as 117.4, the main site already had it): the skull sceptre is a magic weapon, cast like the magic
 staff (tier 1, max hit 10, range 6, runes or a picked spell) in place of a swung club, as the
 user asked. `GAME_BUILD` 126.
 
