@@ -1734,13 +1734,16 @@ export const SHOP_POTIONS: number[] = [119, 137, 6691, 2434];
 export const CLUE_SCROLL = 2677;
 export const VAULT_KEY = 989;
 export const BOSS_KEY = 991;
-// What a pack carries at most: this many pieces of food in all, and this
-// many arrows and this many runes (every kind together); a bite takes this
-// long before the next (inventory.ts's canCarry enforces the limits,
-// run.ts the delay). Runes went from 100 to 2000 with the spellbook
-// (version 106): a spell takes OSRS's two to seventeen of them.
+// What a pack carries at most: this many pieces of food in all, this many
+// arrows (every kind together) and this many runes of each kind; a bite
+// takes this long before the next (inventory.ts's canCarry enforces the
+// limits, run.ts the delay). Runes went from 100 to 2000 with the spellbook
+// (version 106), and to 250 of each kind with version 130, from the
+// playtest (a spell takes three or four kinds, which shared the 2000).
 export const FOOD_LIMIT = 15;
-export const AMMO_LIMITS: Record<"arrows" | "runes", number> = { arrows: 150, runes: 2000 };
+export const AMMO_LIMITS: Record<"arrows" | "runes", number> = { arrows: 150, runes: 250 };
+// Whether a kind's limit is for each item of it (runes) or all together
+export const AMMO_PER_ITEM: Record<"arrows" | "runes", boolean> = { arrows: false, runes: true };
 export const EAT_DELAY = 1.8;
 // The weakest kind of each, what a new pack starts with
 export const AMMO_ARROWS = 882;

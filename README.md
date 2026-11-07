@@ -127,8 +127,9 @@ browsers.
   in `items.ts`; the stash's Pack button, pickups and the trader all stop there; a stack on the
   ground gives what fits and leaves the rest, since version 100), and a bite takes
   1.8 seconds before the next (`EAT_DELAY`): "You're still chewing." Ammunition is 150 arrows
-  and 2,000 runes at most, every kind together (`AMMO_LIMITS`; runes were 100 before the
-  spellbook, version 106), at 3 to 150 coins each in the shop by the kind, and a kill drops
+  at most, every kind together, and 250 of each kind of rune (`AMMO_LIMITS`, `AMMO_PER_ITEM`;
+  runes were 100 before the spellbook, version 106, then 2,000 all together, and per kind
+  since version 130, from the playtest, as a spell takes three or four kinds), at 3 to 150 coins each in the shop by the kind, and a kill drops
   ammunition one time in four: three to six arrows of its map's tier, or 15 to 30 of one
   elemental rune, or four to eight of the map tier's catalyst (`runeDrop` in `spells.ts`). A roused melee boss moves nearly as fast as you do unburdened
   (`BOSS_CHASE_SPEED`), so it can't be shot from a walk backwards for ever; a boss that shoots

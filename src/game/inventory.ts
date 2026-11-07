@@ -1,12 +1,12 @@
 // Item lists (the stash, a run's inventory) and what worn gear adds up to.
-import { AMMO_LIMITS, ATTACK_STYLES, AttackStyle, FOOD_LIMIT, ItemDef, SLOTS, Slot, WEAK_TO, getItem, price, weaponStyle } from "../content/items";
+import { AMMO_LIMITS, AMMO_PER_ITEM, ATTACK_STYLES, AttackStyle, FOOD_LIMIT, ItemDef, SLOTS, Slot, WEAK_TO, getItem, price, weaponStyle } from "../content/items";
 import { Equipment, ItemStack } from "./save";
 
 export const INVENTORY_SIZE = 28;
 
 // Whether a pack can take this many more of something, by what it's
 // carrying already: food is FOOD_LIMIT pieces in all, ammunition
-// AMMO_LIMITS arrows in all and runes in all (every kind together);
+// AMMO_LIMITS arrows in all and runes of each kind (AMMO_PER_ITEM);
 // everything else is only the slots
 export function canCarry(list: ItemStack[], id: number, count = 1): boolean {
     const item = getItem(id);
@@ -16,7 +16,8 @@ export function canCarry(list: ItemStack[], id: number, count = 1): boolean {
     }
     if (item.ammo) {
         const kind = item.ammo;
-        const packed = list.reduce((n, s) => n + (getItem(s.id).ammo === kind ? s.count : 0), 0);
+        const same = AMMO_PER_ITEM[kind] ? (s: ItemStack) => s.id === id : (s: ItemStack) => getItem(s.id).ammo === kind;
+        const packed = list.reduce((n, s) => n + (same(s) ? s.count : 0), 0);
         return packed + count <= AMMO_LIMITS[kind];
     }
     return true;
@@ -38,7 +39,9 @@ export function carryLimitText(id: number): string {
         return `You can't carry more than ${FOOD_LIMIT} pieces of food.`;
     }
     const kind = item.ammo ?? "arrows";
-    return `You can't carry more than ${AMMO_LIMITS[kind]} ${kind} of every kind together.`;
+    return AMMO_PER_ITEM[kind]
+        ? `You can't carry more than ${AMMO_LIMITS[kind]} ${item.name.toLowerCase()}.`
+        : `You can't carry more than ${AMMO_LIMITS[kind]} ${kind} of every kind together.`;
 }
 
 export function countOf(list: ItemStack[], id: number): number {

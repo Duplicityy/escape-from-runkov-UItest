@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 130 (built 7 November 2026): the playtest's updates on the main site, as the user asked,
+less the ways out never closing (playtest 117.2) and every item for everyone (6ad825f's kit).
+Main already had every playtest change but those and the playtest's 250 of each rune, which this
+brings over (`AMMO_PER_ITEM`; runes were 2000 all together). The main site is now built from
+main, accounts (functions/, the production D1 `runkov-accounts`) included. `GAME_BUILD` 130.
+
 Version 129 (built 7 November 2026; on the main site as 105.11, its runes from release's own
 `ammoOfTier` there): party balloons, a random event, as the user
 asked. Every three to five minutes (the first a minute or two in) six to nine of the Party Room's

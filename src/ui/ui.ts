@@ -3754,7 +3754,7 @@ export class UI {
                         h(
                             "div",
                             { class: "muted small-text" },
-                            `Food ${FOOD_LIMIT} pieces at most, arrows ${AMMO_LIMITS.arrows} and runes ${AMMO_LIMITS.runes} of every kind together. A click puts ${this.quantityWord() === "all" ? "a stack" : this.quantityWord()} back in the vault.`,
+                            `Food ${FOOD_LIMIT} pieces at most, arrows ${AMMO_LIMITS.arrows} of every kind together and ${AMMO_LIMITS.runes} of each kind of rune. A click puts ${this.quantityWord() === "all" ? "a stack" : this.quantityWord()} back in the vault.`,
                         ),
                         packNote,
                         h("button", { class: "wide", disabled: save.backpack.length === 0, onclick: () => depositPack.click() }, "Empty pack into vault"),
