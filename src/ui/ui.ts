@@ -143,6 +143,9 @@ type HotSlot = {
 // The minimap's circle, in pixels (style.css sizes it the same)
 const MINIMAP_SIZE = 176;
 
+// The game's Discord server (version 131), from the title screen's buttons
+const DISCORD_URL = "https://discord.gg/DcCADFqG5n";
+
 // The pages over a paused run: the pause menu and its two pages, and the
 // trader's stall
 type PauseView = "menu" | "settings" | "stats" | "trade";
@@ -1191,6 +1194,8 @@ export class UI {
     // Progress lives in this browser; a code carries it to another
     private utilityButtons(): HTMLElement[] {
         return [
+            // The game's Discord server (version 131), in a new tab
+            h("button", { class: "discord", title: "Join the game's Discord server", onclick: () => window.open(DISCORD_URL, "_blank", "noopener") }, "Discord"),
             // To switch accounts or make another (version 117)
             this.account?.name && loadedSlot() === 0
                 ? h("button", { title: `Logged in as ${this.account.name}: log out to switch accounts or make another`, onclick: () => void this.logOut() }, "Log out")

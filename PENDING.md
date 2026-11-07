@@ -1,5 +1,9 @@
 # Pending for the next push
 
+Version 131 (built 7 November 2026, not deployed): a Discord button in the title screen's row of
+buttons (`DISCORD_URL` in ui.ts, https://discord.gg/DcCADFqG5n, opened in a new tab), in
+Discord's blurple (`button.discord` in skin.css), as the user asked. `GAME_BUILD` 131.
+
 Version 130 (built 7 November 2026): the playtest's updates on the main site, as the user asked,
 less the ways out never closing (playtest 117.2) and every item for everyone (6ad825f's kit).
 Main already had every playtest change but those and the playtest's 250 of each rune, which this

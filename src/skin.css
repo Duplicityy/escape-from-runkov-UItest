@@ -766,6 +766,17 @@
     padding: 7px 14px;
 }
 
+/* The Discord button, in Discord's own blurple */
+button.discord {
+    background: #5865f2;
+    border-color: #3c45a5;
+    color: #fff;
+}
+
+button.discord:hover {
+    background: #4752c4;
+}
+
 /* A short window: the card scrolls, and the way in sits lower */
 @media (max-height: 760px) {
     .osrs-card,
