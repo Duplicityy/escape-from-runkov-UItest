@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 140 (built 7 November 2026, not deployed): gear that shared its numbers is spread a
+little, as the user asked (`TIE_SPREAD` in items.ts: within a group of pieces with the same
+slot, tier and stats, ordered by worth, the max hit or defence moves up to 12% each way, at least
+a point). Tied pieces went from 500 of 1,022 to 315; the exclusive twins still copy their
+piece. GEAR-LIST.md regenerated. `GAME_BUILD` 140.
+
 Version 139 (built 7 November 2026, not deployed): gear batch 8, as the user asked, 59 pieces of
 the real combat gear the cache still had, picked by their OSRS bonuses (the new Run-Escape
 `scripts/cache/dump-obj-params.ts` prints an item's params: 0–4 attack, 5–9 defence, 10 melee

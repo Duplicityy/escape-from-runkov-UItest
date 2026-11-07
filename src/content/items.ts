@@ -1653,6 +1653,39 @@ for (const item of ITEMS) {
     }
 }
 
+// Pieces of one tier and slot with the very same numbers (version 140, as
+// the user asked: half the gear shared its stats with another piece) are
+// spread a little, the pricier slightly better and the cheaper slightly
+// worse, by up to TIE_SPREAD of the stat each way (at least one point): a
+// weapon's max hit, or an armour piece's defence. The pieces' order by
+// worth is OSRS's own, so the mystic staves, the god platelegs or the
+// steel and black helms now differ by a point or two. Done before the
+// exclusive twins below copy their piece's numbers.
+const TIE_SPREAD = 0.12;
+{
+    const tieKey = (i: ItemDef) => [i.slot, i.tier, i.damage, i.speed, i.range, i.defence, i.hp, i.prayer, i.style, i.uses].join("|");
+    const ties = new Map<string, ItemDef[]>();
+    for (const item of ITEMS) {
+        if (item.slot && !item.exclusive && (item.damage || item.defence)) {
+            const key = tieKey(item);
+            ties.set(key, [...(ties.get(key) ?? []), item]);
+        }
+    }
+    for (const group of ties.values()) {
+        if (group.length < 2) {
+            continue;
+        }
+        group.sort((a, b) => a.value - b.value || a.id - b.id);
+        const stat = group[0].damage ? "damage" : "defence";
+        const base = group[0][stat]!;
+        const most = Math.max(1, Math.round(base * TIE_SPREAD));
+        const half = (group.length - 1) / 2;
+        group.forEach((item, rank) => {
+            item[stat] = Math.max(1, base + Math.round(((rank - half) / half) * most));
+        });
+    }
+}
+
 // The gilded pieces (version 83), for the owner's test character alone
 // (kit.ts keeps them at the head of its stash): OSRS's gilded armour has the
 // stats of the piece it gilds, so each is that piece's twin here, and the

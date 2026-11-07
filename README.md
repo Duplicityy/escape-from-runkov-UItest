@@ -973,7 +973,11 @@ infinity to Ancestral, bows, crossbows, the blowpipe and ballista, staves from b
 tridents, the Sanguinesti staff and Tumeken's shadow, and the end-game melee prizes (claws,
 the warhammer, elder maul, scythe, rapier, fang, Voidwaker, the godswords). Tiers follow what OSRS
 asks to wear a piece: levels 1 to 10 are tier 1, 20 to 30 tier 2, 40 tier 3, 50 to 60 tier 4, 70
-and up tier 5; stats sit on the scale of what was there (`items.ts`, the second and third batches
+and up tier 5. Pieces of one tier and slot that had the very same numbers are spread a little
+since version 140 (`TIE_SPREAD`, up to 12% of the max hit or defence each way, at least a point),
+the pricier slightly better: the mystic staves now hit 25 to 34 where nine of them hit 28, and
+the six god platelegs range 23 to 28; 500 of the 1,022 pieces shared their stats with another,
+315 still do (small numbers can only move a point). Stats sit on the scale of what was there (`items.ts`, the second and third batches
 at the end of `ITEMS`: snakeskin, red d'hide, xerician, splitbark, Dagon'hai, elder chaos,
 Virtus, every battlestaff and mystic staff, the nightmare staves, hastas and spears, the demon
 slayer blades, the anchor, Dinh's bulwark, the ancient godsword and the soulreaper axe among them;
