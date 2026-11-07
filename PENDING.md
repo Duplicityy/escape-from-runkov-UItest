@@ -1,6 +1,7 @@
 # Pending for the next push
 
-Version 127 (built 6 November 2026): starter kits, as the user asked. A new character's first
+Version 127 (built 6 November 2026; on the playtest as 117.5, and the main site as 105.9, ported
+by hand there with 100 mind runes, a pack's most on that code): starter kits, as the user asked. A new character's first
 screen is "Choose your style": Melee · Squire (bronze longsword and armour, wooden shield),
 Ranged · Archer (shortbow, 100 bronze arrows, leather) or Magic · Apprentice (staff of air, 150
 mind runes, blue wizard robes), each with shrimps, worn and packed in place of the old bronze
