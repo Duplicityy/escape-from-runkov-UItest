@@ -1,5 +1,15 @@
 # Pending for the next push
 
+Version 142 (built 7 November 2026, not deployed): perks, as the user asked for more variety in
+what armour does. Each comes from the piece's own OSRS bonuses (`src/content/osrs-bonuses.json`,
+written by Run-Escape's new `scripts/cache/dump-bonuses.ts ../dungeon-extraction/assets.json
+<out>`): a damage perk (melee strength, ranged strength or magic damage for a weapon of that
+style, capped 1.5% to 3.5% by tier, `PERK_CAP`), a ward (a third more defence against magic or
+ranged for a piece OSRS gives much more of it there), and OSRS's prayer bonus where
+`PRAYER_BONUS` had none. 323 of the 646 pieces of armour and jewellery have one. Balance sim
+(BALANCE_SEEDS=8): tiers 1–4 unchanged, tier 5 bosses 3/4/6 of 8 → 5/6/8 (caps of 2–8% made it
+7/8/8). Shown in the tooltip, the stats card and the bank's worn panel. `GAME_BUILD` 142.
+
 Version 141 (built 7 November 2026, not deployed): armour has a strength stat by its tier and
 combat style, as the user asked (`strength` on an ItemDef, `TIER_STRENGTH` and `SLOT_STRENGTH`
 in items.ts, `GearStats.strength` in inventory.ts): melee strength, ranged strength or magic

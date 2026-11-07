@@ -1,6 +1,9 @@
 // Every item in the game, keyed by its OSRS cache id (the folder under
 // public/assets/items). Wearable gear only comes out of dungeon chests; the
 // shop sells food and buys anything.
+// Each piece's own OSRS bonuses (version 142), written by Run Escape's
+// scripts/cache/dump-bonuses.ts from the game's assets.json: its perks below
+import osrsBonuses from "./osrs-bonuses.json";
 
 export type Slot =
     | "weapon"
@@ -101,6 +104,10 @@ export type ItemDef = {
     // weapon of the same kind, by its tier and slot (TIER_STRENGTH,
     // SLOT_STRENGTH): melee strength, ranged strength or magic damage
     strength?: number;
+    // A piece's extra (version 142, as the user asked), from its own OSRS
+    // bonuses (osrs-bonuses.json): more damage for one style of weapon,
+    // whatever the piece's own kind, and more defence against one style
+    perk?: { damage?: { style: AttackStyle; share: number }; ward?: { style: AttackStyle; defence: number } };
     // One crowned test character's alone (kit.ts): the owner's (version 83,
     // the gilded pieces) or the playtester's (version 89, the Guthix sunfire
     // set). Never in a chest, a drop or the shop, and no tier's prize.
@@ -1592,6 +1599,52 @@ for (const item of ITEMS) {
 
 // What each armour kind's strength is called: OSRS's names for it
 export const STRENGTH_NAME: Record<AttackStyle, string> = { melee: "melee strength", ranged: "ranged strength", magic: "magic damage" };
+
+// Perks (version 142, as the user asked: more variety in what armour does),
+// each from the piece's own OSRS bonuses, so a piece does here what it's
+// known for there. Not on weapons, whose bonuses are their max hit.
+//  - Damage: OSRS's melee strength, ranged strength or magic damage on a
+//    piece of armour or jewellery adds that share to a weapon of that style,
+//    whatever the piece's kind (an amulet of fury's melee strength, Ancestral
+//    robes' magic damage, an anguish's ranged strength), up to its tier's cap
+//  - Prayer: OSRS's prayer bonus, for the pieces PRAYER_BONUS hasn't set
+//  - Ward: a piece whose OSRS defence against magic or ranged stands well
+//    above its defence against melee (d'hide against magic, as OSRS has it)
+//    counts a third more of its defence against that style
+// A piece that has a perk keeps it in its exclusive twin.
+// (Caps of 2% to 8% by tier made the tier 5 bosses half again easier in the
+// balance sim: a whole tier 5 set stacks several perks)
+const PERK_CAP = [0, 0.015, 0.02, 0.025, 0.03, 0.035];
+const PERK_MIN = 0.005;
+const WARD_SHARE = 1 / 3;
+{
+    const bonuses = osrsBonuses as Record<string, { str?: number; rstr?: number; mdmg?: number; pray?: number; def: number[] }>;
+    for (const item of ITEMS) {
+        const b = bonuses[item.id];
+        if (!b || !item.slot || item.slot === "weapon") {
+            continue;
+        }
+        const cap = PERK_CAP[item.tier] ?? 0;
+        const offers: { style: AttackStyle; share: number }[] = [
+            { style: "melee", share: (b.str ?? 0) * 0.004 },
+            { style: "ranged", share: (b.rstr ?? 0) * 0.008 },
+            { style: "magic", share: (b.mdmg ?? 0) / 1000 },
+        ];
+        const best = offers.sort((x, y) => y.share - x.share)[0];
+        if (best.share >= PERK_MIN) {
+            item.perk = { ...item.perk, damage: { style: best.style, share: Math.round(Math.min(cap, best.share) * 1000) / 1000 } };
+        }
+        if (item.prayer === undefined && (b.pray ?? 0) > 0) {
+            item.prayer = b.pray;
+        }
+        const [stab, slash, crush, magic, ranged] = b.def;
+        const melee = (stab + slash + crush) / 3;
+        const ward = magic >= 10 && magic > melee * 1.5 ? "magic" : ranged >= 10 && ranged > melee * 1.5 ? "ranged" : undefined;
+        if (ward && item.defence) {
+            item.perk = { ...item.perk, ward: { style: ward, defence: Math.max(1, Math.round(item.defence * WARD_SHARE)) } };
+        }
+    }
+}
 
 // A piece's prayer bonus slows the bar's drain and speeds its refill by
 // 1 + bonus / this

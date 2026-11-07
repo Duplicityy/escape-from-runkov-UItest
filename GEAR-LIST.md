@@ -123,10 +123,10 @@
 | Bronze chainbody | 6 |  | Melee |  |
 | Studded body | 5 |  | Ranged |  |
 | Yak-hide armour | 5 |  | Melee |  |
-| Shade robe top | 4 |  | Magic |  |
+| Black robe | 4 |  | Magic |  |
 | Leather body | 3 |  | Ranged |  |
 | Monk's robe top | 3 |  | Magic | +6 |
-| Black robe | 3 |  | Magic |  |
+| Shade robe top | 3 |  | Magic | +5 |
 | Druid's robe top | 3 |  | Magic | +4 |
 | Blue wizard robe | 2 |  | Magic |  |
 
@@ -143,11 +143,11 @@
 | Bronze plateskirt | 5 |  | Melee |  |
 | Studded chaps | 4 |  | Ranged |  |
 | Yak-hide armour | 4 |  | Melee |  |
-| Shade robe | 3 |  | Magic |  |
+| Druid's robe | 3 |  | Magic | +4 |
 | Leather chaps | 2 |  | Ranged |  |
+| Blue skirt | 2 |  | Magic |  |
 | Monk's robe | 2 |  | Magic | +5 |
-| Druid's robe | 2 |  | Magic | +4 |
-| Blue skirt | 1 |  | Magic |  |
+| Shade robe | 1 |  | Magic | +4 |
 
 ### Feet (9)
 
@@ -306,13 +306,13 @@
 | Black kiteshield | 11 |  | Melee |  |
 | Neitiznot shield | 11 |  | Melee |  |
 | Mithril sq shield | 10 |  | Melee |  |
-| White kiteshield | 10 |  | Melee |  |
+| White kiteshield | 10 |  | Melee | +1 |
 | Mirror shield | 10 |  | Melee |  |
 | Steel kiteshield | 9 |  | Melee |  |
-| White sq shield | 9 |  | Melee |  |
+| Maple shield | 9 |  | Melee |  |
 | Anti-dragon shield | 8 | +5 |  |  |
 | Black sq shield | 8 |  | Melee |  |
-| Maple shield | 8 |  | Melee |  |
+| White sq shield | 8 |  | Melee | +1 |
 | Steel sq shield | 7 |  | Melee |  |
 | Mithril defender | 7 |  | Melee |  |
 | Snakeskin shield | 7 |  | Ranged |  |
@@ -329,18 +329,18 @@
 | Shayzien helm (5) | 10 |  | Melee |  |
 | Shayzien helm (4) | 9 |  | Melee |  |
 | Tyras helm | 9 |  | Melee |  |
+| Steel full helm | 8 |  | Melee |  |
 | Black full helm | 8 |  | Melee |  |
 | Mithril med helm | 8 |  | Melee |  |
 | Proselyte sallet | 8 |  | Melee | +4 |
-| White full helm | 8 |  | Melee |  |
+| White full helm | 8 |  | Melee | +1 |
 | Shayzien helm (3) | 8 |  | Melee |  |
-| Steel full helm | 7 |  | Melee |  |
 | Black med helm | 7 |  | Melee |  |
 | Spiny helmet | 7 |  | Melee |  |
 | Gold helmet | 7 |  | Melee |  |
 | Xerician hat | 6 |  | Magic |  |
 | Steel med helm | 6 |  | Melee |  |
-| White med helm | 6 |  | Melee |  |
+| White med helm | 6 |  | Melee | +1 |
 | Mind helmet | 6 |  | Magic |  |
 | Coif | 5 |  | Ranged |  |
 | Zealot's helm | 5 |  | Magic | +3 |
@@ -360,11 +360,11 @@
 | Mithril chainbody | 17 |  | Melee |  |
 | Shayzien platebody (4) | 17 |  | Melee |  |
 | Proselyte hauberk | 16 |  | Melee | +8 |
-| White platebody | 16 |  | Melee |  |
-| White chainbody | 16 |  | Melee |  |
+| White platebody | 16 |  | Melee | +1 |
+| Black chainbody | 15 |  | Melee |  |
 | Black platebody | 15 |  | Melee |  |
+| White chainbody | 15 |  | Melee | +1 |
 | Shayzien platebody (3) | 15 |  | Melee |  |
-| Black chainbody | 14 |  | Melee |  |
 | Steel platebody | 13 |  | Melee |  |
 | Graahk top | 13 |  | Melee |  |
 | Larupia top | 12 |  | Melee |  |
@@ -392,13 +392,13 @@
 | Mithril plateskirt | 16 |  | Melee |  |
 | Shayzien greaves (5) | 15 |  | Melee |  |
 | Proselyte tasset | 15 |  | Melee | +6 |
+| White plateskirt | 13 |  | Melee | +1 |
 | Shayzien greaves (4) | 13 |  | Melee |  |
 | Steel platelegs | 12 |  | Melee |  |
 | Mithril platelegs | 12 |  | Melee |  |
-| White platelegs | 12 |  | Melee |  |
-| White plateskirt | 12 |  | Melee |  |
 | Black platelegs | 11 |  | Melee |  |
 | Proselyte cuisse | 11 |  | Melee | +6 |
+| White platelegs | 11 |  | Melee | +1 |
 | Black plateskirt | 11 |  | Melee |  |
 | Steel plateskirt | 10 |  | Melee |  |
 | Shayzien greaves (3) | 10 |  | Melee |  |
@@ -430,16 +430,16 @@
 | Shayzien boots (5) | 4 |  | Melee |  |
 | Boots of stone | 4 |  | Melee |  |
 | Mixed hide boots | 4 |  | Ranged |  |
-| Shayzien boots (3) | 4 |  | Melee |  |
 | Shayzien boots (4) | 4 |  | Melee |  |
 | Steel boots | 3 |  | Melee |  |
 | Black boots | 3 |  | Melee |  |
+| White boots | 3 |  | Melee | +1 |
 | Holy sandals | 3 |  | Melee | +3 |
 | Frog-leather boots | 3 |  | Ranged |  |
 | Zealot's boots | 3 |  | Magic | +2 |
+| Shayzien boots (3) | 3 |  | Melee |  |
 | Moonclan boots | 3 |  | Magic |  |
 | Snakeskin boots | 2 |  | Ranged |  |
-| White boots | 2 |  | Melee |  |
 | Ghostly boots | 1 |  | Magic |  |
 
 ### Hands (12)
@@ -454,7 +454,7 @@
 | Shayzien gloves (4) | 3 |  | Melee |  |
 | Black gloves | 2 |  | Melee |  |
 | Mithril gloves | 2 |  | Melee |  |
-| White gloves | 2 |  | Melee |  |
+| White gloves | 2 |  | Melee | +1 |
 | Moonclan gloves | 2 |  | Magic |  |
 | Steel gloves | 1 |  | Melee |  |
 | Ghostly gloves | 1 |  | Magic |  |
@@ -618,7 +618,7 @@
 | Book of war | 6 | +10 | Magic | +5 |
 | Holy book | 5 | +10 | Magic | +5 |
 | Unholy book | 5 | +10 | Magic | +5 |
-| Book of the Dead | 4 |  | Magic |  |
+| Book of the Dead | 4 |  | Magic | +3 |
 
 ### Head (31)
 
@@ -627,19 +627,19 @@
 | Bandos full helm | 19 |  | Melee | +1 |
 | Armadyl full helm | 18 |  | Melee | +1 |
 | Fighter hat | 18 |  | Melee |  |
-| Granite helm | 17 |  | Melee |  |
 | Rock-shell helm | 17 |  | Melee |  |
 | Guthix full helm | 17 |  | Melee | +1 |
 | Ancient full helm | 17 |  | Melee | +1 |
 | Berserker helm | 16 | +5 | Melee |  |
+| Granite helm | 16 |  | Melee |  |
 | Saradomin full helm | 16 |  | Melee | +1 |
+| Elite black full helm | 16 |  | Melee | +4 |
 | Runner hat | 16 |  | Melee |  |
-| Warrior helm | 15 |  | Melee |  |
 | Zamorak full helm | 15 |  | Melee | +1 |
 | Ardougne knight helm | 15 |  | Melee |  |
+| Warrior helm | 14 |  | Melee |  |
 | Farseer helm | 14 |  | Magic |  |
 | Archer helm | 14 |  | Ranged |  |
-| Elite black full helm | 14 |  | Melee |  |
 | Rune full helm | 13 |  | Melee |  |
 | Ranger hat | 13 |  | Ranged |  |
 | Adamant full helm | 12 |  | Melee |  |
@@ -667,7 +667,7 @@
 | Rock-shell plate | 34 |  | Melee |  |
 | Guthix platebody | 33 |  | Melee | +1 |
 | Saradomin platebody | 32 |  | Melee | +1 |
-| Elite black platebody | 32 |  | Melee |  |
+| Elite black platebody | 32 |  | Melee | +8 |
 | Zamorak platebody | 30 |  | Melee | +1 |
 | Ardougne knight platebody | 30 |  | Melee |  |
 | Fighter torso | 28 | +5 | Melee |  |
@@ -696,7 +696,6 @@
 | Bandos platelegs | 28 |  | Melee | +1 |
 | Armadyl plateskirt | 28 |  | Melee | +1 |
 | Armadyl platelegs | 27 |  | Melee | +1 |
-| Elite black platelegs | 27 |  | Melee |  |
 | Ancient plateskirt | 27 |  | Melee | +1 |
 | Granite legs | 26 |  | Melee |  |
 | Rune plateskirt | 26 |  | Melee |  |
@@ -704,11 +703,12 @@
 | Guthix plateskirt | 26 |  | Melee | +1 |
 | Saradomin plateskirt | 25 |  | Melee | +1 |
 | Zamorak plateskirt | 25 |  | Melee | +1 |
+| Rock-shell legs | 24 |  | Melee |  |
 | Guthix platelegs | 24 |  | Melee | +1 |
 | Saradomin platelegs | 24 |  | Melee | +1 |
+| Elite black platelegs | 24 |  | Melee | +6 |
 | Zamorak platelegs | 23 |  | Melee | +1 |
 | Ardougne knight platelegs | 22 |  | Melee |  |
-| Rock-shell legs | 21 |  | Melee |  |
 | Rune platelegs | 20 |  | Melee |  |
 | Penance skirt | 20 |  | Melee |  |
 | Adamant plateskirt | 18 |  | Melee |  |
@@ -779,12 +779,12 @@
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Amulet of power | 4 | +10 |  | +1 |
-| Salve amulet | 4 | +10 |  |  |
+| Salve amulet | 4 | +10 |  | +3 |
 | Dragonbone necklace | 4 | +10 |  | +12 |
 | Elemental amulet | 3 |  |  |  |
 | Salve amulet(ei) | 3 |  |  | +3 |
 | Phoenix necklace | 2 | +15 |  |  |
-| Berserker necklace | 2 | +5 |  |  |
+| Berserker necklace | 2 | +5 |  | +3 |
 
 ### Rings (1)
 
@@ -909,7 +909,7 @@
 | Obsidian helmet | 22 |  | Melee |  |
 | Dragonstone full helm | 22 |  | Melee |  |
 | Dharok's helm | 21 |  | Melee |  |
-| Helm of neitiznot | 20 | +5 | Melee |  |
+| Helm of neitiznot | 20 | +5 | Melee | +3 |
 | Dragon med helm | 20 |  | Melee |  |
 | Slayer helmet | 19 | +5 | Melee |  |
 | Eclipse Moon helm | 18 | +5 | Ranged |  |
@@ -919,9 +919,9 @@
 | Morrigan's coif | 16 |  | Ranged |  |
 | Blue Moon helm | 14 | +5 | Magic |  |
 | Zuriel's hood | 14 |  | Magic |  |
-| Hueycoatl hide coif | 14 |  | Ranged |  |
+| Hueycoatl hide coif | 14 |  | Ranged | +2 |
 | Void melee helm | 13 | +8 |  |  |
-| Dagon'hai hat | 13 |  | Magic |  |
+| Dagon'hai hat | 13 |  | Magic | +2 |
 | Elder chaos hood | 13 |  | Magic |  |
 | Armadyl coif | 13 |  | Ranged | +2 |
 | Bandos coif | 13 |  | Ranged | +2 |
@@ -953,7 +953,7 @@
 | Eclipse Moon chestplate | 32 | +10 | Ranged |  |
 | Rune platebody (g) | 32 |  | Melee |  |
 | Morrigan's leather body | 30 |  | Ranged |  |
-| Hueycoatl hide body | 28 |  | Ranged |  |
+| Hueycoatl hide body | 28 |  | Ranged | +3 |
 | Armadyl d'hide body | 27 |  | Ranged | +4 |
 | Blue Moon chestplate | 26 | +10 | Magic |  |
 | Ahrim's robetop | 26 |  | Magic |  |
@@ -961,9 +961,9 @@
 | Elder chaos top | 25 |  | Magic |  |
 | Ancient d'hide body | 25 |  | Ranged | +4 |
 | Zuriel's robe top | 24 |  | Magic |  |
-| Dagon'hai robe top | 23 |  | Magic |  |
+| Dagon'hai robe top | 23 |  | Magic | +2 |
 | Saradomin d'hide body | 23 |  | Ranged | +4 |
-| Elite void top | 22 | +12 |  |  |
+| Elite void top | 22 | +12 |  | +3 |
 | Black d'hide body | 22 |  | Ranged |  |
 | Infinity top | 22 |  | Magic |  |
 | Guthix d'hide body | 22 |  | Ranged | +4 |
@@ -992,9 +992,9 @@
 | Blue Moon tassets | 22 | +5 | Magic |  |
 | Zuriel's robe bottom | 22 |  | Magic |  |
 | Elder chaos robe | 20 |  | Magic |  |
-| Hueycoatl hide chaps | 20 |  | Ranged |  |
-| Dagon'hai robe bottom | 19 |  | Magic |  |
-| Elite void robe | 18 | +10 |  |  |
+| Hueycoatl hide chaps | 20 |  | Ranged | +2 |
+| Dagon'hai robe bottom | 19 |  | Magic | +2 |
+| Elite void robe | 18 | +10 |  | +3 |
 | Ahrim's robeskirt | 18 |  | Magic |  |
 | Infinity bottoms | 18 |  | Magic |  |
 | Armadyl chaps | 18 |  | Ranged | +3 |
@@ -1013,10 +1013,10 @@
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Dragon boots | 14 |  | Melee |  |
-| Guardian boots | 12 |  | Melee |  |
+| Guardian boots | 12 |  | Melee | +2 |
 | Bandos boots | 10 |  | Melee | +1 |
 | Dragonstone boots | 10 |  | Melee |  |
-| Aranea boots | 9 |  | Ranged |  |
+| Aranea boots | 9 |  | Ranged | +1 |
 | Ranger boots | 8 |  | Ranged |  |
 | Wizard boots | 8 |  | Magic |  |
 | Infinity boots | 8 |  | Magic |  |
@@ -1038,7 +1038,7 @@
 | Ancient bracers | 9 |  | Melee | +1 |
 | Ranger gloves | 9 |  | Ranged |  |
 | Bandos bracers | 9 |  | Melee | +1 |
-| Hueycoatl hide vambraces | 9 |  | Ranged |  |
+| Hueycoatl hide vambraces | 9 |  | Ranged | +1 |
 | Guthix bracers | 8 |  | Melee | +1 |
 | Saradomin bracers | 8 |  | Melee | +1 |
 | Dragonstone gauntlets | 8 |  | Melee |  |
@@ -1057,15 +1057,15 @@
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
-| Mythical cape | 10 | +5 |  |  |
+| Mythical cape | 10 | +5 |  | +1 |
 
 ### Necklaces and amulets (3)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
-| Amulet of glory | 6 | +15 |  | +3 |
-| Amulet of the Damned | 6 | +15 |  |  |
-| Amulet of avarice | 6 | +10 |  |  |
+| Amulet of the Damned | 7 | +15 |  | +3 |
+| Amulet of avarice | 6 | +10 |  | +3 |
+| Amulet of glory | 5 | +15 |  | +3 |
 
 ### Rings (7)
 
@@ -1157,7 +1157,7 @@
 | Thousand-dragon ward | 38 | +10 | Melee | +6 |
 | 3rd age kiteshield | 36 | +5 | Melee |  |
 | Arcane spirit shield | 34 | +10 | Magic | +3 |
-| Elidinis' ward | 28 | +10 | Magic |  |
+| Elidinis' ward | 28 | +10 | Magic | +1 |
 | Twisted buckler | 28 |  | Ranged |  |
 | Spectral spirit shield | 26 | +10 | Magic | +3 |
 | Avernic defender | 24 |  | Melee |  |
@@ -1167,16 +1167,16 @@
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Oathplate helm | 34 | +10 | Melee |  |
-| Justiciar faceguard | 34 | +5 | Melee |  |
-| Torva full helm | 32 | +10 | Melee |  |
+| Justiciar faceguard | 34 | +5 | Melee | +2 |
+| Torva full helm | 32 | +10 | Melee | +1 |
 | 3rd age full helmet | 32 | +5 | Melee |  |
-| Neitiznot faceguard | 30 | +10 | Melee |  |
-| Inquisitor's great helm | 30 | +5 | Melee |  |
+| Neitiznot faceguard | 30 | +10 | Melee | +3 |
+| Inquisitor's great helm | 30 | +5 | Melee | +1 |
 | Masori mask | 26 | +5 | Ranged |  |
 | 3rd age range coif | 26 |  | Ranged |  |
 | Armadyl helmet | 24 |  | Ranged | +1 |
-| Crystal helm | 24 |  | Ranged |  |
-| Virtus mask | 18 | +5 | Magic |  |
+| Crystal helm | 24 |  | Ranged | +2 |
+| Virtus mask | 18 | +5 | Magic | +1 |
 | 3rd age mage hat | 18 |  | Magic |  |
 | Ancestral hat | 16 | +5 | Magic |  |
 
@@ -1185,16 +1185,16 @@
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Oathplate chest | 60 | +20 | Melee |  |
-| Justiciar chestguard | 60 | +10 | Melee |  |
-| Torva platebody | 58 | +20 | Melee |  |
+| Justiciar chestguard | 60 | +10 | Melee | +4 |
+| Torva platebody | 58 | +20 | Melee | +1 |
 | 3rd age platebody | 56 | +10 | Melee |  |
-| Inquisitor's hauberk | 52 | +10 | Melee |  |
+| Inquisitor's hauberk | 52 | +10 | Melee | +2 |
 | Bandos chestplate | 48 | +5 | Melee | +1 |
 | Masori body | 44 | +10 | Ranged |  |
 | 3rd age range top | 42 |  | Ranged |  |
 | Armadyl chestplate | 40 | +5 | Ranged | +1 |
-| Crystal body | 38 |  | Ranged |  |
-| Virtus robe top | 30 | +10 | Magic |  |
+| Crystal body | 38 |  | Ranged | +3 |
+| Virtus robe top | 30 | +10 | Magic | +2 |
 | 3rd age robe top | 30 |  | Magic |  |
 | Ancestral robe top | 28 | +10 | Magic |  |
 | 3rd Age druidic robe top | 28 | +10 | Magic | +8 |
@@ -1203,18 +1203,18 @@
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
-| Oathplate legs | 54 | +15 | Melee |  |
 | 3rd Age plateskirt | 54 | +10 | Melee |  |
-| Justiciar legguards | 50 | +10 | Melee |  |
-| Inquisitor's plateskirt | 44 | +10 | Melee |  |
-| Torva platelegs | 42 | +15 | Melee |  |
+| Justiciar legguards | 50 | +10 | Melee | +4 |
+| Torva platelegs | 48 | +15 | Melee | +1 |
+| Oathplate legs | 48 | +15 | Melee |  |
+| Inquisitor's plateskirt | 44 | +10 | Melee | +2 |
 | 3rd age platelegs | 42 | +10 | Melee |  |
 | Bandos tassets | 38 | +5 | Melee | +1 |
 | Masori chaps | 36 | +10 | Ranged |  |
 | 3rd age range legs | 36 |  | Ranged |  |
 | Armadyl chainskirt | 34 | +5 | Ranged | +1 |
-| Crystal legs | 32 |  | Ranged |  |
-| Virtus robe bottom | 26 | +10 | Magic |  |
+| Crystal legs | 32 |  | Ranged | +2 |
+| Virtus robe bottom | 26 | +10 | Magic | +1 |
 | 3rd age robe | 26 |  | Magic |  |
 | Ancestral robe bottom | 24 | +10 | Magic |  |
 | 3rd Age druidic robe bottoms | 24 | +10 | Magic | +6 |
@@ -1233,22 +1233,22 @@
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
-| Zaryte vambraces | 14 |  | Ranged |  |
+| Zaryte vambraces | 14 |  | Ranged | +1 |
 | Ferocious gloves | 12 |  | Melee |  |
 | 3rd age vambraces | 12 |  | Ranged |  |
-| Confliction gauntlets | 10 |  | Magic |  |
-| Tormented bracelet | 8 |  | Magic |  |
+| Confliction gauntlets | 10 |  | Magic | +2 |
+| Tormented bracelet | 8 |  | Magic | +2 |
 
 ### Capes (9)
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
 | Infernal cape | 16 | +15 |  | +2 |
+| 3rd Age druidic cloak | 13 | +5 |  | +5 |
 | Imbued zamorak cape | 13 |  |  |  |
-| 3rd Age cloak | 12 | +5 |  |  |
-| 3rd Age druidic cloak | 12 | +5 |  | +5 |
 | Imbued guthix cape | 12 |  |  |  |
 | Fire cape | 11 | +10 |  | +2 |
+| 3rd Age cloak | 11 | +5 |  | +5 |
 | Imbued saradomin cape | 11 |  |  |  |
 | Blessed Dizana's quiver | 10 | +5 |  |  |
 | Ava's assembler | 8 |  |  |  |
@@ -1271,7 +1271,7 @@
 
 | Piece | Defence | Hitpoints | Kind | Prayer |
 |---|---:|---:|---|---:|
-| Ring of suffering | 8 | +20 | Melee |  |
+| Ring of suffering | 8 | +20 | Melee | +2 |
 | Ultor ring | 7 | +15 | Melee |  |
 | Bellator ring | 6 | +15 | Melee |  |
 | Magus ring | 6 | +15 | Magic |  |

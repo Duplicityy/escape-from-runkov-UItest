@@ -218,6 +218,12 @@ function describe(item: ItemDef): string {
     if (item.strength) {
         parts.push(`+${percent(item.strength)} ${STRENGTH_NAME[item.style!]}`);
     }
+    if (item.perk?.damage) {
+        parts.push(`perk: +${percent(item.perk.damage.share)} ${item.perk.damage.style} damage`);
+    }
+    if (item.perk?.ward) {
+        parts.push(`perk: +${item.perk.ward.defence} defence vs ${item.perk.ward.style}`);
+    }
     if (item.hp) {
         parts.push(`+${item.hp} hp`);
     }
@@ -365,6 +371,12 @@ function statRows(item: ItemDef): [string, string][] {
     }
     if (item.strength) {
         rows.push([capitalize(STRENGTH_NAME[item.style!]), `+${percent(item.strength)} (with a ${item.style} weapon)`]);
+    }
+    if (item.perk?.damage) {
+        rows.push(["Perk", `+${percent(item.perk.damage.share)} ${item.perk.damage.style} damage (with a ${item.perk.damage.style} weapon)`]);
+    }
+    if (item.perk?.ward) {
+        rows.push(["Perk", `+${item.perk.ward.defence} defence against ${item.perk.ward.style}`]);
     }
     if (item.hp) {
         rows.push(["Hitpoints", `+${item.hp}`]);
@@ -3627,6 +3639,7 @@ export class UI {
             bonus("Max hit", `${stats.damage} every ${stats.speed}s`),
             stats.styleBonus !== 0 ? bonus(`${capitalize(weaponStyle(stats.weapon))} armour`, `${signed(Math.round(stats.styleBonus * 100))}%`, stats.styleBonus) : null,
             stats.strength > 0 ? bonus(capitalize(STRENGTH_NAME[weaponStyle(stats.weapon)]), `+${percent(stats.strength)}`, stats.strength) : null,
+            stats.perkDamage > 0 ? bonus("Perks' damage", `+${percent(stats.perkDamage)}`, stats.perkDamage) : null,
             bonus("Defence vs melee", signed(stats.defenceVs.melee), stats.defenceVs.melee),
             bonus("Defence vs ranged", signed(stats.defenceVs.ranged), stats.defenceVs.ranged),
             bonus("Defence vs magic", signed(stats.defenceVs.magic), stats.defenceVs.magic),

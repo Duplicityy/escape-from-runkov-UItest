@@ -149,6 +149,21 @@ browsers.
   0.6, gloves and boots 0.4, cape 0.3). A whole tier 1 set adds about 4%, a whole tier 5 set
   about 11%; the item's stats card and the bank's worn panel show it. The stash and pack panels
   show the defence against each style and what the armour does to the max hit.
+- **Perks** (version 142): many pieces of armour and jewellery do something extra, each from its
+  own OSRS bonuses (`src/content/osrs-bonuses.json`, written by Run Escape's
+  `scripts/cache/dump-bonuses.ts` from `assets.json`), so a piece does here what it's known for
+  there. A damage perk is OSRS's melee strength, ranged strength or magic damage on the piece,
+  added to a weapon of that style whatever the piece's own kind, capped by tier (1.5% for tier 1
+  to 3.5% for tier 5, `PERK_CAP`): the Amulet of torture +3.5% melee, Ferocious gloves +3.5%
+  melee, the Occult necklace +3.5% magic, the Necklace of anguish +3.5% ranged, Bandos's
+  chestplate +1.6% melee. A ward is a piece whose OSRS defence against magic or ranged stands well
+  above its defence against melee: it counts a third more of its defence against that style (the
+  Mystic robe top +5 against magic). Prayer comes from OSRS's prayer bonus wherever
+  `PRAYER_BONUS` hadn't set one. Of the 646 pieces of armour and jewellery, 323 have something
+  extra (15 of tier 1's 84, 74 of tier 5's 85). Caps of 2% to 8% made tier 5's bosses half again
+  easier in the balance sim; at these the tier 5 maps' bosses went from 3, 4 and 6 wins of 8 to 5,
+  6 and 8, and tiers 1 to 4 didn't move. The stats card shows a piece's perks, and the bank's worn
+  panel what they add.
 - **Dropping**: a right click on a thing in the pack (I) opens its menu (View stats, Drop; version 136; it dropped it straight away before) and drops it a step ahead of you, the whole
   stack of a stackable, and the pack's Drop switch does the same for a left click (or a tap on a
   phone) until it's switched off. Dropped things lie there like any loot: for making room, or for

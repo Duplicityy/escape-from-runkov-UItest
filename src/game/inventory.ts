@@ -113,6 +113,8 @@ export type GearStats = {
     // The armour of the weapon's kind's own strength, a share on the max hit
     // too (version 141, items.ts's TIER_STRENGTH)
     strength: number;
+    // What the pieces' damage perks add for the weapon's style (version 142)
+    perkDamage: number;
     hp: number;
     // The prayer bonus in all (items.ts's PRAYER_BONUS_SCALE says what it does)
     prayer: number;
@@ -161,6 +163,7 @@ const FISTS: GearStats = {
     defenceVs: { melee: 0, ranged: 0, magic: 0 },
     styleBonus: 0,
     strength: 0,
+    perkDamage: 0,
     hp: 0,
     prayer: 0,
 };
@@ -208,6 +211,15 @@ export function gearStats(equipment: Equipment, wear: Wear = {}): GearStats {
         for (const style of ATTACK_STYLES) {
             stats.defenceVs[style] += item.style && WEAK_TO[item.style] === style ? Math.round(defence / 2) : defence;
         }
+        // Its perks (version 142): a ward's extra defence against its style,
+        // and a damage perk for a weapon of its style
+        const ward = item.perk?.ward;
+        if (ward) {
+            stats.defenceVs[ward.style] += Math.round(ward.defence * (1 - WEAR_DEFENCE_LOSS * wearOf(wear, id)));
+        }
+        if (item.perk?.damage && item.perk.damage.style === hitsWith && slot !== "weapon") {
+            stats.perkDamage += item.perk.damage.share;
+        }
         if (item.style && slot !== "weapon") {
             bonus += item.style === hitsWith ? STYLE_HELP : -STYLE_HINDER;
             if (item.style === hitsWith) {
@@ -219,7 +231,8 @@ export function gearStats(equipment: Equipment, wear: Wear = {}): GearStats {
     }
     stats.styleBonus = Math.min(STYLE_BONUS_MAX, Math.max(STYLE_BONUS_MIN, bonus));
     stats.strength = Math.round(stats.strength * 1000) / 1000;
-    stats.damage = Math.max(1, Math.round(stats.damage * (1 + stats.styleBonus + stats.strength)));
+    stats.perkDamage = Math.round(stats.perkDamage * 1000) / 1000;
+    stats.damage = Math.max(1, Math.round(stats.damage * (1 + stats.styleBonus + stats.strength + stats.perkDamage)));
     const worn = Object.values(equipment);
     for (const [set, def] of Object.entries(BARROWS_SETS) as [BarrowsSet, { items: number[] }][]) {
         if (def.items.every((id) => worn.includes(id))) {
