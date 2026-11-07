@@ -132,6 +132,10 @@ export type DownMessage =
     // Coins found in a party that splits its loot (version 115): who found
     // how many, and each hero's share of them
     | { k: "share"; by: string; n: number; s: [string, number][] }
+    // Party balloons drifting down (version 129): each one's number, x, z
+    // and colour (0 to 5); and one burst, by whoever ran into it
+    | { k: "balloons"; b: [number, number, number, number][] }
+    | { k: "burst"; u: number }
     // The host's run is over
     | { k: "over" };
 

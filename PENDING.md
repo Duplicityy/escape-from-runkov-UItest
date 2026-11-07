@@ -1,5 +1,13 @@
 # Pending for the next push
 
+Version 129 (built 7 November 2026, not deployed): party balloons, a random event, as the user
+asked. Every three to five minutes (the first a minute or two in) six to nine of the Party Room's
+balloons drift down round someone; running into one bursts it for arrows or runes, food, now and
+then gear, or nothing (`updateBalloons` and friends in run.ts, `playPop` in assets.ts). Locs
+115–120 and their bursts 123–128 exported from the cache and packed into public with the
+scratchpad's pack-locs.mjs, and added to assets.json. Co-op: the host drops and bursts them
+(`balloons`/`burst` down messages; no relay change). `GAME_BUILD` 129.
+
 Version 128 (built 6 November 2026; on the main site as 105.10): Sanguine torva (28254, 28256, 28258) for the owner's own
 first character alone, kept like the Ankou outfit (`SANGUINE_TORVA`, `OWNER_MAIN_KIT`), each the
 twin of its Torva piece, as the user asked. Worn pieces packed into public with the scratchpad's

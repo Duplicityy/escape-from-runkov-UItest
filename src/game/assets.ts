@@ -542,3 +542,27 @@ export function playChime(high = false): void {
         osc.stop(at + 0.75);
     }
 }
+
+// A balloon bursting: a short crack of noise, quieter the further off
+export function playPop(volume = 1): void {
+    if (settings.muted || settings.volume <= 0 || volume <= 0.02) {
+        return;
+    }
+    const ctx = context();
+    const length = Math.floor(ctx.sampleRate * 0.12);
+    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 4);
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 1800;
+    filter.Q.value = 0.8;
+    const gain = ctx.createGain();
+    gain.gain.value = 0.6 * volume * settings.volume;
+    source.connect(filter).connect(gain).connect(ctx.destination);
+    source.start();
+}

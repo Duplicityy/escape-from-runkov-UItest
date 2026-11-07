@@ -219,6 +219,13 @@ browsers.
   arrows and runes by the bundle, at half again the shop's prices, paid from the coins you're
   carrying; and he buys the gear in your pack at the shop's price for it, which lightens the
   pack. The coins are still only yours if you get out.
+- **Party balloons** (version 129), a random event: a minute or two into a run, and every three
+  to five minutes after, six to nine balloons (the Party Room's, locs 115–120) drift down round
+  someone standing. Running into one bursts it (its own burst, 123–128, and a pop), and what was
+  in it falls where it was: arrows or runes of the map's tier (45%), the map's food (32%), a
+  piece of gear the way a chest gives it (8%), or nothing. Those left alone float off after 45
+  seconds. In a party the host drops them and bursts them for whoever runs in (`balloons` and
+  `burst` messages); `RunReport.balloons` counts this player's.
 - A **genie** floats two tiles from where you arrived (version 70). **E** at his side pays him
   for a wish out of the map, at once and quietly, with everything you carry: 150 coins on a one
   star map and 2.2 times more a tier (330, 730, 1,600, 3,510; `ferryFee` in `run.ts`), about a

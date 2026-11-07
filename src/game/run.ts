@@ -93,6 +93,7 @@ import {
     npcSound,
     play,
     playChime,
+    playPop,
     playSound,
     setWorldLight,
     tint,
@@ -209,6 +210,8 @@ export type RunReport = {
     genie: boolean;
     secondsLeft: number;
     party: number;
+    // Party balloons this player burst (version 129)
+    balloons: number;
 };
 
 export type RunHooks = {
@@ -371,6 +374,10 @@ type Pickup = {
     age: number;
 };
 
+// A party balloon (version 129): where it lands, its colour, how long it's
+// been about, and its model once loaded
+type Balloon = { uid: number; x: number; z: number; colour: number; age: number; actor?: Actor; gone: boolean };
+
 // A friendly face on the map: the wandering trader, and whether he's been
 // pointed out yet (his model comes after his place is picked)
 type Trader = { actor?: Actor; x: number; z: number; rotation: number; seen: boolean };
@@ -457,6 +464,30 @@ const VAULT_LOC = 172;
 // between two stone pillars (its own animation, exported with the model;
 // 29667, the lobby's low yellow Clan Wars vortex, is in the assets too)
 const EXIT_LOC = 26645;
+// Party balloons (version 129), a random event: now and then a handful
+// drift down round someone standing, to burst by running into them. The
+// six colours, and each one's burst, in the same order
+const BALLOON_LOCS = [115, 116, 117, 118, 119, 120];
+const BALLOON_BURSTS = [123, 124, 125, 126, 127, 128];
+// Seconds into the run of the first, and between one and the next
+const BALLOON_FIRST: [number, number] = [60, 150];
+const BALLOON_EVERY: [number, number] = [180, 300];
+const BALLOON_COUNT: [number, number] = [6, 9];
+// How far round the hero they land (tiles), how high they start, how long
+// the fall takes, and how long they stay before floating off
+const BALLOON_SPREAD: [number, number] = [1.5, 5];
+const BALLOON_HEIGHT = 6;
+// The model's a fifth of a tile tall: drawn this much bigger, to read on
+// the map
+const BALLOON_SCALE = 3;
+const BALLOON_FALL = 2;
+const BALLOON_LIFE = 45;
+const BALLOON_REACH = 0.75;
+// What's in one: a piece of gear now and then, arrows or runes, food, or
+// nothing at all
+const BALLOON_GEAR = 0.08;
+const BALLOON_AMMO = 0.45;
+const BALLOON_FOOD = 0.32;
 // The map wakes after this long (enemies notice you from twice as far, and
 // nothing heals on its own), and the way out closes after this long
 const WAKE_SECONDS = 240;
@@ -750,6 +781,13 @@ export class Run {
     spellbook: Book = "standard";
     private slamRing?: THREE.RingGeometry;
     private hazards: Hazard[] = [];
+    // Party balloons about now, and when the next lot comes (the host's
+    // and a solo run's to decide; -1 until the run's clock starts)
+    private balloons: Balloon[] = [];
+    private balloonsAt = -1;
+    // Bursts playing out, and how many this player has burst
+    private popping: { actor: Actor; left: number }[] = [];
+    private balloonsBurst = 0;
     // A ring under the enemy being hit, where there's no cursor to show it
     // (a touch screen; ui/touch.ts turns it on)
     markTarget = false;
@@ -2683,6 +2721,7 @@ export class Run {
                 genie: this.genie,
                 secondsLeft: Math.round(this.timeLeft),
                 party: 1 + this.mates.size,
+                balloons: this.balloonsBurst,
             },
         });
     }
@@ -2795,6 +2834,153 @@ export class Run {
         }
     }
 
+    // Party balloons: the next lot when it's time (not on a guest: the host
+    // sends them), the fall, the bob, a burst for whoever runs into one,
+    // and those left too long floating off
+    private updateBalloons(dt: number): void {
+        const host = this.coop?.role !== "guest";
+        const between = (range: [number, number]) => range[0] + this.rng() * (range[1] - range[0]);
+        if (host) {
+            if (this.balloonsAt < 0) {
+                this.balloonsAt = this.time + between(BALLOON_FIRST);
+            } else if (this.time >= this.balloonsAt) {
+                this.balloonsAt = this.time + between(BALLOON_EVERY);
+                this.dropBalloons();
+            }
+        }
+        for (const pop of [...this.popping]) {
+            pop.actor.mixer.update(dt);
+            pop.left -= dt;
+            if (pop.left <= 0) {
+                this.scene.remove(pop.actor.root);
+                this.popping.splice(this.popping.indexOf(pop), 1);
+            }
+        }
+        const heroes = host ? this.heroes() : [];
+        for (const b of [...this.balloons]) {
+            b.age += dt;
+            if (b.age > BALLOON_LIFE + 3) {
+                this.removeBalloon(b);
+                continue;
+            }
+            if (b.actor) {
+                b.actor.mixer.update(dt);
+                // Down from on high, eased in; off up into the sky at the end
+                const fall = Math.max(0, 1 - b.age / BALLOON_FALL);
+                const off = Math.max(0, b.age - BALLOON_LIFE);
+                b.actor.root.position.y = this.region.topAt(b.x, b.z) + BALLOON_HEIGHT * fall * fall + off * off * 2;
+            }
+            if (!host || b.age < BALLOON_FALL || b.age > BALLOON_LIFE) {
+                continue;
+            }
+            const by = heroes.find((h) => Math.hypot(h.x - b.x, h.z - b.z) < BALLOON_REACH + PLAYER_RADIUS);
+            if (by) {
+                this.burstBalloon(b, by);
+            }
+        }
+    }
+
+    // A lot of party balloons round someone standing (a solo run's player,
+    // or anyone in a party), each on open ground
+    private dropBalloons(): void {
+        const heroes = this.heroes();
+        if (heroes.length === 0) {
+            return;
+        }
+        const hero = heroes[Math.floor(this.rng() * heroes.length)];
+        const count = randInt(this.rng, BALLOON_COUNT[0], BALLOON_COUNT[1]);
+        const sent: [number, number, number, number][] = [];
+        for (let i = 0; i < count; i++) {
+            for (let tries = 0; tries < 10; tries++) {
+                const angle = this.rng() * Math.PI * 2;
+                const dist = BALLOON_SPREAD[0] + this.rng() * (BALLOON_SPREAD[1] - BALLOON_SPREAD[0]);
+                const x = round2(hero.x + Math.cos(angle) * dist);
+                const z = round2(hero.z + Math.sin(angle) * dist);
+                if (!this.region.fits(x, z, 0.3) || this.balloons.some((b) => Math.hypot(b.x - x, b.z - z) < 1)) {
+                    continue;
+                }
+                const uid = this.nextUid++;
+                const colour = Math.floor(this.rng() * BALLOON_LOCS.length);
+                this.addBalloon(uid, x, z, colour);
+                sent.push([uid, x, z, colour]);
+                break;
+            }
+        }
+        if (sent.length === 0) {
+            return;
+        }
+        if (this.coop?.role === "host") {
+            this.coop.send({ k: "balloons", b: sent } satisfies DownMessage);
+        }
+        this.announce(
+            this.coop ? "Party balloons are drifting down! Run into them to burst them." : "Party balloons drift down around you! Run into them to burst them.",
+        );
+    }
+
+    private addBalloon(uid: number, x: number, z: number, colour: number): void {
+        const b: Balloon = { uid, x, z, colour, age: 0, gone: false };
+        this.balloons.push(b);
+        void createActor("locs", BALLOON_LOCS[colour] ?? BALLOON_LOCS[0]).then((actor) => {
+            if (b.gone || this.done) {
+                return;
+            }
+            b.actor = actor;
+            this.placeActor(actor, x, z, this.rng() * Math.PI * 2, BALLOON_SCALE);
+            actor.root.position.y += BALLOON_HEIGHT;
+            play(actor, "play");
+        });
+    }
+
+    private removeBalloon(b: Balloon): void {
+        b.gone = true;
+        if (b.actor) {
+            this.scene.remove(b.actor.root);
+        }
+        const i = this.balloons.indexOf(b);
+        if (i !== -1) {
+            this.balloons.splice(i, 1);
+        }
+    }
+
+    // A balloon run into: it bursts, and what was in it falls where it was
+    // (the host rolls it and tells everyone)
+    private burstBalloon(b: Balloon, by?: Hero): void {
+        this.removeBalloon(b);
+        const distance = Math.hypot(b.x - this.px, b.z - this.pz);
+        playPop(distance <= HEAR_NEAR ? 1 : Math.max(0, 1 - (distance - HEAR_NEAR) / (HEAR_FAR - HEAR_NEAR)));
+        void createActor("locs", BALLOON_BURSTS[b.colour] ?? BALLOON_BURSTS[0]).then((actor) => {
+            if (this.done) {
+                return;
+            }
+            this.placeActor(actor, b.x, b.z, 0, BALLOON_SCALE);
+            this.popping.push({ actor, left: Math.max(0.3, play(actor, "play", { once: true })) });
+        });
+        if (!by) {
+            return;
+        }
+        if (this.coop?.role === "host") {
+            this.coop.send({ k: "burst", u: b.uid } satisfies DownMessage);
+        }
+        if (by.me) {
+            this.balloonsBurst++;
+        }
+        const roll = this.rng();
+        if (roll < BALLOON_GEAR) {
+            this.dropGear(this.world.lootTiers, b.x, b.z, 0, 0.3);
+        } else if (roll < BALLOON_GEAR + BALLOON_AMMO) {
+            if (this.rng() < 0.5) {
+                this.dropPickup(ammoOfTier("arrows", this.world.tier, this.rng()), randInt(this.rng, 5, 10), b.x, b.z, 0.3);
+            } else {
+                const runes = runeDrop(this.world.tier, this.rng(), this.rng(), (lo, hi) => randInt(this.rng, lo, hi));
+                this.dropPickup(runes.id, runes.count * 2, b.x, b.z, 0.3);
+            }
+        } else if (roll < BALLOON_GEAR + BALLOON_AMMO + BALLOON_FOOD) {
+            this.dropPickup(FOOD_BY_TIER[Math.min(FOOD_BY_TIER.length - 1, this.world.tier - 1)], randInt(this.rng, 1, 2), b.x, b.z, 0.3);
+        } else {
+            this.tell(by, "The balloon was empty.");
+        }
+    }
+
     // The weapon's special attack, on the next swing, if the bar has enough
     useSpecial(): void {
         const special = specialOf(this.stats.weapon);
@@ -2877,6 +3063,7 @@ export class Run {
         this.updateEffects(dt);
         this.updateTorches(dt);
         this.updatePickups(dt);
+        this.updateBalloons(dt);
         this.updateInteractions(dt);
         this.player.update(dt);
         for (const exit of this.exits) {
@@ -5703,6 +5890,20 @@ export class Run {
             case "drop":
                 this.dropPickup(message.i, message.n, message.x, message.z, 0, message.u);
                 break;
+            case "balloons":
+                if (Array.isArray(message.b)) {
+                    for (const [u, x, z, c] of message.b) {
+                        this.addBalloon(Number(u), Number(x), Number(z), Number(c) || 0);
+                    }
+                }
+                break;
+            case "burst": {
+                const b = this.balloons.find((x) => x.uid === message.u);
+                if (b) {
+                    this.burstBalloon(b);
+                }
+                break;
+            }
             case "share":
                 if (Array.isArray(message.s)) {
                     this.takeShare(String(message.by), Number(message.n) || 0, message.s);
