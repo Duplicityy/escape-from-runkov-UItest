@@ -1,5 +1,11 @@
 # Pending for the next push
 
+Version 134 (built 7 November 2026, not deployed): party balloons come all the way down. The
+balloon's own animation (seq 498, the "play" clip) is its fall, about seven tiles at the drawn
+scale to the ground in 2.5 seconds, not a bob: looped, it kept dropping them from on high, on
+top of run.ts's own fall. It now plays once (synced to the balloon's age), and run.ts's fall is
+gone (`BALLOON_HEIGHT` removed, `BALLOON_FALL` 2.5). `GAME_BUILD` 134.
+
 Version 133 (built 7 November 2026, not deployed): Save code and Load code are hidden for a
 player logged in to an account (the account carries the save), as the user asked; a test
 character and play on this device while the accounts can't be reached still have them.

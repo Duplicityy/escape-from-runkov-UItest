@@ -473,14 +473,15 @@ const BALLOON_BURSTS = [123, 124, 125, 126, 127, 128];
 const BALLOON_FIRST: [number, number] = [60, 150];
 const BALLOON_EVERY: [number, number] = [180, 300];
 const BALLOON_COUNT: [number, number] = [6, 9];
-// How far round the hero they land (tiles), how high they start, how long
-// the fall takes, and how long they stay before floating off
+// How far round the hero they land (tiles), how long the fall takes, and
+// how long they stay before floating off. The fall is the model's own
+// animation, played once: from about seven tiles up (at this scale) to
+// the ground in two and a half seconds
 const BALLOON_SPREAD: [number, number] = [1.5, 5];
-const BALLOON_HEIGHT = 6;
 // The model's a fifth of a tile tall: drawn this much bigger, to read on
 // the map
 const BALLOON_SCALE = 3;
-const BALLOON_FALL = 2;
+const BALLOON_FALL = 2.5;
 const BALLOON_LIFE = 45;
 const BALLOON_REACH = 0.75;
 // What's in one: a piece of gear now and then, arrows or runes, food, or
@@ -2865,10 +2866,10 @@ export class Run {
             }
             if (b.actor) {
                 b.actor.mixer.update(dt);
-                // Down from on high, eased in; off up into the sky at the end
-                const fall = Math.max(0, 1 - b.age / BALLOON_FALL);
+                // On the ground once its fall's played; off up into the sky
+                // at the end
                 const off = Math.max(0, b.age - BALLOON_LIFE);
-                b.actor.root.position.y = this.region.topAt(b.x, b.z) + BALLOON_HEIGHT * fall * fall + off * off * 2;
+                b.actor.root.position.y = this.region.topAt(b.x, b.z) + off * off * 2;
             }
             if (!host || b.age < BALLOON_FALL || b.age > BALLOON_LIFE) {
                 continue;
@@ -2926,8 +2927,10 @@ export class Run {
             }
             b.actor = actor;
             this.placeActor(actor, x, z, this.rng() * Math.PI * 2, BALLOON_SCALE);
-            actor.root.position.y += BALLOON_HEIGHT;
-            play(actor, "play");
+            // Its fall, once, as far along as the balloon is (a model that
+            // loaded late, or a guest told late, doesn't start from the top)
+            play(actor, "play", { once: true });
+            actor.mixer.update(Math.min(b.age, BALLOON_FALL));
         });
     }
 
