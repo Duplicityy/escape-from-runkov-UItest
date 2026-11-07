@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 133 (built 7 November 2026, not deployed): Save code and Load code are hidden for a
+player logged in to an account (the account carries the save), as the user asked; a test
+character and play on this device while the accounts can't be reached still have them.
+`GAME_BUILD` 133.
+
 Version 132 (built 7 November 2026, not deployed): the GitHub repo is public now, as the user
 asked, and a GitHub button sits beside Discord's (`GITHUB_URL` in ui.ts, `button.github` in
 skin.css). On a phone on its side (max-height 450px) the six buttons are a smaller row, clear

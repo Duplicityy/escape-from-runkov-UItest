@@ -1193,18 +1193,21 @@ export class UI {
         this.root.append(overlay);
     }
 
-    // Progress lives in this browser; a code carries it to another
+    // Progress lives in this browser; a code carries it to another, where
+    // there's no account to carry it (version 133: a test character, or
+    // playing on this device while the accounts can't be reached)
     private utilityButtons(): HTMLElement[] {
+        const loggedIn = !!this.account?.name && loadedSlot() === 0;
         return [
             // The game's Discord server (version 131), in a new tab
             h("button", { class: "discord", title: "Join the game's Discord server", onclick: () => window.open(DISCORD_URL, "_blank", "noopener") }, "Discord"),
             // And its code (version 132)
             h("button", { class: "github", title: "The game's code on GitHub", onclick: () => window.open(GITHUB_URL, "_blank", "noopener") }, "GitHub"),
             // To switch accounts or make another (version 117)
-            this.account?.name && loadedSlot() === 0
-                ? h("button", { title: `Logged in as ${this.account.name}: log out to switch accounts or make another`, onclick: () => void this.logOut() }, "Log out")
+            loggedIn
+                ? h("button", { title: `Logged in as ${this.account!.name}: log out to switch accounts or make another`, onclick: () => void this.logOut() }, "Log out")
                 : null,
-            h(
+            loggedIn ? null : h(
                 "button",
                 {
                     title: "Your progress as text, to paste into the game in another browser",
@@ -1214,7 +1217,7 @@ export class UI {
                 },
                 "Save code",
             ),
-            h(
+            loggedIn ? null : h(
                 "button",
                 {
                     title: "Paste a save code from another browser; it replaces what's here",

@@ -11,7 +11,7 @@ import { Character, Equipment } from "./save";
 
 // The build a game is: a room only takes players on the host's (the relay
 // compares them). Raised with every push to itch.
-export const GAME_BUILD = "132";
+export const GAME_BUILD = "133";
 
 // Where the relay is: the build's VITE_COOP_URL, a saved override (for
 // trying one), the local relay beside a dev server, or the one on Fly.io
