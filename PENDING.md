@@ -1,5 +1,15 @@
 # Pending for the next push
 
+Version 143 (built 7 November 2026, not deployed): thrown weapons fly as themselves, as the user
+asked (they flew as their metal's arrow). The cache's travel spot animations, ids from the
+scratchpad's RuneLite gameval SpotanimID: darts 226–231 (black 34, amethyst 1936, dragon 1122),
+knives 212–218 (dragon 28), thrownaxes 35–41 (bronze 36, iron 35, dragon 1319), Morrigan's
+javelin 1620 and throwing axe 1623. Exported with `export-assets.ts spotanim <ids>`, packed into
+public with the scratchpad's pack-kind.mjs (vite stopped), added to assets.json's spotanims.
+The player's throw itself still plays the sword swing: OSRS's throws (knives and axes 929,
+darts 6600, chinchompas 2779, salamanders 5247) would be new PLAYER_CLIPS and a re-export of
+every player piece. `GAME_BUILD` 143.
+
 Version 142 (built 7 November 2026, not deployed): perks, as the user asked for more variety in
 what armour does. Each comes from the piece's own OSRS bonuses (`src/content/osrs-bonuses.json`,
 written by Run-Escape's new `scripts/cache/dump-bonuses.ts ../dungeon-extraction/assets.json
