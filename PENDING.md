@@ -1,5 +1,14 @@
 # Pending for the next push
 
+Version 141 (built 7 November 2026, not deployed): armour has a strength stat by its tier and
+combat style, as the user asked (`strength` on an ItemDef, `TIER_STRENGTH` and `SLOT_STRENGTH`
+in items.ts, `GearStats.strength` in inventory.ts): melee strength, ranged strength or magic
+damage, a share on a matching weapon's max hit, shown in the stats card, the item's tooltip and
+the bank's worn panel. A whole tier 5 set adds about 11% (Torva with an Abyssal tentacle: 44 to
+57 with the kinds' own +18%), a tier 1 set about 4%. The balance sim (BALANCE_SEEDS=8) barely
+moved: only the tier 2 set's hit, 17 to 18; its sets wear little armour of their weapon's kind.
+`GAME_BUILD` 141.
+
 Version 140 (built 7 November 2026, not deployed): gear that shared its numbers is spread a
 little, as the user asked (`TIE_SPREAD` in items.ts: within a group of pieces with the same
 slot, tier and stats, ordered by worth, the max hit or defence moves up to 12% each way, at least

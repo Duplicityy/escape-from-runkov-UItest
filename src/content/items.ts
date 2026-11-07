@@ -97,6 +97,10 @@ export type ItemDef = {
     // weapon's hits and hurts the others' (inventory.ts). Unset is neutral:
     // jewellery, capes, void.
     style?: AttackStyle;
+    // Armour of a kind (version 141): a share added to the max hit of a
+    // weapon of the same kind, by its tier and slot (TIER_STRENGTH,
+    // SLOT_STRENGTH): melee strength, ranged strength or magic damage
+    strength?: number;
     // One crowned test character's alone (kit.ts): the owner's (version 83,
     // the gilded pieces) or the playtester's (version 89, the Guthix sunfire
     // set). Never in a chest, a drop or the shop, and no tier's prize.
@@ -1570,6 +1574,24 @@ for (const item of ITEMS) {
         item.style = armourStyle(item);
     }
 }
+
+// Each piece of armour of a kind strengthens a weapon of that kind (version
+// 141, as the user asked), more for a better tier and a bigger piece: a
+// tier's share for a body, the rest of the slots part of it. A whole tier 5
+// set (body, legs, helm, shield, gloves, boots) is about 11% on the max hit,
+// a tier 1 set about 4%; it's on top of the armour kinds' own +3% a piece
+// (inventory.ts), and does nothing for a weapon of another kind
+export const TIER_STRENGTH = [0, 0.01, 0.015, 0.02, 0.025, 0.03];
+export const SLOT_STRENGTH: Partial<Record<Slot, number>> = { body: 1, legs: 0.8, head: 0.6, shield: 0.6, hands: 0.4, feet: 0.4, cape: 0.3 };
+for (const item of ITEMS) {
+    const share = item.slot ? SLOT_STRENGTH[item.slot] : undefined;
+    if (item.style && share) {
+        item.strength = Math.round((TIER_STRENGTH[item.tier] ?? 0) * share * 1000) / 1000;
+    }
+}
+
+// What each armour kind's strength is called: OSRS's names for it
+export const STRENGTH_NAME: Record<AttackStyle, string> = { melee: "melee strength", ranged: "ranged strength", magic: "magic damage" };
 
 // A piece's prayer bonus slows the bar's drain and speeds its refill by
 // 1 + bonus / this

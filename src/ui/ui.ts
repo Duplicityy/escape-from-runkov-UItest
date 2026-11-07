@@ -17,6 +17,7 @@ import {
     SLOTS,
     Slot,
     ITEM_BY_ID,
+    STRENGTH_NAME,
     TIER_COLOURS,
     WEAK_TO,
     formatCoins,
@@ -195,6 +196,11 @@ function h<K extends keyof HTMLElementTagNameMap>(
     return el;
 }
 
+// A share as a percentage, to a half point: 0.015 is "1.5%"
+function percent(share: number): string {
+    return `${Math.round(share * 200) / 2}%`;
+}
+
 function describe(item: ItemDef): string {
     const parts: string[] = [];
     if (item.damage !== undefined) {
@@ -208,6 +214,9 @@ function describe(item: ItemDef): string {
     }
     if (item.style) {
         parts.push(`${item.style} armour: half as good against ${WEAK_TO[item.style]}, helps ${item.style} hits and hinders the rest`);
+    }
+    if (item.strength) {
+        parts.push(`+${percent(item.strength)} ${STRENGTH_NAME[item.style!]}`);
     }
     if (item.hp) {
         parts.push(`+${item.hp} hp`);
@@ -353,6 +362,9 @@ function statRows(item: ItemDef): [string, string][] {
     }
     if (item.style) {
         rows.push(["Armour", `${capitalize(item.style)}: helps ${item.style} hits, half as good against ${WEAK_TO[item.style]}`]);
+    }
+    if (item.strength) {
+        rows.push([capitalize(STRENGTH_NAME[item.style!]), `+${percent(item.strength)} (with a ${item.style} weapon)`]);
     }
     if (item.hp) {
         rows.push(["Hitpoints", `+${item.hp}`]);
@@ -3614,6 +3626,7 @@ export class UI {
             { class: "card-lines" },
             bonus("Max hit", `${stats.damage} every ${stats.speed}s`),
             stats.styleBonus !== 0 ? bonus(`${capitalize(weaponStyle(stats.weapon))} armour`, `${signed(Math.round(stats.styleBonus * 100))}%`, stats.styleBonus) : null,
+            stats.strength > 0 ? bonus(capitalize(STRENGTH_NAME[weaponStyle(stats.weapon)]), `+${percent(stats.strength)}`, stats.strength) : null,
             bonus("Defence vs melee", signed(stats.defenceVs.melee), stats.defenceVs.melee),
             bonus("Defence vs ranged", signed(stats.defenceVs.ranged), stats.defenceVs.ranged),
             bonus("Defence vs magic", signed(stats.defenceVs.magic), stats.defenceVs.magic),

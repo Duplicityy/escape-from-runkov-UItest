@@ -141,9 +141,15 @@ browsers.
   melee, magic to ranged: `WEAK_TO`), so a knight in full plate takes a mage's spells on half his
   armour. And armour helps the weapon it suits: each piece of the weapon's kind adds 3% to its
   hits, each piece of another kind takes 4% off, between -30% and +20% (`STYLE_HELP`,
-  `STYLE_HINDER` in `inventory.ts`): plate with a bow or a staff is a poor idea. The stash and
-  pack panels show the defence against each style and what the armour does to the max hit.
-- **Dropping**: a right click on a thing in the pack (I) drops it a step ahead of you, the whole
+  `STYLE_HINDER` in `inventory.ts`): plate with a bow or a staff is a poor idea. On top of that
+  (version 141) each piece of a kind has its own strength by its tier and size, OSRS's names for
+  it: melee armour melee strength, ranged armour ranged strength, magic armour magic damage, a
+  share added to a matching weapon's max hit and nothing to another's (`TIER_STRENGTH` 1% to 3%
+  for a body by tier, `SLOT_STRENGTH` a share of that for the rest: legs 0.8, helm and shield
+  0.6, gloves and boots 0.4, cape 0.3). A whole tier 1 set adds about 4%, a whole tier 5 set
+  about 11%; the item's stats card and the bank's worn panel show it. The stash and pack panels
+  show the defence against each style and what the armour does to the max hit.
+- **Dropping**: a right click on a thing in the pack (I) opens its menu (View stats, Drop; version 136; it dropped it straight away before) and drops it a step ahead of you, the whole
   stack of a stackable, and the pack's Drop switch does the same for a left click (or a tap on a
   phone) until it's switched off. Dropped things lie there like any loot: for making room, or for
   a friend in a co-op run to walk over and take (the boss's key, say). In a party a guest's drop is

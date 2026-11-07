@@ -110,6 +110,9 @@ export type GearStats = {
     defenceVs: Record<AttackStyle, number>;
     // What the armour did to the max hit, as a share (+0.12 for 12% more)
     styleBonus: number;
+    // The armour of the weapon's kind's own strength, a share on the max hit
+    // too (version 141, items.ts's TIER_STRENGTH)
+    strength: number;
     hp: number;
     // The prayer bonus in all (items.ts's PRAYER_BONUS_SCALE says what it does)
     prayer: number;
@@ -157,6 +160,7 @@ const FISTS: GearStats = {
     defence: 0,
     defenceVs: { melee: 0, ranged: 0, magic: 0 },
     styleBonus: 0,
+    strength: 0,
     hp: 0,
     prayer: 0,
 };
@@ -206,12 +210,16 @@ export function gearStats(equipment: Equipment, wear: Wear = {}): GearStats {
         }
         if (item.style && slot !== "weapon") {
             bonus += item.style === hitsWith ? STYLE_HELP : -STYLE_HINDER;
+            if (item.style === hitsWith) {
+                stats.strength += item.strength ?? 0;
+            }
         }
         stats.hp += item.hp ?? 0;
         stats.prayer += item.prayer ?? 0;
     }
     stats.styleBonus = Math.min(STYLE_BONUS_MAX, Math.max(STYLE_BONUS_MIN, bonus));
-    stats.damage = Math.max(1, Math.round(stats.damage * (1 + stats.styleBonus)));
+    stats.strength = Math.round(stats.strength * 1000) / 1000;
+    stats.damage = Math.max(1, Math.round(stats.damage * (1 + stats.styleBonus + stats.strength)));
     const worn = Object.values(equipment);
     for (const [set, def] of Object.entries(BARROWS_SETS) as [BarrowsSet, { items: number[] }][]) {
         if (def.items.every((id) => worn.includes(id))) {
