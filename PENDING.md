@@ -1,5 +1,17 @@
 # Pending for the next push
 
+Version 144 (built 7 November 2026, not deployed): the player throws as OSRS does, as the user
+asked. Run Escape's PLAYER_CLIPS gained attack_throw (929, knives, axes and javelins),
+attack_dart (6600), attack_chinchompa (2779) and attack_salamander (5247), 12 frames at most;
+`thrown()` in items.ts picks one by the weapon's name. Every player piece re-exported with the
+scratchpad's reexport-player-v144.ps1 (174 s: kits, every item, then every special export in
+order: the gilded set, the three Guthix sunfire pieces with their paint and insets, the Ankou
+outfit, the red ghostly robes, the red staff of the dead and spirit shield), the old export
+kept in full-assets/player-before-v144; the scratchpad's compare-colours.mjs found every
+special piece's vertices and colours unchanged. Packed with `node scripts/copy-player.mjs
+../full-assets` (vite stopped, 219 s): 1,195 pieces, 2,308 MB, the biggest 5.4 MB. Every player
+file changed, so the next deploy uploads all of them. `GAME_BUILD` 144.
+
 Version 143 (built 7 November 2026, not deployed): thrown weapons fly as themselves, as the user
 asked (they flew as their metal's arrow). The cache's travel spot animations, ids from the
 scratchpad's RuneLite gameval SpotanimID: darts 226–231 (black 34, amethyst 1936, dragon 1122),

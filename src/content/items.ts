@@ -56,7 +56,21 @@ export type ItemDef = {
     // How the character holds it: the clips a stance plays standing and
     // running (player.ts), and the swing it makes
     stance?: Stance;
-    attackClip?: "attack" | "attack_stab" | "attack_whip" | "attack_2h" | "attack_bow" | "attack_cast" | "attack_maul" | "attack_spear";
+    attackClip?:
+        | "attack"
+        | "attack_stab"
+        | "attack_whip"
+        | "attack_2h"
+        | "attack_bow"
+        | "attack_cast"
+        | "attack_maul"
+        | "attack_spear"
+        // The throws (version 144): knives, axes and javelins, darts,
+        // chinchompas, salamanders
+        | "attack_throw"
+        | "attack_dart"
+        | "attack_chinchompa"
+        | "attack_salamander";
     // What it shoots: a spot animation flying to the target, and one where it
     // lands
     projectile?: number;
@@ -257,8 +271,18 @@ export const BOLT = 27;
 // A thrown weapon: a dart, a knife, an axe, a chinchompa, a salamander's
 // flame. Ranged, one in the hand, and nothing taken from the pack: it's its
 // own ammunition, which is why it hits less than a bow of its tier.
+// It's thrown the way OSRS throws its kind (version 144): a dart flicked, a
+// chinchompa lobbed, a salamander's flame, a knife, an axe or a javelin
+// hurled overarm.
 function thrown(id: number, name: string, tier: number, damage: number, speed: number, value: number, projectile: number, extra: Partial<ItemDef> = {}): ItemDef {
-    return weapon(id, name, tier, damage, speed, value, { ranged: true, range: 4, sound: ARROW, projectile, ...extra });
+    const attackClip: ItemDef["attackClip"] = /dart/i.test(name)
+        ? "attack_dart"
+        : /chinchompa/i.test(name)
+          ? "attack_chinchompa"
+          : /salamander|lizard/i.test(name)
+            ? "attack_salamander"
+            : "attack_throw";
+    return weapon(id, name, tier, damage, speed, value, { ranged: true, range: 4, sound: ARROW, projectile, attackClip, ...extra });
 }
 
 // Ammunition: a kind of arrow or rune. Its tier is the maps whose enemies

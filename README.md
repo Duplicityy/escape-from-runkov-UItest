@@ -1046,6 +1046,10 @@ attack, stab, lash, two handed, bow and cast; the two handed, staff and whip sta
 run; and since version 81 the godsword's, the maul's and the bulwark's idle and run, the maul's
 swing and the spear's thrust).
 
+Thrown weapons are thrown as OSRS throws them (version 144, `thrown()` in `items.ts`): knives,
+throwing axes and javelins hurled overarm (`attack_throw`, seq 929), darts flicked
+(`attack_dart`, 6600), chinchompas lobbed (`attack_chinchompa`, 2779) and salamanders' flame
+(`attack_salamander`, 5247), each flying as its own cache spot animation since version 143.
 Two handers are held as OSRS holds them (version 81; `Stance` and `HOLDS` in `items.ts`): two
 handed swords, the colossal blade and the scythe the two handed sword's way (seqs 2561 and 2563);
 the godswords and the Saradomin swords upright in one hand (7053, 7043); the mauls, the
