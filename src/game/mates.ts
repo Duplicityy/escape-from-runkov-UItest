@@ -12,7 +12,7 @@ import { gearStats } from "./inventory";
 import { Overhead } from "./overhead";
 import { HERO_ATTACK, HERO_DEATH, HERO_IDLE, HERO_RUN, HeroAnim, HeroState, PRAY_NAMES, prayCode } from "./party";
 import { createPet } from "./pets";
-import { PlayerLook } from "./player";
+import { PlayerLook, RUN_CLIP_SPEED } from "./player";
 import { ProtectStyle } from "./run";
 import { Equipment } from "./save";
 
@@ -292,7 +292,7 @@ export class Mate implements Hero {
                 look.play(this.attackClip, { once: true });
             } else if (look.current !== this.attackClip || this.anim !== HERO_ATTACK) {
                 // Standing or running; a swing that's played out gives way too
-                look.play(this.anim === HERO_RUN ? "run" : "idle");
+                look.play(this.anim === HERO_RUN ? "run" : "idle", this.anim === HERO_RUN ? { speed: RUN_CLIP_SPEED } : {});
             }
             look.update(dt);
         }

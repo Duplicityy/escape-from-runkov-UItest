@@ -1,5 +1,10 @@
 # Pending for the next push
 
+Version 137 (built 7 November 2026, not deployed): characters walk 30% faster, as the user asked
+(`PLAYER_SPEED` 4.2 → 5.46 tiles a second); a melee boss's chase stays at 95% of it
+(`BOSS_CHASE_SPEED`), and the run clip plays 1.3 times as fast (`RUN_CLIP_SPEED` in player.ts,
+for this player and for mates) so the feet keep up. `GAME_BUILD` 137.
+
 Version 136 (built 7 November 2026, not deployed), as the user asked: every piece of gear glows
 its tier's colour (`TIER_COLOURS` in items.ts: common grey, uncommon green, rare blue, epic
 purple, legendary gold). In the interface `iconElement` gives gear icons a `tier-glow` drop

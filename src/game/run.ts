@@ -123,7 +123,7 @@ import {
 } from "./inventory";
 import { CROWN_SHEET_HEIGHT, crownKey, crownSprite, crownVerified, nameColorOf } from "./crown";
 import { playMusic } from "./music";
-import { PlayerLook } from "./player";
+import { PlayerLook, RUN_CLIP_SPEED } from "./player";
 import { isKept } from "./kit";
 import { Region, Tile, TileSet, loadRegion } from "./region";
 import { Character, Equipment, Grave, ItemStack } from "./save";
@@ -459,7 +459,9 @@ const PLAYER_RADIUS = 0.35;
 // What the ground stops: narrower than the body, so a one tile gap between
 // trees, or a doorway, can be walked through without lining up on it
 const COLLISION_RADIUS = 0.25;
-const PLAYER_SPEED = 4.2;
+// Tiles a second unburdened: 4.2 until version 137, 30% faster since, as
+// the user asked (a melee boss's chase below keeps pace with it)
+const PLAYER_SPEED = 4.2 * 1.3;
 // A melee boss after you moves at least this fast (just under you
 // unburdened); any boss gives up the chase this many tiles from you and
 // walks back to where it stood
@@ -3346,7 +3348,7 @@ export class Run {
             [this.px, this.pz] = this.moveCircle(this.px, this.pz, dx * speed * dt, dz * speed * dt, COLLISION_RADIUS);
             if (!swinging) {
                 this.facing = Math.atan2(dx, dz);
-                p.play("run");
+                p.play("run", { speed: RUN_CLIP_SPEED });
             }
         } else if (!swinging) {
             p.play("idle");
