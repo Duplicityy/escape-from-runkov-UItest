@@ -1,6 +1,12 @@
 /* Browser counterpart of the classic RuneScape client layout. The supplied
    MORS repository's Java widgets depend on an external game cache; this HUD
    uses Runkov's bundled interface tiles and fonts with its existing actions. */
+/* The world map takes the whole screen, including the chat's usual corner. */
+body:has(.full-map:not([hidden])) .chat.client-chat {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .classic-client {
     --client-rail: 246px;
     --client-rim: #756649;
