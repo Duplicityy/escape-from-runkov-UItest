@@ -1,0 +1,90 @@
+name: Publish the signed Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/android-release.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-v1.0.0-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      RELEASE_TAG: android-v1.0.0
+    steps:
+      - name: Check out the game
+        uses: actions/checkout@v4
+
+      - name: Retrieve the previously built and signed APK
+        uses: actions/checkout@v4
+        with:
+          ref: android-downloads
+          path: release-download
+          lfs: true
+
+      - name: Verify the exact tested APK and create its checksum
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import shutil
+          from pathlib import Path
+
+          source = Path('release-download/Escape-from-Runkov-1.0.apk')
+          expected_size = 567421258
+          expected_digest = '88c89a761576f6189d15d86be9bff7eff103f2ebe685a32c920cc2ddfbe7c62e'
+          if source.stat().st_size != expected_size:
+              raise SystemExit('The APK size does not match the signed release; check Git LFS retrieval.')
+          digest = hashlib.sha256()
+          with source.open('rb') as stream:
+              if stream.read(4) != b'PK\x03\x04':
+                  raise SystemExit('The download is not an APK ZIP archive.')
+              stream.seek(0)
+              for block in iter(lambda: stream.read(1024 * 1024), b''):
+                  digest.update(block)
+          if digest.hexdigest() != expected_digest:
+              raise SystemExit('The APK checksum does not match the signed release.')
+          output = Path('artifacts/android')
+          output.mkdir(parents=True, exist_ok=True)
+          apk = output / source.name
+          shutil.copyfile(source, apk)
+          apk.with_suffix('.apk.sha256').write_text(f'{expected_digest}  {apk.name}\n')
+          print(f'Verified signed APK: {apk.name} ({expected_size:,} bytes)')
+          print(f'SHA-256: {expected_digest}')
+          PY
+
+      - name: Publish the APK and checksum to GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/runkov-release-notes.md" <<'NOTES'
+          Install Escape-from-Runkov-1.0.apk on an Android 8.0 or newer device.
+
+          Includes the OSRS HUD, inventory, equipment, magic, loot tracker, expandable explored map, click-to-walk, and preserved 360-degree movement. Supports Xbox and compatible USB-C/OTG or Bluetooth game controllers through Android's native input system.
+
+          The complete game assets are bundled in the APK. Physical Android devices and controllers have not been available for hardware testing.
+          NOTES
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" --title 'Escape from Runkov 1.0 — Android APK' \
+              --notes-file "$RUNNER_TEMP/runkov-release-notes.md" --draft
+          fi
+          gh release upload "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            artifacts/android/Escape-from-Runkov-1.0.apk \
+            artifacts/android/Escape-from-Runkov-1.0.apk.sha256 --clobber
+          gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --draft=false --prerelease=false --latest
+          {
+            echo '### Android APK published'
+            echo
+            echo "[Download the APK](https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/Escape-from-Runkov-1.0.apk)"
+            echo
+            cat artifacts/android/Escape-from-Runkov-1.0.apk.sha256
+          } >> "$GITHUB_STEP_SUMMARY"
