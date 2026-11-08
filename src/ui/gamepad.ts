@@ -14,6 +14,25 @@ export type ControllerRun = {
 };
 
 type PadLike = Pick<Gamepad, "axes" | "buttons">;
+export type PlatformGamepad = Pick<Gamepad, "id" | "index" | "connected" | "mapping" | "axes" | "buttons" | "timestamp">;
+
+declare global {
+    interface Window {
+        // The Android host supplies native InputDevice events for USB-C and
+        // Bluetooth pads, including WebViews without navigator.getGamepads.
+        __runkovAndroidGamepads?: readonly PlatformGamepad[];
+        __runkovNativeBack?: () => boolean;
+        __runkovNativePause?: () => void;
+    }
+}
+
+export function platformGamepads(android: readonly PlatformGamepad[] | undefined, browser: () => readonly (PlatformGamepad | null)[]): readonly (PlatformGamepad | null)[] {
+    // An empty host list means all native pads disconnected. Do not revive a
+    // stale WebView pad after unplugging a USB controller.
+    if (Array.isArray(android)) return android;
+    return browser();
+}
+
 export type ControllerHost = {
     run(): ControllerRun | undefined;
     action(action: ControllerAction): boolean;
@@ -303,7 +322,7 @@ export class GamepadControls {
     }
 
     start(): void {
-        if (this.frame !== undefined || typeof navigator.getGamepads !== "function") return;
+        if (this.frame !== undefined) return;
         this.lastTime = 0;
         this.suspended = document.hidden;
         this.driver.release(true);
@@ -345,9 +364,12 @@ export class GamepadControls {
         const dt = this.lastTime ? Math.min(0.05, Math.max(0, (now - this.lastTime) / 1000)) : 0;
         this.lastTime = now;
         if (this.suspended || document.hidden) return;
-        let pads: readonly (Gamepad | null)[];
-        try { pads = navigator.getGamepads(); } catch { this.driver.release(); return; }
-        const supported = [...pads].filter((pad): pad is Gamepad => !!pad?.connected && pad.mapping === "standard" && pad.axes.length >= 4 && pad.buttons.length >= 16);
+        let pads: readonly (PlatformGamepad | null)[];
+        try {
+            pads = platformGamepads(window.__runkovAndroidGamepads, () =>
+                typeof navigator.getGamepads === "function" ? navigator.getGamepads() : []);
+        } catch { this.driver.release(); return; }
+        const supported = [...pads].filter((pad): pad is PlatformGamepad => !!pad?.connected && pad.mapping === "standard" && pad.axes.length >= 4 && pad.buttons.length >= 16);
         const pad = supported.find((candidate) => candidate.index === this.connected) ?? supported.find((candidate) => /xbox|xinput/i.test(candidate.id)) ?? supported[0];
         if (pad && pad.index !== this.connected) {
             this.driver.release(true);

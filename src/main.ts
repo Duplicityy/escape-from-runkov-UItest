@@ -58,6 +58,16 @@ const gamepad = new GamepadControls({
 gamepad.start();
 window.addEventListener("pagehide", gamepad.stop);
 window.addEventListener("pageshow", () => gamepad.start());
+window.__runkovNativeBack = () => {
+    if (ui.controllerAction("back")) return true;
+    if (run && !run.ended) return ui.controllerAction("pause");
+    return false;
+};
+window.__runkovNativePause = () => {
+    run?.releaseControllerInput();
+    if (run?.controlsEnabled) ui.controllerAction("pause");
+    window.dispatchEvent(new Event("blur"));
+};
 if (wiped) {
     ui.notice = "This version starts everyone fresh: the save from before it has been cleared.";
 }

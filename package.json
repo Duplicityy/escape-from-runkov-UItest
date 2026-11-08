@@ -10,6 +10,8 @@
     "dev": "vite",
     "test": "node --import tsx scripts/check-pathfinding.ts && node --import tsx scripts/check-loot.ts && node --import tsx scripts/check-gamepad.ts",
     "build": "tsc --noEmit && vite build",
+    "apk": "python3 scripts/build-apk.py",
+    "fetch-assets": "python3 scripts/fetch-runtime-assets.py",
     "preview": "vite preview"
   },
   "dependencies": {

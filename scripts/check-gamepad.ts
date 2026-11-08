@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { ControllerDriver, radialStick, readController, type ControllerHost, type ControllerRun } from "../src/ui/gamepad";
+import { ControllerDriver, platformGamepads, radialStick, readController, type ControllerHost, type ControllerRun, type PlatformGamepad } from "../src/ui/gamepad";
 
 const button = (pressed: boolean) => ({ pressed, touched: pressed, value: pressed ? 1 : 0 });
 const pad = (buttons: number[] = [], axes = [0, 0, 0, 0]) => ({ axes, buttons: Array.from({ length: 17 }, (_, i) => button(buttons.includes(i))) });
@@ -9,6 +9,10 @@ assert(Math.abs(diagonal.x - 0.6) < 1e-8 && Math.abs(diagonal.y + 0.8) < 1e-8);
 assert(Math.abs(Math.hypot(...Object.values(radialStick(1, 1))) - 1) < 1e-8);
 assert.deepEqual(radialStick(NaN, 1), { x: 0, y: 0 });
 assert.equal(readController(pad([7])).down[7], true);
+const wiredPad: PlatformGamepad = { ...pad([2], [0.6, -0.8, 0, 0]), id: "USB-C gamepad", index: 10001, connected: true, mapping: "standard", timestamp: 1 };
+assert.deepEqual(platformGamepads([wiredPad], () => []), [wiredPad], "native Android USB-C input works independently of browser Gamepad support");
+assert.deepEqual(platformGamepads([], () => [wiredPad]), [], "unplugging the native pad must not revive a stale browser state");
+assert.deepEqual(platformGamepads(undefined, () => [wiredPad]), [wiredPad], "ordinary browser controllers retain their original path");
 
 let enabled = true;
 let modal = false;

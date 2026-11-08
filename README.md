@@ -1,5 +1,17 @@
 # Escape from Runkov
 
+## Android APK
+
+Install the signed APK from this repository's [Android release](https://github.com/Duplicityy/escape-from-runkov-UItest/releases/tag/android-v1.0.0).
+Requires Android 8.0 or newer with WebGL 2 support in Android System WebView. The APK bundles
+all twelve maps and the complete game asset set. Accounts and co-op use the existing online
+services. Touch controls, USB-C/OTG wired gamepads and Bluetooth Xbox controllers are supported.
+
+To build it from source, install Node.js 20+, Python 3, JDK 17+, Android SDK 35 and Build Tools
+35.0.0, set `ANDROID_HOME`, then run `npm ci` and `npm run apk`. The asset fetcher downloads and
+verifies the pinned files before building. See [android/README.md](android/README.md) for signing
+and controller details. The signed file is written to `artifacts/android/Escape-from-Runkov-1.0.apk`.
+
 A browser extraction game built on Old School RuneScape's art (the folder and package are still
 called `dungeon-extraction`, as is the browser's save key): pick a map, fight what lives there,
 open the chests scattered about, and get back to where you came in with the loot. Die and
