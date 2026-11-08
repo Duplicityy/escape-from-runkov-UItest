@@ -127,6 +127,14 @@ export class Chat {
         this.add({ kind: "game", text, at: performance.now() });
     }
 
+    // The client's Friends tab opens the same chat used by Enter.
+    openForParty(): void {
+        this.setOpen(true);
+        if (!this.form.hidden) {
+            this.input.focus();
+        }
+    }
+
     private heard(line: ChatLine): void {
         if (line.system) {
             this.add({ kind: "system", text: line.text, at: performance.now() });

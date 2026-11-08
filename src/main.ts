@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import "./ui/client.css";
 
 import { COINS, ITEMS, PRIZES, SLOTS, rollGear, rollShopStock } from "./content/items";
 import { TASKS } from "./content/tasks";

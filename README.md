@@ -39,8 +39,12 @@ browsers.
 
 ## How it plays
 
-- **WASD** to move. Your weapon attacks on its own whenever an enemy is in its range and in sight
-  (**Space** or a click swings anyway), and you can keep moving while it does. **E** opens a chest.
+- **WASD** or the touch movement stick preserves continuous, camera-relative 360-degree walking.
+  Click or tap ground to walk there using a route around the map's collision. Movement keys or
+  the stick immediately cancel the route. A world tap walks on release; dragging and pinching
+  keep the existing camera controls. Your weapon attacks on its own whenever an enemy is in
+  range and in sight (**Space** or clicking an enemy requests a swing), and you can keep moving
+  while it does. **E** opens a chest.
   The ways out are four portals (Clan Wars' Free-for-all portal, a white swirl spinning between
   two stone pillars, with its own animation, version 63), each somewhere else on the map each
   run, a good walk from where you arrived and spread out from each other (a third of the map's
@@ -51,6 +55,17 @@ browsers.
   everything idle within fifteen tiles comes running, so the run ends on a last stand rather
   than a quiet walk out. You can't move while holding, but your weapon still swings at whatever
   reaches you, and letting go to deal with it starts the ten seconds over. **I** opens your pack.
+- The classic RuneScape HUD keeps separate **Inventory**, **Equipment**, **Prayer** and **Magic**
+  tabs, alongside Combat, Tasks, Friends, Character, Settings, Music and Logout. **Loot** takes
+  the Skilling position and tracks actual new pickups in this run, including your own share of
+  party coins. It lists quantities and estimated shop value, even after using an item. Brought
+  supplies, purchases, recovered graves and items dropped from a pack are excluded. It resets
+  when the next run starts. Inventory capacity, gear bonuses, spell requirements and combat
+  rules are unchanged.
+- Click the **minimap** (or press **M**) to open the full map. Click light, discovered ground to
+  choose a walking destination: the map closes and the character follows the route. Dim,
+  unexplored destinations are refused. Dragging pans, the wheel or a pinch zooms, and **Stop
+  walking** clears the route. The destination appears in yellow in the world and on both maps.
 - A run is on the clock. After four minutes the map wakes: enemies notice you from twice as far,
   and nothing heals on its own any more. After twelve the ways out close, with warnings at two
   minutes, one and thirty seconds; after that there's no leaving with the loot.

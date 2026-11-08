@@ -101,7 +101,7 @@ export type DownMessage =
     // An enemy's colour changed: enraged (1), reborn (2), or back to its own (0)
     | { k: "tint"; u: number; c: 0 | 1 | 2 }
     // Something dropped, and something picked up (given to `to`, if anyone)
-    | { k: "drop"; u: number; i: number; n: number; x: number; z: number }
+    | { k: "drop"; u: number; i: number; n: number; x: number; z: number; noLoot?: 1 }
     // n of it, when only part was taken (version 100): `left` stays on the ground
     | { k: "taken"; u: number; to?: string; n?: number; left?: number }
     // A chest opened (by whom, for their count of vaults)

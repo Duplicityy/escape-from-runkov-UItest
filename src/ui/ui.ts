@@ -86,6 +86,7 @@ import {
     wearOf,
 } from "../game/inventory";
 import { MenuScene } from "../game/menu";
+import type { LootTracker } from "../game/loot";
 import { applyMusicVolume } from "../game/music";
 import { PET_ONE_IN, isBossPet, petBuff, petFrom, petName } from "../game/pets";
 import { BODY_PART_NAMES, COLOR_GROUP_NAMES, loadColorTables, loadKits } from "../game/player";
@@ -155,6 +156,7 @@ const GITHUB_URL = "https://github.com/OSRS-God/escape-from-runkov";
 // The pages over a paused run: the pause menu and its two pages, and the
 // trader's stall
 type PauseView = "menu" | "settings" | "stats" | "trade";
+type ClientTab = "combat" | "loot" | "tasks" | "pack" | "equipment" | "prayer" | "spells" | "friends" | "account" | "music";
 
 const POTION_NAMES: Record<Potion, string> = {
     strength: "Strength potion",
@@ -527,7 +529,8 @@ export class UI {
         inventory: HTMLElement;
         inventoryOpen: boolean;
         // Which page of it is up: the pack, or the spellbook (version 106)
-        inventoryView: "pack" | "spells";
+        inventoryView: ClientTab;
+        tabs: HTMLElement;
         signature: string;
         run: Run;
         // The whole HUD (it's marked hurt when hitpoints are low), and a
@@ -656,7 +659,7 @@ export class UI {
 
     // The pack panel, on its pack or its spellbook: the key for the page up
     // shuts it, the other's turns the page
-    private toggleInventory(view: "pack" | "spells" = "pack"): void {
+    private toggleInventory(view: ClientTab = "pack"): void {
         if (!this.hud) {
             return;
         }
@@ -737,6 +740,7 @@ export class UI {
     // The chat box shows in a run, and in a co-op room's lobby
     private updateChat(): void {
         this.chat.setActive(this.hud !== undefined || this.session.room !== undefined);
+        this.chat.root.classList.toggle("client-chat", this.hud !== undefined);
     }
 
     private persist(): void {
@@ -1429,8 +1433,8 @@ export class UI {
 
     private controlsHint(): string {
         return isTouch
-            ? "Drag on the left to move · tap the world to swing · the big button opens chests and holds for the way out · Eat eats · tap Pray, or hold it to pick a protection"
-            : "WASD to move · your weapon attacks on its own · Q special · E opens chests and the way out · F eats · 1 2 3 4 drink · I pack · M map · Esc pauses";
+            ? "Drag on the left for 360° movement · tap ground to walk · tap an enemy to attack · the big button opens chests and holds for the way out · Eat eats · tap Pray, or hold it to pick a protection"
+            : "WASD for 360° movement · click ground to walk · click an enemy or Space to attack · Q special · E interacts · F eats · 1 2 3 4 drink · I inventory · B magic · M map · Esc pauses";
     }
 
     // The rooms down the right, the name and the record top left, the small
@@ -4292,7 +4296,12 @@ export class UI {
         const coins = h("div", { class: "floor" });
         const clock = h("div", { class: "clock" });
         const prompt = h("div", { class: "prompt", hidden: true });
-        const inventory = h("div", { class: "inventory", hidden: true });
+        const inventory = h("div", { class: "inventory client-panel", hidden: isTouch });
+        inventory.id = "client-tab-panel";
+        inventory.setAttribute("role", "tabpanel");
+        const tabs = h("div", { class: "pack-tabs client-tabs" });
+        tabs.setAttribute("role", "tablist");
+        tabs.setAttribute("aria-label", "Game panels");
         const minimap = document.createElement("canvas");
         minimap.className = "minimap";
         minimap.width = MINIMAP_SIZE;
@@ -4332,26 +4341,51 @@ export class UI {
         // On a touch screen, the stick's zone goes in first so everything
         // after it takes its own taps
         const touch = isTouch ? touchControls(run, { togglePack: () => this.toggleInventory(), pause: () => this.togglePause(), openMap: () => this.openFullMap() }) : undefined;
+        const sidebar = h(
+            "aside",
+            { class: "client-sidebar" },
+            h(
+                "div",
+                { class: "client-minimap-frame" },
+                minimap,
+                h("button", { class: "client-compass", title: "Open the world map (M)", onclick: () => this.openFullMap() }, "N"),
+                h(
+                    "div",
+                    { class: "client-map-actions" },
+                    h("button", { title: "Open the full map (M)", onclick: () => this.openFullMap() }, "Map"),
+                    h("button", { title: "Pause and open settings", onclick: () => {
+                        run.setPaused(true);
+                        this.showPauseView("settings");
+                    } }, "Settings"),
+                ),
+            ),
+            h(
+                "div",
+                { class: "client-meters" },
+                h("div", { class: "client-meter hitpoints", title: "Hitpoints" }, h("span", { class: "meter-name" }, "HP"), h("div", { class: "bar" }, hp, hpLabel)),
+                h("button", { class: "client-meter prayer", title: "Prayer: click to open protection prayers", onclick: () => this.toggleInventory("prayer") }, h("span", { class: "meter-name" }, "Prayer"), h("div", { class: "bar prayer-bar" }, prayer, prayerLabel)),
+                h("button", { class: "client-meter special", title: "Use your weapon's special attack (Q)", onclick: () => run.useSpecial() }, h("span", { class: "meter-name" }, "Special"), h("div", { class: "bar spec-bar" }, spec, specLabel)),
+            ),
+            tabs,
+            inventory,
+            h("div", { class: "client-panel-hint" }, "I pack · B spells · M map · Esc pause"),
+        );
         const hudRoot = h(
                 "div",
-                { class: "hud" },
+                { class: "hud classic-client" },
                 touch?.zone,
                 h(
                     "div",
-                    { class: "top" },
-                    h("div", { class: "bar" }, hp, hpLabel),
-                    h("div", { class: "bar spec-bar" }, spec, specLabel),
-                    h("div", { class: "bar prayer-bar" }, prayer, prayerLabel),
-                    h("div", { class: "floor" }, `${run.world.name} · tier ${run.world.tier}${run.night ? " · night" : ""}${run.coop ? " · co-op" : ""}`),
+                    { class: "client-raid-status" },
+                    h("div", { class: "floor client-location" }, `${run.world.name} · tier ${run.world.tier}${run.night ? " · night" : ""}${run.coop ? " · co-op" : ""}`),
                     coins,
                     clock,
                     party,
                 ),
                 boss,
                 prompt,
-                inventory,
                 hotbar,
-                minimap,
+                sidebar,
                 touch?.corner,
                 touch?.cluster,
                 fullMap.root,
@@ -4374,8 +4408,9 @@ export class UI {
             clock,
             prompt,
             inventory,
-            inventoryOpen: false,
+            inventoryOpen: !isTouch,
             inventoryView: "pack",
+            tabs,
             signature: "",
             run,
             hotbar: hotSlots,
@@ -4387,6 +4422,7 @@ export class UI {
             dropMode: false,
             fullMap,
         };
+        tabs.append(...Array.from(this.packTabs().childNodes));
         this.updateChat();
         this.updateHud();
     }
@@ -4424,16 +4460,15 @@ export class UI {
         }
         const run = hud.run;
         hud.hp.style.width = `${(100 * run.hp) / run.maxHp}%`;
-        hud.hpLabel.textContent = `${run.hp} / ${run.maxHp}`;
+        hud.hpLabel.textContent = `${run.hp}/${run.maxHp}`;
         const special = specialOf(run.stats.weapon);
         hud.spec.style.width = `${run.spec}%`;
-        hud.specLabel.textContent = special ? `${special.name} ${Math.round(run.spec)}%` : "";
+        hud.specLabel.textContent = `${Math.round(run.spec)}%`;
+        hud.spec.parentElement!.title = special ? `${special.name}: ${Math.round(run.spec)}%` : "Equip a weapon to use a special attack";
         hud.spec.parentElement?.classList.toggle("ready", run.specReady);
         hud.prayer.style.width = `${run.prayer}%`;
-        hud.prayerLabel.textContent =
-            run.protect === "none"
-                ? `Prayer ${Math.round(run.prayer)}%${isTouch ? "" : " · Z melee X ranged C magic"}`
-                : `Protect from ${run.protect} ${Math.round(run.prayer)}%`;
+        hud.prayerLabel.textContent = `${Math.round(run.prayer)}%`;
+        hud.prayer.parentElement!.title = run.protect === "none" ? "No protection prayer active" : `Protect from ${run.protect}`;
         hud.prayer.parentElement?.classList.toggle("on", run.protect !== "none");
         const uses = run.stats.weapon?.uses;
         let ammoText = "";
@@ -4479,14 +4514,44 @@ export class UI {
             slot.slot.classList.toggle("active", left > 0);
         }
         hud.inventory.hidden = !hud.inventoryOpen;
+        hud.root.classList.toggle("client-panel-open", hud.inventoryOpen);
+        for (const button of hud.tabs.querySelectorAll<HTMLButtonElement>("button[data-view]")) {
+            const selected = hud.inventoryOpen && button.dataset.view === hud.inventoryView;
+            button.classList.toggle("on", selected);
+            button.setAttribute("aria-selected", String(selected));
+        }
         if (hud.inventoryOpen) {
-            const signature = JSON.stringify([run.inventory, run.equipment, hud.inventoryView, run.autocast]);
+            const pageState = hud.inventoryView === "prayer" ? []
+                : hud.inventoryView === "loot" ? [run.loot.revision]
+                : hud.inventoryView === "friends" ? [run.party(), this.session.view.friends, this.save.friends]
+                : [run.inventory, run.equipment, run.autocast, run.spellbook, ...(hud.inventoryView === "combat" ? [Math.round(run.spec)] : [])];
+            const signature = JSON.stringify([hud.inventoryView, ...pageState]);
             if (signature !== hud.signature) {
                 hud.signature = signature;
-                if (hud.inventoryView === "spells") {
-                    this.renderSpellbook(run);
-                } else {
-                    this.renderInventory(run);
+                const scroll = hud.inventory.scrollTop;
+                switch (hud.inventoryView) {
+                    case "spells": this.renderSpellbook(run); break;
+                    case "equipment": this.renderEquipment(run); break;
+                    case "prayer": this.renderPrayer(run); break;
+                    case "loot": this.renderLootTracker(run.loot); break;
+                    case "combat": this.renderCombat(run); break;
+                    case "tasks": this.renderRunTasks(); break;
+                    case "friends": this.renderRunFriends(run); break;
+                    case "account": this.renderRunAccount(); break;
+                    case "music": this.renderRunMusic(); break;
+                    default: this.renderInventory(run);
+                }
+                hud.inventory.scrollTop = scroll;
+            }
+            if (hud.inventoryView === "prayer") {
+                const points = hud.inventory.querySelector(".client-prayer-points");
+                if (points) points.textContent = `Prayer: ${Math.round(run.prayer)} / 100`;
+                for (const button of hud.inventory.querySelectorAll<HTMLButtonElement>("button[data-protect]")) {
+                    const active = button.dataset.protect === run.protect;
+                    button.classList.toggle("on", active);
+                    button.setAttribute("aria-pressed", String(active));
+                    const status = button.querySelector("small");
+                    if (status) status.textContent = active ? "Active" : button.dataset.key ?? "";
                 }
             }
         }
@@ -4518,23 +4583,6 @@ export class UI {
 
     private renderInventory(run: Run): void {
         const hud = this.hud!;
-        const equipment = h(
-            "div",
-            { class: "equipment" },
-            ...SLOTS.map((slot) => {
-                const id = run.equipment[slot];
-                const item = id !== undefined ? getItem(id) : undefined;
-                return h(
-                    "div",
-                    {
-                        class: "equip-slot",
-                        title: item ? `${item.name}: ${describe(item)}. Click to take off.` : slot,
-                        onclick: () => run.unequipSlot(slot as Slot),
-                    },
-                    item ? icon(item) : slot,
-                );
-            }),
-        );
         const slots = h(
             "div",
             { class: "slots" },
@@ -4586,23 +4634,11 @@ export class UI {
                 return slot;
             }),
         );
-        const stats = run.stats;
-        const weight = run.weight();
         hud.inventory.replaceChildren(
-            this.packTabs(),
-            h("h3", {}, "Worn"),
-            equipment,
-            h(
-                "div",
-                { class: "hint" },
-                `Max hit ${stats.damage} every ${stats.speed}s${styleNote(stats)} · defence vs melee ${stats.defenceVs.melee}, ranged ${stats.defenceVs.ranged}, magic ${stats.defenceVs.magic}` +
-                    prayerNote(stats) +
-                    (weight > 0 ? ` · the gear in your pack slows you ${Math.round(weight * 100)}%` : ""),
-            ),
             h(
                 "div",
                 { class: "row pack-head" },
-                h("h3", {}, "Pack"),
+                h("h3", {}, `Inventory ${run.inventory.length}/${run.slots}`),
                 h(
                     "button",
                     {
@@ -4618,27 +4654,202 @@ export class UI {
                 ),
             ),
             slots,
+            h("div", { class: "hint" }, `${formatCoins(run.coins)} coins · Click to use or wear. Right-click for item options.`),
         );
     }
 
-    // The pack panel's two pages: the pack (I) and the spellbook (B)
+    // All client tabs stay visible while the selected page is open or folded.
     private packTabs(): HTMLElement {
         const hud = this.hud!;
-        const tab = (view: "pack" | "spells", label: string, key: string) =>
-            h(
+        const tab = (view: ClientTab, label: string, symbol: Child, key?: string) => {
+            const button = h(
                 "button",
                 {
-                    class: "pack-tab" + (hud.inventoryView === view ? " on" : ""),
-                    title: isTouch ? label : `${label} (${key})`,
-                    onclick: () => {
-                        hud.inventoryView = view;
-                        hud.signature = "";
-                        this.updateHud();
-                    },
+                    class: "pack-tab client-tab" + (hud.inventoryView === view ? " on" : ""),
+                    title: key && !isTouch ? `${label} (${key})` : label,
+                    onclick: () => this.toggleInventory(view),
                 },
-                label,
+                h("span", { class: "client-tab-symbol" }, symbol),
+                h("span", { class: "client-tab-name" }, label === "Inventory" ? "Pack" : label === "Equipment" ? "Equip" : label),
             );
-        return h("div", { class: "pack-tabs" }, tab("pack", "Pack", "I"), tab("spells", "Spellbook", "B"));
+            button.dataset.view = view;
+            button.setAttribute("role", "tab");
+            button.setAttribute("aria-controls", "client-tab-panel");
+            button.setAttribute("aria-label", label);
+            return button;
+        };
+        const action = (label: string, symbol: string, click: () => void) => h("button", { class: "client-tab", title: label, onclick: click }, h("span", { class: "client-tab-symbol" }, symbol), h("span", { class: "client-tab-name" }, label));
+        return h(
+            "div", { class: "pack-tabs client-tabs" },
+            tab("combat", "Combat", iconElement(1291, "Bronze longsword")),
+            tab("loot", "Loot", iconElement(COINS, "Coins")),
+            tab("tasks", "Tasks", iconElement(2677, "Task scroll")),
+            tab("pack", "Inventory", h("span", { class: "client-bag-icon" }), "I"),
+            tab("equipment", "Equipment", iconElement(1103, "Worn armour")),
+            tab("prayer", "Prayer", h("img", { src: assetUrl("ui/headicons/melee.png"), alt: "" })),
+            tab("spells", "Magic", h("img", { src: assetUrl("ui/spells/wind_strike.png"), alt: "" }), "B"),
+            tab("friends", "Friends", "☻"),
+            tab("account", "Character", "♙"),
+            action("Settings", "⚙", () => {
+                hud.run.setPaused(true);
+                this.showPauseView("settings");
+            }),
+            tab("music", "Music", "♫"),
+            action("Logout", "⇥", () => {
+                hud.run.setPaused(true);
+                this.showPauseView("menu");
+            }),
+        );
+    }
+
+    private renderEquipment(run: Run): void {
+        const cross: (Slot | "ammo" | undefined)[] = [undefined, "head", undefined, "cape", "neck", "ammo", "weapon", "body", "shield", undefined, "legs", undefined, "hands", "feet", "ring"];
+        const equipment = h("div", { class: "equip-cross client-equipment" }, ...cross.map((slot) => {
+            if (!slot) return h("div", { class: "equip-slot none" });
+            const ammo = slot === "ammo" ? run.ammo() : undefined;
+            const id = slot === "ammo" ? ammo?.id : run.equipment[slot];
+            const item = id !== undefined ? getItem(id) : undefined;
+            const button = h("button", {
+                class: "equip-slot" + (item ? "" : " empty"),
+                title: item ? `${item.name}: ${describe(item)}.${slot === "ammo" ? " Click to view ammunition in your inventory." : " Click to take off."}` : slot,
+                onclick: () => { if (slot === "ammo") this.toggleInventory("pack"); else run.unequipSlot(slot); },
+            }, item ? icon(item) : h("span", { class: "slot-name" }, slot));
+            if (item && slot !== "ammo") button.addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                showItemMenu(item, e.clientX, e.clientY, [["Take off", () => run.unequipSlot(slot)]]);
+            });
+            return button;
+        }));
+        const s = run.stats;
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, "Worn equipment"), equipment,
+            h("div", { class: "client-stat-list" },
+                h("div", {}, "Max hit", h("strong", {}, String(s.damage))),
+                h("div", {}, "Attack speed", h("strong", {}, `${s.speed}s`)),
+                h("div", {}, "Melee defence", h("strong", {}, String(s.defenceVs.melee))),
+                h("div", {}, "Ranged defence", h("strong", {}, String(s.defenceVs.ranged))),
+                h("div", {}, "Magic defence", h("strong", {}, String(s.defenceVs.magic))),
+            ),
+            h("div", { class: "hint" }, `Click a worn item to remove it.${prayerNote(s)}${run.weight() > 0 ? ` Packed gear slows you ${Math.round(run.weight() * 100)}%.` : ""}`),
+        );
+    }
+
+    private renderPrayer(run: Run): void {
+        const choices = [["melee", "Z"], ["ranged", "X"], ["magic", "C"]] as const;
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, "Protection prayers"),
+            h("div", { class: "client-prayer-points" }, `Prayer: ${Math.round(run.prayer)} / 100`),
+            h("div", { class: "client-prayers" }, ...choices.map(([style, key]) => {
+                const active = run.protect === style;
+                const button = h("button", {
+                    class: "client-prayer" + (active ? " on" : ""),
+                    title: `Protect from ${style}: halves hits of this style (${key}). Click again to turn off.`,
+                    onclick: () => { run.setProtect(style); this.updateHud(); },
+                }, h("img", { src: assetUrl(`ui/headicons/${style}.png`), alt: "" }), h("span", {}, `Protect from ${style}`), h("small", {}, active ? "Active" : key));
+                button.dataset.protect = style;
+                button.dataset.key = key;
+                button.setAttribute("aria-pressed", String(active));
+                return button;
+            })),
+            h("div", { class: "hint" }, "Protection halves incoming hits of the chosen style. Prayer drains while active and recovers when no prayer is active. Holy equipment makes it last longer."),
+        );
+    }
+
+    private renderLootTracker(loot: LootTracker): void {
+        const entries = [...loot.entries].sort((a, b) => (b.id === COINS ? b.count : price(getItem(b.id)) * b.count) - (a.id === COINS ? a.count : price(getItem(a.id)) * a.count));
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, "Loot tracker"),
+            h("div", { class: "client-loot-total" }, iconElement(COINS, "Coins"), h("div", {}, h("strong", {}, `${formatCoins(loot.value)} gp`), h("span", {}, "Estimated value this run"))),
+            h("div", { class: "hint" }, `${entries.length} item types · ${loot.totalCount.toLocaleString()} collected`),
+            entries.length ? h("div", { class: "client-loot-list" }, ...entries.map(({ id, count }) => {
+                const item = getItem(id);
+                const value = id === COINS ? count : price(item) * count;
+                return h("div", { class: "client-loot-row", title: `${item.name}: ${count.toLocaleString()} collected, estimated ${formatCoins(value)} gp` }, icon(item), h("div", {}, h("span", { class: "name" }, item.name), h("small", {}, `×${count.toLocaleString()}`)), h("span", { class: "coins" }, `${formatCoins(value)} gp`));
+            })) : h("div", { class: "client-empty" }, h("span", { class: "client-empty-symbol" }, "▥"), h("strong", {}, "No loot collected yet"), h("span", {}, "Pick up loot in the world to track it here.")),
+            h("div", { class: "hint client-loot-note" }, "Tracks new loot picked up this run, including items later used or dropped. Brought gear and purchases are excluded. Resets on the next run."),
+        );
+    }
+
+    private renderCombat(run: Run): void {
+        const s = run.stats;
+        const special = specialOf(s.weapon);
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, "Combat"),
+            h("div", { class: "client-weapon" }, s.weapon ? icon(s.weapon) : null, h("strong", {}, s.weapon?.name ?? "Unarmed")),
+            h("div", { class: "client-stat-list" },
+                h("div", {}, "Max hit", h("strong", {}, String(s.damage))),
+                h("div", {}, "Attack speed", h("strong", {}, `${s.speed}s`)),
+                h("div", {}, s.ranged ? "Range" : "Reach", h("strong", {}, `${s.range} tiles`)),
+            ),
+            h("div", { class: "hint" }, styleNote(s) || (s.ranged ? "Ranged attacks" : "Melee attacks")),
+            h("button", { class: "client-special-button" + (run.specReady ? " ready" : ""), disabled: !run.specReady || !special, title: "Use special attack (Q)", onclick: () => run.useSpecial() }, special ? `${special.name} · ${Math.round(run.spec)}%` : "Equip a weapon for a special attack"),
+            h("div", { class: "hint" }, "Attack using the existing combat controls. Special attacks use half the special bar. Open Equipment to change your weapon."),
+        );
+    }
+
+    private renderRunTasks(): void {
+        const done = this.save.tasks;
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, `Task journal ${done.length}/${TASKS.length}`),
+            this.contractPanel(true),
+            h("div", { class: "hint" }, "Tasks and contracts are checked and paid when a run ends."),
+            h("div", { class: "client-task-list" }, ...TASKS.map((task) => h("div", { class: "client-task" + (done.includes(task.id) ? " done" : "") }, h("span", {}, `${done.includes(task.id) ? "✓ " : ""}${task.name}`), h("small", {}, done.includes(task.id) ? "Completed" : `${formatCoins(task.reward)} coins`)))),
+        );
+    }
+
+    private renderRunFriends(run: Run): void {
+        const online = new Map((this.session.view.friends ?? []).map((friend) => [friend.code, friend]));
+        const code = this.friendCode();
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, "Friends & party"),
+            h("div", { class: "hint" }, `Your friend code: ${code ? formatFriendCode(code) : "connecting…"}`),
+            h("button", { disabled: !code, onclick: () => {
+                if (code) void navigator.clipboard?.writeText(code).catch(() => prompt("Your friend code:", formatFriendCode(code)));
+            } }, "Copy friend code"),
+            h("h3", {}, run.coop ? "Current party" : "Solo run"),
+            ...run.party().map((member) => h("div", { class: "client-friend-row" }, h("span", {}, `${member.name}${member.me ? " (you)" : ""}`), h("small", {}, member.dead ? "Down" : member.done ? "Out" : `${member.hp}/${member.maxHp} HP`))),
+            h("h3", {}, "Friends"),
+            ...(this.save.friends?.length ? this.save.friends.map((friend) => {
+                const active = online.get(friend.code);
+                return h("div", { class: "client-friend-row" + (active ? " online" : "") }, h("span", {}, active?.name ?? friend.name), h("small", {}, active ? this.friendDoing(active) : "Offline"));
+            }) : [h("div", { class: "hint" }, "No friends added yet. Manage your friends in the War Room between runs.")]),
+            h("button", { onclick: () => this.chat.openForParty() }, "Open chat"),
+        );
+    }
+
+    private renderRunAccount(): void {
+        this.hud!.inventory.replaceChildren(
+            h("h3", {}, "Character"),
+            h("div", { class: "client-character-name" }, this.save.character.name),
+            h("div", { class: "hint" }, this.account?.name ? `Account: ${this.account.name}` : "Progress is saved in this browser."),
+            h("div", { class: "client-stat-list" },
+                h("div", {}, "Runs", h("strong", {}, String(this.save.stats.runs))),
+                h("div", {}, "Escapes", h("strong", {}, String(this.save.stats.extractions))),
+                h("div", {}, "Enemies slain", h("strong", {}, String(this.save.stats.kills))),
+                h("div", {}, "Banked coins", h("strong", {}, formatCoins(this.save.coins))),
+            ),
+            h("div", { class: "hint" }, "Appearance, account and bank management are available at the guild between runs."),
+        );
+    }
+
+    private renderRunMusic(): void {
+        const music = h("input", { type: "range", min: "0", max: "1", step: "0.05", value: String(settings.music) });
+        music.setAttribute("aria-label", "Music volume");
+        const amount = h("span", {}, `${Math.round(settings.music * 100)}%`);
+        music.addEventListener("input", () => {
+            settings.music = Number(music.value);
+            amount.textContent = `${Math.round(settings.music * 100)}%`;
+            saveSettings();
+            applyMusicVolume();
+        });
+        const mute = h("button", { onclick: () => {
+            settings.muted = !settings.muted;
+            saveSettings();
+            applyMusicVolume();
+            this.hud!.signature = "";
+            this.updateHud();
+        } }, settings.muted ? "Unmute sounds" : "Mute sounds");
+        this.hud!.inventory.replaceChildren(h("h3", {}, "Music & sound"), h("div", { class: "client-music-label" }, "Music volume", amount), music, mute, h("div", { class: "hint" }, "Music follows the area you are exploring. Your volume settings are saved for this browser."));
     }
 
     // Opens the other spellbook (version 107): as in OSRS, a spell picked
@@ -4837,7 +5048,7 @@ export class UI {
             h(
                 "div",
                 { class: "spell-page" },
-                this.packTabs(),
+                h("h3", {}, "Magic"),
                 ...(powered ? [ownRow!] : [books, head, grid, ...(ownRow ? [ownRow] : [])]),
                 ...(detail ? [detail] : []),
                 hint,

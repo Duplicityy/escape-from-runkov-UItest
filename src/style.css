@@ -3,17 +3,17 @@
 
 @font-face {
     font-family: "OSRS Bold";
-    src: url(../ui/RuneScape-Bold-12.ttf);
+    src: url(/ui/RuneScape-Bold-12.ttf);
 }
 
 @font-face {
     font-family: "OSRS Small";
-    src: url(../ui/RuneScape-Plain-11.ttf);
+    src: url(/ui/RuneScape-Plain-11.ttf);
 }
 
 @font-face {
     font-family: "OSRS Plain";
-    src: url(../ui/RuneScape-Plain-12.ttf);
+    src: url(/ui/RuneScape-Plain-12.ttf);
 }
 
 :root {
@@ -83,9 +83,9 @@ body {
 .inventory,
 .prompt,
 .menu-box {
-    background-image: url(../ui/interface-bg.png);
+    background-image: url(/ui/interface-bg.png);
     border: 6px solid;
-    border-image: url(../ui/interface-border.png) 6 / 6px / 0 repeat;
+    border-image: url(/ui/interface-border.png) 6 / 6px / 0 repeat;
     box-shadow: 0 6px 30px rgba(0, 0, 0, 0.7);
 }
 
@@ -162,7 +162,7 @@ input[type="range"] {
 
 /* The loading screen: nothing behind it worth seeing */
 .screen.solid {
-    background: #000 url(../ui/interface-bg.png);
+    background: #000 url(/ui/interface-bg.png);
     background-blend-mode: multiply;
     background-color: #5a5a5a;
 }
@@ -1130,9 +1130,9 @@ input[type="range"] {
     position: relative;
     width: 44px;
     height: 44px;
-    background-image: url(../ui/interface-bg.png);
+    background-image: url(/ui/interface-bg.png);
     border: 3px solid;
-    border-image: url(../ui/interface-border.png) 6 / 3px / 0 repeat;
+    border-image: url(/ui/interface-border.png) 6 / 3px / 0 repeat;
     cursor: pointer;
 }
 
@@ -1334,6 +1334,18 @@ input[type="range"] {
 
 .full-map-legend .note {
     color: var(--dim);
+}
+
+.full-map-notice {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    max-width: min(320px, calc(100% - 16px));
+    padding: 8px 12px;
+    color: var(--yellow);
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid var(--edge);
+    pointer-events: none;
 }
 
 /* A phone sideways has little height: the key goes, the bar stays */
@@ -2116,7 +2128,7 @@ body.chat-shown .screen {
         box-sizing: border-box;
         border-radius: 50%;
         border: 3px solid var(--edge);
-        background-image: url(../ui/interface-bg.png);
+        background-image: url(/ui/interface-bg.png);
         box-shadow:
             inset 0 0 0 1px var(--edge-light),
             0 2px 8px rgba(0, 0, 0, 0.6);
@@ -2566,7 +2578,7 @@ body.chat-shown .screen {
         font-size: 24px;
         color: var(--orange);
         text-shadow: 2px 2px 0 #000;
-        background: #000 url(../ui/interface-bg.png);
+        background: #000 url(/ui/interface-bg.png);
         background-blend-mode: multiply;
         background-color: #5a5a5a;
         touch-action: none;
