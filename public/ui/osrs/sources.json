@@ -1,0 +1,153 @@
+{
+  "source": "https://github.com/skeldoor/osrs-sprites/releases/tag/sprites-2026-11-03",
+  "archive": "https://github.com/skeldoor/osrs-sprites/releases/download/sprites-2026-11-03/sprites-2026-11-03.zip",
+  "archiveSha256": "fee6e406bcd058bcd1b89993c2369a77157e91a72d9f223eaa93f815303d09ad",
+  "cacheDate": "2026-11-03",
+  "scale": "native 1x",
+  "frames": {
+    "combat": {
+      "spriteId": 168,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/168_0.png",
+      "width": 20,
+      "height": 20,
+      "sha256": "d50897c55b0e9ead57d1e0fca8f99112ed5580fb7c0b6cab27a9c1e1a1ac59d2"
+    },
+    "inventory": {
+      "spriteId": 900,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/900_0.png",
+      "width": 26,
+      "height": 28,
+      "sha256": "15f699a036c1793652d22be1a4aeb2f57a32e784ae6ee93430f84fa70812f0fc"
+    },
+    "equipment": {
+      "spriteId": 901,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/901_0.png",
+      "width": 27,
+      "height": 32,
+      "sha256": "84aff36649432f298a0c83ed5f6220f4dc88dbc4e0ba7242f08db87e6788003f"
+    },
+    "prayer": {
+      "spriteId": 779,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/779_0.png",
+      "width": 26,
+      "height": 30,
+      "sha256": "00370748d69e121e00ee01815f24d3e969bf96b093d4c8fd0c52b11f0f6537bd"
+    },
+    "magic": {
+      "spriteId": 780,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/780_0.png",
+      "width": 25,
+      "height": 24,
+      "sha256": "8c87ff8415b7737152b5d1b223c7a1f6d9d82625f5735be34a8ec08b10964e7a"
+    },
+    "tasks": {
+      "spriteId": 776,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/776_0.png",
+      "width": 22,
+      "height": 22,
+      "sha256": "21ca1f13f5cefd439d13c61b906515322a319b1402437657466008eb6402e000"
+    },
+    "friends": {
+      "spriteId": 782,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/782_0.png",
+      "width": 23,
+      "height": 23,
+      "sha256": "1026592e57805995cd8dec111ba198b146ba9933a3b98d5eb9c8428818b4fa3b"
+    },
+    "character": {
+      "spriteId": 909,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/909_0.png",
+      "width": 19,
+      "height": 28,
+      "sha256": "3fffac973b937de79ceeadf87b57f31f6bf5885b8a577565cd5683ebd5feaa8f"
+    },
+    "music": {
+      "spriteId": 910,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/910_0.png",
+      "width": 22,
+      "height": 26,
+      "sha256": "1b848ad274e665329dfe6ee5914cf1a43bf8b11b233c1214752ba454e8e44c7b"
+    },
+    "map": {
+      "spriteId": 1439,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/1439_0.png",
+      "width": 22,
+      "height": 22,
+      "sha256": "f101dc591b1573d8d36ec138e51ddbe057e7e10ad57827bbeed1853ce829b5da"
+    },
+    "settings": {
+      "spriteId": 908,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/908_0.png",
+      "width": 24,
+      "height": 24,
+      "sha256": "ef160def165d0c1f86dbbd87777acfc551fcfc78623507922853f1b4da7bc7f3"
+    },
+    "logout": {
+      "spriteId": 907,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/907_0.png",
+      "width": 21,
+      "height": 30,
+      "sha256": "6daf405364b542e7d12143e08d7bbd691de618f9313d8b54ec8331cc790910e8"
+    },
+    "loot": {
+      "spriteId": 6390,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/6390_0.png",
+      "width": 25,
+      "height": 23,
+      "sha256": "4a04fbc222e4af62dfc8c1567f33f24a8e4e9ca084c89bdfb993e64287b2ae67"
+    },
+    "heart": {
+      "spriteId": 1067,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/1067_0.png",
+      "width": 15,
+      "height": 14,
+      "sha256": "a2d8221ca57c90c62be030ea12a3d8fc7fab21fc92542fb4ee6c3c34c80354ed"
+    },
+    "prayer-orb": {
+      "spriteId": 1068,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/1068_0.png",
+      "width": 20,
+      "height": 20,
+      "sha256": "62dd65a259ab74d23d8db12e684e1947968054c983ea5fa93ec419205e23f2fd"
+    },
+    "special": {
+      "spriteId": 1610,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/1610_0.png",
+      "width": 16,
+      "height": 16,
+      "sha256": "386d8be06eb67e00602f9514773e8176877c697dfad5c59f6d397e1689be3376"
+    },
+    "coins": {
+      "spriteId": 1453,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/1453_0.png",
+      "width": 15,
+      "height": 15,
+      "sha256": "d1c2b1fd85b2784f1229de4ce5df02304abb7d7e914c266d4ac1114b51947f39"
+    },
+    "compass": {
+      "spriteId": 169,
+      "frame": 0,
+      "archivePath": "sprites-2026-11-03/1x/169_0.png",
+      "width": 51,
+      "height": 51,
+      "sha256": "fb6b85cbd58fa7ce9364788588363e58335590ca459181786fb2a0a11daf86bf"
+    }
+  }
+}

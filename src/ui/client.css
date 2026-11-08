@@ -63,10 +63,11 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    filter: drop-shadow(1px 1px 1px #080907);
+    filter: none;
 }
 .reference-client .client-tab-symbol > .icon-sprite { transform: scale(.85); }
-.reference-client .client-tab-symbol > img { width: 27px; height: 27px; object-fit: contain; image-rendering: pixelated; }
+.reference-client .osrs-interface-icon { display: block; object-fit: contain; image-rendering: pixelated; pointer-events: none; user-select: none; }
+.reference-client .client-tab-symbol > .osrs-interface-icon { width: auto; height: auto; max-width: 32px; max-height: 32px; }
 .reference-client .client-tab-name {
     position: absolute;
     width: 1px;
@@ -75,29 +76,6 @@
     clip-path: inset(50%);
     white-space: nowrap;
 }
-.reference-client .client-glyph { width: 29px; height: 29px; overflow: visible; }
-.reference-client .client-glyph path { fill: none; stroke: #c5bc9d; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
-.reference-client .client-glyph-prayer path { fill: #d2e1db; stroke: #c0ccc6; stroke-width: 1; }
-.reference-client .client-glyph-coins path { fill: #aa8637; stroke: #ddbd66; stroke-width: 1.6; }
-.reference-client .client-glyph-friends path { stroke: #d7b66a; stroke-width: 2.2; }
-.reference-client .client-glyph-character path { stroke: #789f84; stroke-width: 2.1; }
-.reference-client .client-glyph-music path { stroke: #dbc275; stroke-width: 2.2; }
-.reference-client .client-glyph-logout path { stroke: #c5c0ac; stroke-width: 2.1; }
-.reference-client .client-glyph-magic path { fill: #bad2ff; stroke: #7181c9; stroke-width: 1.3; }
-.reference-client .client-bag-icon {
-    position: relative;
-    width: 23px;
-    height: 23px;
-    margin-top: 3px;
-    border: 2px solid #382416;
-    border-radius: 6px 6px 8px 8px;
-    background: linear-gradient(135deg, #a17d4b, #78532e 60%, #543a23);
-    box-shadow: inset 2px 1px #c59b61, 1px 2px #17120c;
-    transform: rotate(-12deg);
-}
-.reference-client .client-bag-icon::before { content: ""; position: absolute; left: 3px; top: -5px; width: 12px; height: 7px; border: 2px solid #9c7948; border-bottom: 0; border-radius: 5px 5px 0 0; }
-.reference-client .client-bag-icon::after { content: ""; position: absolute; left: 7px; top: 5px; width: 5px; height: 9px; border: 1px solid #422d19; background: #bea068; }
-
 .reference-client .client-minimap-frame {
     position: absolute;
     top: calc(11px + var(--safe-top, 0px));
@@ -122,6 +100,7 @@
 }
 .reference-client .client-compass {
     position: absolute;
+    overflow: hidden;
     top: 0;
     left: calc(var(--ref-orb-height) * -.42);
     width: var(--ref-orb-height);
@@ -135,6 +114,7 @@
     font-size: clamp(14px, 3vh, 18px);
     pointer-events: auto;
 }
+.reference-client .client-compass .osrs-interface-icon { width: 100%; height: 100%; }
 .reference-client .client-meters {
     position: absolute;
     right: calc(100% + 9px);
@@ -163,9 +143,7 @@
 .reference-client .client-orb .label { position: relative; z-index: 2; width: calc(var(--ref-orb-width) - var(--ref-orb-height) - 4px); font: normal clamp(13px, 3.05vh, 18px)/1 "OSRS Bold", sans-serif; color: #21e521; text-align: left; text-shadow: 1px 1px #0a1608; white-space: nowrap; }
 .reference-client .client-orb-icon { position: absolute; top: -1px; right: -1px; width: calc(var(--ref-orb-height) - 2px); height: calc(var(--ref-orb-height) - 2px); display: flex; align-items: center; justify-content: center; border-radius: 50%; background: conic-gradient(#c4bd77 var(--orb-fill), #51503a 0); }
 .reference-client .client-orb-icon::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: #424536; box-shadow: inset 0 0 3px #111; }
-.reference-client .client-orb-icon .client-glyph { position: relative; width: 23px; height: 23px; filter: drop-shadow(1px 1px #182016); }
-.reference-client .client-orb.hitpoints .client-glyph path { fill: #cf3824; stroke: #691b12; stroke-width: 1.3; }
-.reference-client .client-orb.special .client-glyph path { stroke: #d4cbb0; stroke-width: 2; }
+.reference-client .client-orb-icon .osrs-interface-icon { position: relative; width: auto; height: auto; max-width: 23px; max-height: 23px; }
 .reference-client .client-orb.ready { border-color: #9c9159; }
 .reference-client .client-orb.prayer.on { box-shadow: inset 0 0 0 1px #d6c86c, 0 0 5px #dcba6144; }
 .reference-client .client-orb.pack .label { font-size: clamp(12px, 3.05vh, 18px); }
@@ -316,7 +294,7 @@
     .reference-client .client-tab-symbol { transform: scale(.83); }
     .reference-client .client-meters { gap: 3px; }
     .reference-client .client-orb { padding-left: 5px; }
-    .reference-client .client-orb-icon .client-glyph { width: 18px; height: 18px; }
+    .reference-client .client-orb-icon .osrs-interface-icon { max-width: 20px; max-height: 20px; }
     .reference-client .client-map-caption { top: calc(100% + 9px); }
     .reference-client .client-world-label { padding: 3px 7px; font-size: 13px; line-height: 17px; }
     .reference-client .client-panel { width: 232px; padding: 10px 7px; }

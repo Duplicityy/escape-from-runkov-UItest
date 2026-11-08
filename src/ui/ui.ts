@@ -30,6 +30,7 @@ import {
     PRAYER_BONUS_SCALE,
 } from "../content/items";
 import { iconElement, setIcon } from "../game/icons";
+import { interfaceIcon } from "./interface-icons";
 import { assetUrl } from "../game/paths";
 import {
     AIR as AIR_RUNE,
@@ -196,32 +197,6 @@ function h<K extends keyof HTMLElementTagNameMap>(
         el.append(typeof child === "string" ? document.createTextNode(child) : child);
     }
     return el;
-}
-
-// Small, fixed-colour client glyphs avoid platform emoji in the icon rails.
-function clientGlyph(kind: "equipment" | "friends" | "character" | "music" | "settings" | "logout" | "map" | "heart" | "prayer" | "special" | "coins" | "magic"): SVGSVGElement {
-    const paths: Record<typeof kind, string> = {
-        equipment: "M12 3a3 3 0 1 0 0 6a3 3 0 0 0 0-6M8 10l4 2 4-2M6 12l2-2-1 6M18 12l-2-2 1 6M12 12v6M8 14h8M8 17h8M10 18l-2 5M14 18l2 5M5 12l-2 7M19 12l2 7",
-        friends: "M9 4a3 3 0 1 0 0 6a3 3 0 0 0 0-6M17 7a2.5 2.5 0 1 0 0 5a2.5 2.5 0 0 0 0-5M3 21v-6c0-5 12-5 12 0v6M16 14c5-1 6 2 6 7M6 16v5M12 16v5",
-        character: "M12 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6M7 10l5-2 5 2-1 8H8l-1-8M7 11l-4 7M17 11l4 7M10 18l-2 6M14 18l2 6M8 13h8",
-        music: "M8 17V6l12-3v12M8 10l12-3M8 17c-7-2-7 6-2 5 2 0 2-2 2-5M20 15c-7-2-7 6-2 5 2 0 2-2 2-5",
-        settings: "M19 3l-4 4 2 3 4-4c2 5-2 9-7 7L6 22l-4-4 9-8C9 5 14 1 19 3M5 18l1 1",
-        logout: "M3 22V8a9 9 0 0 1 18 0v14M7 22V8a5 5 0 0 1 10 0v14M1 22h8M15 22h8M13 12h6M17 10l2 2-2 2",
-        map: "M3 4l6 2 6-3 6 2-2 17-6-2-6 3-6-2 2-17M9 6L7 23M15 3l-2 17M6 11l3 2 5-4 3 6",
-        heart: "M12 21C-5 10 4-1 12 6c8-7 17 4 0 15",
-        prayer: "M12 1l3 8 7 3-7 3-3 8-3-8-7-3 7-3 3-8",
-        special: "M5 2l3 3 9 10 3-2 2 2-3 3 3 4-2 2-4-4-3 3-2-2 3-3L4 8 2 5l3-3M5 5l11 11",
-        coins: "M3 8c0-5 18-5 18 0s-18 5-18 0M3 8v5c0 5 18 5 18 0V8M3 13v5c0 5 18 5 18 0v-5M8 9v4M12 10v4M16 9v4",
-        magic: "M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20M12 5l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5",
-    };
-    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("viewBox", "0 0 26 26");
-    svg.setAttribute("aria-hidden", "true");
-    svg.setAttribute("class", `client-glyph client-glyph-${kind}`);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", paths[kind]);
-    svg.append(path);
-    return svg;
 }
 
 function clientKeyboardButton(element: HTMLElement): void {
@@ -4480,12 +4455,12 @@ export class UI {
         const location = h("div", { class: "client-world-label" }, run.world.name);
         const minimapFrame = h("div", { class: "client-minimap-frame" },
             minimap,
-            h("button", { class: "client-compass", title: "Open the world map (M)", onclick: () => this.openFullMap() }, "N"),
+            h("button", { class: "client-compass", title: "Open the world map (M)", onclick: () => this.openFullMap() }, interfaceIcon("compass")),
             h("div", { class: "client-meters" },
-                orb("hitpoints", hp, hpLabel, clientGlyph("heart"), "Hitpoints: click to eat food (F)", () => run.eatHotkey()),
-                orb("prayer", prayer, prayerLabel, clientGlyph("prayer"), "Open protection prayers", () => this.toggleInventory("prayer")),
-                orb("pack", h("div", { class: "fill" }), coins, clientGlyph("coins"), "Coins and inventory", () => this.toggleInventory("pack")),
-                orb("special", spec, specLabel, clientGlyph("special"), "Use your weapon's special attack (Q)", () => run.useSpecial()),
+                orb("hitpoints", hp, hpLabel, interfaceIcon("heart"), "Hitpoints: click to eat food (F)", () => run.eatHotkey()),
+                orb("prayer", prayer, prayerLabel, interfaceIcon("prayer-orb"), "Open protection prayers", () => this.toggleInventory("prayer")),
+                orb("pack", h("div", { class: "fill" }), coins, interfaceIcon("coins"), "Coins and inventory", () => this.toggleInventory("pack")),
+                orb("special", spec, specLabel, interfaceIcon("special"), "Use your weapon's special attack (Q)", () => run.useSpecial()),
             ),
             h("div", { class: "client-map-caption" }, location, clock),
         );
@@ -4853,25 +4828,25 @@ export class UI {
         return h(
             "div", { class: "pack-tabs client-tabs" },
             h("div", { class: "client-tabs-left" },
-                tab("combat", "Combat", iconElement(1291, "Bronze longsword")),
-                tab("prayer", "Prayer", clientGlyph("prayer")),
-                tab("tasks", "Tasks", iconElement(2677, "Task scroll")),
-                tab("friends", "Friends", clientGlyph("friends")),
-                tab("account", "Character", clientGlyph("character")),
-                tab("music", "Music", clientGlyph("music")),
+                tab("combat", "Combat", interfaceIcon("combat")),
+                tab("prayer", "Prayer", interfaceIcon("prayer")),
+                tab("tasks", "Tasks", interfaceIcon("tasks")),
+                tab("friends", "Friends", interfaceIcon("friends")),
+                tab("account", "Character", interfaceIcon("character")),
+                tab("music", "Music", interfaceIcon("music")),
             ),
             h("div", { class: "client-tabs-right" },
-                tab("pack", "Inventory", h("span", { class: "client-bag-icon" }), "I"),
-                tab("equipment", "Equipment", clientGlyph("equipment")),
-                tab("loot", "Loot", clientGlyph("coins")),
-                tab("spells", "Magic", clientGlyph("magic"), "B"),
-                action("Map", clientGlyph("map"), () => this.openFullMap()),
-                action("Settings", clientGlyph("settings"), () => {
+                tab("pack", "Inventory", interfaceIcon("inventory"), "I"),
+                tab("equipment", "Equipment", interfaceIcon("equipment")),
+                tab("loot", "Loot", interfaceIcon("loot")),
+                tab("spells", "Magic", interfaceIcon("magic"), "B"),
+                action("Map", interfaceIcon("map"), () => this.openFullMap()),
+                action("Settings", interfaceIcon("settings"), () => {
                     hud.touch?.cancel();
                     hud.run.setPaused(true);
                     this.showPauseView("settings");
                 }),
-                action("Logout", clientGlyph("logout"), () => {
+                action("Logout", interfaceIcon("logout"), () => {
                     hud.touch?.cancel();
                     hud.run.setPaused(true);
                     this.showPauseView("menu");
