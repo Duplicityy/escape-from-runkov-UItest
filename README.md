@@ -55,8 +55,11 @@ browsers.
   everything idle within fifteen tiles comes running, so the run ends on a last stand rather
   than a quiet walk out. You can't move while holding, but your weapon still swings at whatever
   reaches you, and letting go to deal with it starts the ten seconds over. **I** opens your pack.
-- The classic RuneScape HUD keeps separate **Inventory**, **Equipment**, **Prayer** and **Magic**
-  tabs, alongside Combat, Tasks, Friends, Character, Settings, Music and Logout. **Loot** takes
+- The HUD follows the supplied mobile RuneScape reference: floating buttons along both edges,
+  a minimap and status orbs in the top right, and chat controls in the top left. Panels start
+  closed so the world fills the screen. The top chat buttons open the parchment chat box at
+  the bottom left. Separate **Inventory**, **Equipment**, **Prayer** and **Magic** tabs sit
+  alongside Combat, Tasks, Friends, Character, Settings, Music and Logout. **Loot** takes
   the Skilling position and tracks actual new pickups in this run, including your own share of
   party coins. It lists quantities and estimated shop value, even after using an item. Brought
   supplies, purchases, recovered graves and items dropped from a pack are excluded. It resets
@@ -66,6 +69,18 @@ browsers.
   choose a walking destination: the map closes and the character follows the route. Dim,
   unexplored destinations are refused. Dragging pans, the wheel or a pinch zooms, and **Stop
   walking** clears the route. The destination appears in yellow in the world and on both maps.
+- Touch screens have gold **Move** and **Aim / attack** sticks. The movement stick keeps full
+  360-degree control; the other aims and requests the existing manual attack. A contextual
+  interaction button still opens chests and can be held to escape. Ground outside the sticks
+  remains available for tap-to-walk and camera gestures.
+- **Xbox controllers** work through the browser's native Gamepad API. Connect by USB or
+  Bluetooth and press a button. The left stick moves, the right stick turns the camera,
+  **RT** attacks, **LT** uses the special attack, and holding **X** interacts. **Y** opens the
+  inventory, **View** opens the map, and **Menu / Start** pauses. **D-pad** navigates controls,
+  **A** confirms (or attacks in the world), **B** goes back, and **LB / RB** cycle panels.
+  On the full map, the left stick moves the destination cursor, the right stick pans,
+  triggers zoom, and **A** selects discovered ground to walk to. Keyboard and touch controls
+  remain available, and controller input clears on disconnect or when the page loses focus.
 - A run is on the clock. After four minutes the map wakes: enemies notice you from twice as far,
   and nothing heals on its own any more. After twelve the ways out close, with warnings at two
   minutes, one and thirty seconds; after that there's no leaving with the loot.

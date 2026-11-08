@@ -948,6 +948,13 @@ export class Run {
     // A touch screen's stick (ui/touch.ts): which way and how far, -1 to 1,
     // added to the keys
     readonly stick = { x: 0, z: 0 };
+    // Separate from touch input so releasing a controller cannot release a
+    // thumb still holding the screen's movement stick.
+    private readonly controllerStick = { x: 0, z: 0 };
+    private controllerInteract = false;
+    private controllerAttack = false;
+    private touchAttack = false;
+    private readonly aimInput = { x: 0, z: 0 };
     // A flow field to each hero enemies can be after, worked out every
     // quarter second (one hero outside co-op)
     private flows = new Map<string, Int16Array>();
@@ -2156,6 +2163,10 @@ export class Run {
         this.attackAsked = 0;
         this.stick.x = 0;
         this.stick.z = 0;
+        this.releaseControllerInput();
+        this.touchAttack = false;
+        this.aimInput.x = 0;
+        this.aimInput.z = 0;
         if (!paused) {
             // The time spent paused isn't a frame
             this.clock.getDelta();
@@ -2440,6 +2451,60 @@ export class Run {
         this.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom));
     }
 
+    get controlsEnabled(): boolean {
+        return !this.paused && !this.menuOpen && !this.dead && !this.done && !this.ended;
+    }
+
+    setControllerMove(x: number, z: number): void {
+        const length = Math.hypot(x, z);
+        if (!this.controlsEnabled || !Number.isFinite(length)) {
+            this.controllerStick.x = this.controllerStick.z = 0;
+            return;
+        }
+        this.controllerStick.x = x / Math.max(1, length);
+        this.controllerStick.z = z / Math.max(1, length);
+        if (length > 0) this.cancelWalk();
+    }
+
+    setControllerInteract(down: boolean): void {
+        this.controllerInteract = down && this.controlsEnabled;
+        if (this.controllerInteract) this.cancelWalk();
+    }
+
+    requestAttack(down = true): void {
+        this.controllerAttack = down && this.controlsEnabled;
+    }
+
+    setTouchAttack(down: boolean): void {
+        this.touchAttack = down && this.controlsEnabled;
+    }
+
+    releaseControllerInput(): void {
+        this.controllerStick.x = this.controllerStick.z = 0;
+        this.controllerInteract = false;
+        this.controllerAttack = false;
+    }
+
+    orbitCamera(dx: number, dy: number): void {
+        if (this.controlsEnabled && Number.isFinite(dx) && Number.isFinite(dy)) this.dragCamera(dx, dy);
+    }
+
+    resetCamera(): void {
+        this.cameraYaw = 0;
+        this.cameraPitch = BASE_PITCH;
+    }
+
+    // The right touch stick aims in screen directions. A swing still faces
+    // its selected target and uses the same range, cooldown and hit rules.
+    aimDirection(x: number, z: number): void {
+        if (!this.controlsEnabled || !Number.isFinite(x) || !Number.isFinite(z)) {
+            this.aimInput.x = this.aimInput.z = 0;
+            return;
+        }
+        this.aimInput.x = x;
+        this.aimInput.z = z;
+    }
+
     // A key pressed or let go of by a touch screen's button
     press(code: string, down: boolean): void {
         if (this.paused || this.menuOpen || this.done) {
@@ -2458,6 +2523,8 @@ export class Run {
 
     stop(): void {
         this.cancelWalk();
+        this.releaseControllerInput();
+        this.touchAttack = false;
         if (this.frame !== undefined) {
             cancelAnimationFrame(this.frame);
         }
@@ -3426,6 +3493,11 @@ export class Run {
         if (this.keys.has("KeyD") || this.keys.has("ArrowRight")) dx += 1;
         dx += this.stick.x;
         dz += this.stick.z;
+        // Mouse, keyboard and touch keep priority when inputs overlap.
+        if (dx === 0 && dz === 0) {
+            dx = this.controllerStick.x;
+            dz = this.controllerStick.z;
+        }
         // Up on the keys or the stick is away from the camera, however it's
         // turned (the turn of the camera's offset, done to the way)
         if (this.cameraYaw !== 0) {
@@ -3516,7 +3588,7 @@ export class Run {
             this.attackAsked = ATTACK_BUFFER;
             this.wantAttack = false;
         }
-        const asked = this.attackAsked > 0;
+        const asked = this.attackAsked > 0 || this.controllerAttack || this.touchAttack;
         if (this.attackCooldown <= 0 && !swinging) {
             if (asked || this.nearestEnemy(this.stats.range, true, false)) {
                 this.beginSwing(asked);
@@ -3526,6 +3598,11 @@ export class Run {
         this.attackAsked = Math.max(0, this.attackAsked - dt);
 
         const groundY = this.groundY(this.px, this.pz);
+        if (this.swingIn < 0 && Math.hypot(this.aimInput.x, this.aimInput.z) > 0.15) {
+            const cos = Math.cos(this.cameraYaw);
+            const sin = Math.sin(this.cameraYaw);
+            this.facing = Math.atan2(this.aimInput.x * cos + this.aimInput.z * sin, this.aimInput.z * cos - this.aimInput.x * sin);
+        }
         p.root.position.set(this.px, groundY, this.pz);
         p.root.rotation.y = this.facing;
         const top = groundY + p.height * this.character.size;
@@ -5297,7 +5374,7 @@ export class Run {
             return;
         }
         const near = (x: number, z: number) => Math.hypot(x - this.px, z - this.pz) < 1.6;
-        const pressed = this.keys.has("KeyE");
+        const pressed = this.keys.has("KeyE") || this.controllerInteract;
 
         // A mate who's down: held E at their side brings them back up
         const downed = this.downedMateNear();

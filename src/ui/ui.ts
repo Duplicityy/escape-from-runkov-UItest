@@ -198,6 +198,46 @@ function h<K extends keyof HTMLElementTagNameMap>(
     return el;
 }
 
+// Small, fixed-colour client glyphs avoid platform emoji in the icon rails.
+function clientGlyph(kind: "equipment" | "friends" | "character" | "music" | "settings" | "logout" | "map" | "heart" | "prayer" | "special" | "coins" | "magic"): SVGSVGElement {
+    const paths: Record<typeof kind, string> = {
+        equipment: "M12 3a3 3 0 1 0 0 6a3 3 0 0 0 0-6M8 10l4 2 4-2M6 12l2-2-1 6M18 12l-2-2 1 6M12 12v6M8 14h8M8 17h8M10 18l-2 5M14 18l2 5M5 12l-2 7M19 12l2 7",
+        friends: "M9 4a3 3 0 1 0 0 6a3 3 0 0 0 0-6M17 7a2.5 2.5 0 1 0 0 5a2.5 2.5 0 0 0 0-5M3 21v-6c0-5 12-5 12 0v6M16 14c5-1 6 2 6 7M6 16v5M12 16v5",
+        character: "M12 2a3 3 0 1 0 0 6a3 3 0 0 0 0-6M7 10l5-2 5 2-1 8H8l-1-8M7 11l-4 7M17 11l4 7M10 18l-2 6M14 18l2 6M8 13h8",
+        music: "M8 17V6l12-3v12M8 10l12-3M8 17c-7-2-7 6-2 5 2 0 2-2 2-5M20 15c-7-2-7 6-2 5 2 0 2-2 2-5",
+        settings: "M19 3l-4 4 2 3 4-4c2 5-2 9-7 7L6 22l-4-4 9-8C9 5 14 1 19 3M5 18l1 1",
+        logout: "M3 22V8a9 9 0 0 1 18 0v14M7 22V8a5 5 0 0 1 10 0v14M1 22h8M15 22h8M13 12h6M17 10l2 2-2 2",
+        map: "M3 4l6 2 6-3 6 2-2 17-6-2-6 3-6-2 2-17M9 6L7 23M15 3l-2 17M6 11l3 2 5-4 3 6",
+        heart: "M12 21C-5 10 4-1 12 6c8-7 17 4 0 15",
+        prayer: "M12 1l3 8 7 3-7 3-3 8-3-8-7-3 7-3 3-8",
+        special: "M5 2l3 3 9 10 3-2 2 2-3 3 3 4-2 2-4-4-3 3-2-2 3-3L4 8 2 5l3-3M5 5l11 11",
+        coins: "M3 8c0-5 18-5 18 0s-18 5-18 0M3 8v5c0 5 18 5 18 0V8M3 13v5c0 5 18 5 18 0v-5M8 9v4M12 10v4M16 9v4",
+        magic: "M12 2a10 10 0 1 0 0 20a10 10 0 0 0 0-20M12 5l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5",
+    };
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 26 26");
+    svg.setAttribute("aria-hidden", "true");
+    svg.setAttribute("class", `client-glyph client-glyph-${kind}`);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", paths[kind]);
+    svg.append(path);
+    return svg;
+}
+
+function clientKeyboardButton(element: HTMLElement): void {
+    element.tabIndex = 0;
+    element.setAttribute("role", "button");
+    element.addEventListener("keydown", (event) => {
+        if (event.code !== "Enter" && event.code !== "Space") return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) element.click();
+    });
+    element.addEventListener("keyup", (event) => {
+        if (event.code === "Enter" || event.code === "Space") event.stopPropagation();
+    });
+}
+
 // A share as a percentage, to a half point: 0.015 is "1.5%"
 function percent(share: number): string {
     return `${Math.round(share * 200) / 2}%`;
@@ -639,10 +679,96 @@ export class UI {
             return;
         }
         if (portrait) {
+            hud.touch?.cancel();
             hud.run.setPaused(true);
         } else if (hud.pause.hidden) {
             hud.run.setPaused(false);
         }
+    }
+
+    get controllerModal(): boolean {
+        return !this.hud || !this.hud.pause.hidden || this.hud.fullMap.isOpen || this.hud.inventoryOpen || this.chat.isOpen || !!this.hud.root.querySelector(".client-camera-panel:not([hidden])");
+    }
+
+    get controllerMapOpen(): boolean {
+        return this.hud?.fullMap.isOpen ?? false;
+    }
+
+    controllerMapInput(x: number, y: number, panX: number, panY: number, zoom: number, dt: number): void {
+        this.hud?.fullMap.controllerInput(x, y, panX, panY, zoom, dt);
+    }
+
+    controllerMapConfirm(): void {
+        this.hud?.fullMap.controllerConfirm();
+    }
+
+    controllerAction(action: "inventory" | "map" | "pause" | "back" | "nextTab" | "previousTab"): boolean {
+        const hud = this.hud;
+        if (!hud) {
+            if (action !== "back") return false;
+            const buttons = [...this.root.querySelectorAll<HTMLButtonElement>("button")].filter((button) => !button.disabled && button.getClientRects().length > 0);
+            const back = ["Back", "Close", "Done", "Title screen"].map((name) => buttons.find((button) => button.textContent?.trim() === name)).find(Boolean);
+            if (!back) return false;
+            back.click();
+            return true;
+        }
+        if (action === "back") {
+            if (hud.fullMap.isOpen) hud.fullMap.close();
+            else if (hud.root.querySelector(".client-camera-panel:not([hidden])")) {
+                hud.root.querySelector<HTMLElement>(".client-camera-panel")!.hidden = true;
+                hud.root.querySelector(".client-camera")?.setAttribute("aria-expanded", "false");
+            }
+            else if (this.chat.isOpen) this.chat.close();
+            else if (!hud.pause.hidden) this.togglePause();
+            else if (hud.inventoryOpen) {
+                hud.inventoryOpen = false;
+                this.updateHud();
+            } else return false;
+            return true;
+        }
+        if (action === "pause") {
+            if (hud.fullMap.isOpen) hud.fullMap.close();
+            this.togglePause();
+            return true;
+        }
+        if (action === "map") {
+            if (hud.fullMap.isOpen) hud.fullMap.close();
+            else if (hud.pause.hidden) this.openFullMap();
+            else return false;
+            return true;
+        }
+        if (!hud.pause.hidden || hud.fullMap.isOpen) return false;
+        if (action === "inventory") {
+            this.toggleInventory("pack");
+            if (hud.inventoryOpen) this.focusControllerPanel();
+            return true;
+        }
+        const views: ClientTab[] = ["combat", "prayer", "tasks", "friends", "account", "music", "pack", "equipment", "loot", "spells"];
+        const index = views.indexOf(hud.inventoryView);
+        hud.inventoryView = views[(index + (action === "nextTab" ? 1 : views.length - 1)) % views.length];
+        hud.inventoryOpen = true;
+        hud.signature = "";
+        this.updateHud();
+        this.focusControllerPanel();
+        return true;
+    }
+
+    private focusControllerPanel(): void {
+        const hud = this.hud;
+        if (!hud?.inventoryOpen) return;
+        const selectors: Partial<Record<ClientTab, string>> = {
+            pack: ".slot[tabindex]",
+            prayer: "button[data-protect]",
+            equipment: "button.equip-slot:not(.empty)",
+            spells: '.spell:not([aria-disabled="true"])',
+            music: 'input[type="range"]',
+            combat: ".client-special-button:not(:disabled)",
+        };
+        const preferred = selectors[hud.inventoryView];
+        const element = (preferred ? hud.inventory.querySelector<HTMLElement>(preferred) : undefined)
+            ?? hud.inventory.querySelector<HTMLElement>('button:not(.client-panel-close):not(:disabled), input:not(:disabled)')
+            ?? hud.inventory.querySelector<HTMLElement>(".client-panel-close");
+        element?.focus({ preventScroll: true });
     }
 
     // The full map over the run: it takes the controls (and stops the world
@@ -653,6 +779,7 @@ export class UI {
             return;
         }
         if (hud.fullMap.show()) {
+            hud.touch?.cancel();
             hud.run.setPaused(true);
         }
     }
@@ -725,6 +852,7 @@ export class UI {
     }
 
     private place(...children: Child[]): void {
+        this.hud?.touch?.dispose();
         this.hud = undefined;
         this.loading = false;
         // Only the co-op screen wants the list of servers (it asks again),
@@ -741,6 +869,7 @@ export class UI {
     private updateChat(): void {
         this.chat.setActive(this.hud !== undefined || this.session.room !== undefined);
         this.chat.root.classList.toggle("client-chat", this.hud !== undefined);
+        this.chat.setReferenceLayout(this.hud !== undefined);
     }
 
     private persist(): void {
@@ -1432,9 +1561,10 @@ export class UI {
     }
 
     private controlsHint(): string {
-        return isTouch
-            ? "Drag on the left for 360° movement · tap ground to walk · tap an enemy to attack · the big button opens chests and holds for the way out · Eat eats · tap Pray, or hold it to pick a protection"
+        const controls = isTouch
+            ? "Left stick moves in 360° · right stick aims and attacks · tap ground to walk · tap an enemy to attack · Use opens chests and holds for the way out · tap the heart to eat, or the prayer orb for protection"
             : "WASD for 360° movement · click ground to walk · click an enemy or Space to attack · Q special · E interacts · F eats · 1 2 3 4 drink · I inventory · B magic · M map · Esc pauses";
+        return controls + " · Xbox: LS move, RS camera, A confirm/attack, X hold to interact, RT attack, LT special, Y inventory, View map, Start pause, B back, LB/RB panels, D-pad navigate";
     }
 
     // The rooms down the right, the name and the record top left, the small
@@ -2573,6 +2703,7 @@ export class UI {
             return;
         }
         if (hud.pause.hidden) {
+            hud.touch?.cancel();
             hud.run.setPaused(true);
             this.showPauseView("menu");
         } else if (hud.pauseView === "trade") {
@@ -2590,6 +2721,7 @@ export class UI {
         if (!hud || !hud.pause.hidden) {
             return;
         }
+        hud.touch?.cancel();
         hud.run.setPaused(true);
         this.showPauseView("trade");
     }
@@ -4293,10 +4425,10 @@ export class UI {
         const bossFill = h("div", { class: "fill" });
         const bossLabel = h("div", { class: "label" });
         const boss = h("div", { class: "boss-bar", hidden: true }, h("div", { class: "bar" }, bossFill, bossLabel));
-        const coins = h("div", { class: "floor" });
+        const coins = h("div", { class: "label" });
         const clock = h("div", { class: "clock" });
         const prompt = h("div", { class: "prompt", hidden: true });
-        const inventory = h("div", { class: "inventory client-panel", hidden: isTouch });
+        const inventory = h("div", { class: "inventory client-panel", hidden: true });
         inventory.id = "client-tab-panel";
         inventory.setAttribute("role", "tabpanel");
         const tabs = h("div", { class: "pack-tabs client-tabs" });
@@ -4341,51 +4473,63 @@ export class UI {
         // On a touch screen, the stick's zone goes in first so everything
         // after it takes its own taps
         const touch = isTouch ? touchControls(run, { togglePack: () => this.toggleInventory(), pause: () => this.togglePause(), openMap: () => this.openFullMap() }) : undefined;
-        const sidebar = h(
-            "aside",
-            { class: "client-sidebar" },
-            h(
-                "div",
-                { class: "client-minimap-frame" },
-                minimap,
-                h("button", { class: "client-compass", title: "Open the world map (M)", onclick: () => this.openFullMap() }, "N"),
-                h(
-                    "div",
-                    { class: "client-map-actions" },
-                    h("button", { title: "Open the full map (M)", onclick: () => this.openFullMap() }, "Map"),
-                    h("button", { title: "Pause and open settings", onclick: () => {
-                        run.setPaused(true);
-                        this.showPauseView("settings");
-                    } }, "Settings"),
-                ),
-            ),
-            h(
-                "div",
-                { class: "client-meters" },
-                h("div", { class: "client-meter hitpoints", title: "Hitpoints" }, h("span", { class: "meter-name" }, "HP"), h("div", { class: "bar" }, hp, hpLabel)),
-                h("button", { class: "client-meter prayer", title: "Prayer: click to open protection prayers", onclick: () => this.toggleInventory("prayer") }, h("span", { class: "meter-name" }, "Prayer"), h("div", { class: "bar prayer-bar" }, prayer, prayerLabel)),
-                h("button", { class: "client-meter special", title: "Use your weapon's special attack (Q)", onclick: () => run.useSpecial() }, h("span", { class: "meter-name" }, "Special"), h("div", { class: "bar spec-bar" }, spec, specLabel)),
-            ),
-            tabs,
-            inventory,
-            h("div", { class: "client-panel-hint" }, "I pack · B spells · M map · Esc pause"),
+        const orb = (kind: string, fill: HTMLElement, label: HTMLElement, symbol: Node, title: string, click: () => void) => h(
+            "button", { class: `client-orb ${kind}`, title, onclick: click },
+            fill, label, h("span", { class: "client-orb-icon" }, symbol),
         );
+        const location = h("div", { class: "client-world-label" }, run.world.name);
+        const minimapFrame = h("div", { class: "client-minimap-frame" },
+            minimap,
+            h("button", { class: "client-compass", title: "Open the world map (M)", onclick: () => this.openFullMap() }, "N"),
+            h("div", { class: "client-meters" },
+                orb("hitpoints", hp, hpLabel, clientGlyph("heart"), "Hitpoints: click to eat food (F)", () => run.eatHotkey()),
+                orb("prayer", prayer, prayerLabel, clientGlyph("prayer"), "Open protection prayers", () => this.toggleInventory("prayer")),
+                orb("pack", h("div", { class: "fill" }), coins, clientGlyph("coins"), "Coins and inventory", () => this.toggleInventory("pack")),
+                orb("special", spec, specLabel, clientGlyph("special"), "Use your weapon's special attack (Q)", () => run.useSpecial()),
+            ),
+            h("div", { class: "client-map-caption" }, location, clock),
+        );
+        const cameraValue = h("output", {}, `${Math.round(settings.zoom * 100)}%`);
+        const cameraZoom = h("input", { type: "range", min: String(ZOOM_MIN), max: String(ZOOM_MAX), step: "0.05", value: String(settings.zoom) });
+        cameraZoom.setAttribute("aria-label", "Camera distance");
+        const zoomTo = (value: number) => {
+            settings.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, value));
+            run.setZoom(settings.zoom);
+            saveSettings();
+            cameraZoom.value = String(settings.zoom);
+            cameraValue.textContent = `${Math.round(settings.zoom * 100)}%`;
+        };
+        cameraZoom.addEventListener("input", () => zoomTo(Number(cameraZoom.value)));
+        const cameraPanel = h("div", { class: "client-camera-panel", hidden: true },
+            h("h3", {}, "Camera"),
+            h("div", { class: "client-camera-label" }, "Distance", cameraValue), cameraZoom,
+            h("div", { class: "client-camera-buttons" },
+                h("button", { title: "Zoom in", onclick: () => zoomTo(settings.zoom - .1) }, "−"),
+                h("button", { onclick: () => { run.resetCamera(); zoomTo(1); } }, "Reset"),
+                h("button", { title: "Zoom out", onclick: () => zoomTo(settings.zoom + .1) }, "+"),
+            ),
+            h("div", { class: "hint" }, "Middle-drag to orbit · wheel to zoom"),
+        );
+        const cameraButton = h("button", { class: "client-camera", title: "Camera controls", onclick: () => {
+            cameraPanel.hidden = !cameraPanel.hidden;
+            cameraZoom.value = String(settings.zoom);
+            cameraValue.textContent = `${Math.round(settings.zoom * 100)}%`;
+            cameraButton.setAttribute("aria-expanded", String(!cameraPanel.hidden));
+        } }, "Camera");
+        cameraButton.setAttribute("aria-expanded", "false");
         const hudRoot = h(
                 "div",
-                { class: "hud classic-client" },
+                { class: "hud classic-client reference-client" },
                 touch?.zone,
-                h(
-                    "div",
-                    { class: "client-raid-status" },
-                    h("div", { class: "floor client-location" }, `${run.world.name} · tier ${run.world.tier}${run.night ? " · night" : ""}${run.coop ? " · co-op" : ""}`),
-                    coins,
-                    clock,
-                    party,
-                ),
+                minimapFrame,
+                cameraButton,
+                cameraPanel,
+                tabs,
+                inventory,
+                party,
                 boss,
                 prompt,
                 hotbar,
-                sidebar,
                 touch?.corner,
                 touch?.cluster,
                 fullMap.root,
@@ -4408,7 +4552,7 @@ export class UI {
             clock,
             prompt,
             inventory,
-            inventoryOpen: !isTouch,
+            inventoryOpen: false,
             inventoryView: "pack",
             tabs,
             signature: "",
@@ -4460,14 +4604,18 @@ export class UI {
         }
         const run = hud.run;
         hud.hp.style.width = `${(100 * run.hp) / run.maxHp}%`;
-        hud.hpLabel.textContent = `${run.hp}/${run.maxHp}`;
+        hud.hpLabel.textContent = String(run.hp);
+        hud.hp.parentElement!.title = `Hitpoints ${run.hp}/${run.maxHp}: click to eat food (F)`;
+        hud.hp.parentElement!.style.setProperty("--orb-fill", `${100 * run.hp / run.maxHp}%`);
         const special = specialOf(run.stats.weapon);
         hud.spec.style.width = `${run.spec}%`;
-        hud.specLabel.textContent = `${Math.round(run.spec)}%`;
+        hud.specLabel.textContent = String(Math.round(run.spec));
+        hud.spec.parentElement!.style.setProperty("--orb-fill", `${run.spec}%`);
         hud.spec.parentElement!.title = special ? `${special.name}: ${Math.round(run.spec)}%` : "Equip a weapon to use a special attack";
         hud.spec.parentElement?.classList.toggle("ready", run.specReady);
         hud.prayer.style.width = `${run.prayer}%`;
-        hud.prayerLabel.textContent = `${Math.round(run.prayer)}%`;
+        hud.prayerLabel.textContent = String(Math.round(run.prayer));
+        hud.prayer.parentElement!.style.setProperty("--orb-fill", `${run.prayer}%`);
         hud.prayer.parentElement!.title = run.protect === "none" ? "No protection prayer active" : `Protect from ${run.protect}`;
         hud.prayer.parentElement?.classList.toggle("on", run.protect !== "none");
         const uses = run.stats.weapon?.uses;
@@ -4481,12 +4629,15 @@ export class UI {
             const ammo = run.ammo();
             ammoText = ` · ${ammo ? `${ammo.count} ${getItem(ammo.id).name.toLowerCase()}` : `no ${uses}`}`;
         }
-        hud.coins.textContent = `${formatCoins(run.coins)} coins · pack ${run.inventory.length}/${run.slots}` + ammoText;
+        hud.coins.textContent = formatCoins(run.coins);
+        hud.coins.parentElement!.title = `${formatCoins(run.coins)} coins · inventory ${run.inventory.length}/${run.slots}${ammoText}. Open inventory.`;
         const left = run.timeLeft;
         hud.clock.textContent = run.closed
             ? "Way out closed"
             : `Way out closes in ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, "0")}`;
         hud.clock.classList.toggle("urgent", run.closed || left < 60);
+        const location = hud.root.querySelector<HTMLElement>(".client-world-label");
+        if (location) location.title = `${run.world.name} · tier ${run.world.tier}${run.night ? " · night" : ""} · ${hud.clock.textContent}`;
         hud.boss.hidden = !run.boss;
         if (run.boss) {
             hud.bossFill.style.width = `${(100 * run.boss.hp) / run.boss.maxHp}%`;
@@ -4514,6 +4665,7 @@ export class UI {
             slot.slot.classList.toggle("active", left > 0);
         }
         hud.inventory.hidden = !hud.inventoryOpen;
+        hud.inventory.dataset.side = ["combat", "prayer", "tasks", "friends", "account", "music"].includes(hud.inventoryView) ? "left" : "right";
         hud.root.classList.toggle("client-panel-open", hud.inventoryOpen);
         for (const button of hud.tabs.querySelectorAll<HTMLButtonElement>("button[data-view]")) {
             const selected = hud.inventoryOpen && button.dataset.view === hud.inventoryView;
@@ -4524,7 +4676,7 @@ export class UI {
             const pageState = hud.inventoryView === "prayer" ? []
                 : hud.inventoryView === "loot" ? [run.loot.revision]
                 : hud.inventoryView === "friends" ? [run.party(), this.session.view.friends, this.save.friends]
-                : [run.inventory, run.equipment, run.autocast, run.spellbook, ...(hud.inventoryView === "combat" ? [Math.round(run.spec)] : [])];
+                : [run.inventory, run.equipment, run.autocast, run.spellbook];
             const signature = JSON.stringify([hud.inventoryView, ...pageState]);
             if (signature !== hud.signature) {
                 hud.signature = signature;
@@ -4541,6 +4693,10 @@ export class UI {
                     case "music": this.renderRunMusic(); break;
                     default: this.renderInventory(run);
                 }
+                hud.inventory.prepend(h("button", { class: "client-panel-close", title: "Close panel", ariaLabel: "Close panel", onclick: () => {
+                    hud.inventoryOpen = false;
+                    this.updateHud();
+                } }, "×"));
                 hud.inventory.scrollTop = scroll;
             }
             if (hud.inventoryView === "prayer") {
@@ -4553,6 +4709,19 @@ export class UI {
                     const status = button.querySelector("small");
                     if (status) status.textContent = active ? "Active" : button.dataset.key ?? "";
                 }
+            }
+            if (hud.inventoryView === "combat") {
+                const button = hud.inventory.querySelector<HTMLButtonElement>(".client-special-button");
+                if (button) {
+                    const label = special ? `${special.name} · ${Math.round(run.spec)}%` : "Equip a weapon for a special attack";
+                    if (button.textContent !== label) button.textContent = label;
+                    button.disabled = !run.specReady || !special;
+                    button.classList.toggle("ready", run.specReady);
+                }
+                const values = hud.inventory.querySelectorAll(".client-stat-list strong");
+                [String(run.stats.damage), `${run.stats.speed}s`, `${run.stats.range} tiles`].forEach((value, index) => {
+                    if (values[index] && values[index].textContent !== value) values[index].textContent = value;
+                });
             }
         }
         // The party: everyone's health at a glance, this player first
@@ -4625,6 +4794,8 @@ export class UI {
                     icon(item),
                     stack.count > 1 ? h("span", { class: "count" }, String(stack.count)) : null,
                 );
+                clientKeyboardButton(slot);
+                slot.setAttribute("aria-label", `${item.name}${stack.count > 1 ? ` ×${stack.count}` : ""}. ${action}`);
                 // A right click offers its stats, or to drop it (version 136;
                 // it dropped it straight away before)
                 slot.addEventListener("contextmenu", (e) => {
@@ -4678,27 +4849,34 @@ export class UI {
             button.setAttribute("aria-label", label);
             return button;
         };
-        const action = (label: string, symbol: string, click: () => void) => h("button", { class: "client-tab", title: label, onclick: click }, h("span", { class: "client-tab-symbol" }, symbol), h("span", { class: "client-tab-name" }, label));
+        const action = (label: string, symbol: Child, click: () => void) => h("button", { class: "client-tab", title: label, ariaLabel: label, onclick: click }, h("span", { class: "client-tab-symbol" }, symbol), h("span", { class: "client-tab-name" }, label));
         return h(
             "div", { class: "pack-tabs client-tabs" },
-            tab("combat", "Combat", iconElement(1291, "Bronze longsword")),
-            tab("loot", "Loot", iconElement(COINS, "Coins")),
-            tab("tasks", "Tasks", iconElement(2677, "Task scroll")),
-            tab("pack", "Inventory", h("span", { class: "client-bag-icon" }), "I"),
-            tab("equipment", "Equipment", iconElement(1103, "Worn armour")),
-            tab("prayer", "Prayer", h("img", { src: assetUrl("ui/headicons/melee.png"), alt: "" })),
-            tab("spells", "Magic", h("img", { src: assetUrl("ui/spells/wind_strike.png"), alt: "" }), "B"),
-            tab("friends", "Friends", "☻"),
-            tab("account", "Character", "♙"),
-            action("Settings", "⚙", () => {
-                hud.run.setPaused(true);
-                this.showPauseView("settings");
-            }),
-            tab("music", "Music", "♫"),
-            action("Logout", "⇥", () => {
-                hud.run.setPaused(true);
-                this.showPauseView("menu");
-            }),
+            h("div", { class: "client-tabs-left" },
+                tab("combat", "Combat", iconElement(1291, "Bronze longsword")),
+                tab("prayer", "Prayer", clientGlyph("prayer")),
+                tab("tasks", "Tasks", iconElement(2677, "Task scroll")),
+                tab("friends", "Friends", clientGlyph("friends")),
+                tab("account", "Character", clientGlyph("character")),
+                tab("music", "Music", clientGlyph("music")),
+            ),
+            h("div", { class: "client-tabs-right" },
+                tab("pack", "Inventory", h("span", { class: "client-bag-icon" }), "I"),
+                tab("equipment", "Equipment", clientGlyph("equipment")),
+                tab("loot", "Loot", clientGlyph("coins")),
+                tab("spells", "Magic", clientGlyph("magic"), "B"),
+                action("Map", clientGlyph("map"), () => this.openFullMap()),
+                action("Settings", clientGlyph("settings"), () => {
+                    hud.touch?.cancel();
+                    hud.run.setPaused(true);
+                    this.showPauseView("settings");
+                }),
+                action("Logout", clientGlyph("logout"), () => {
+                    hud.touch?.cancel();
+                    hud.run.setPaused(true);
+                    this.showPauseView("menu");
+                }),
+            ),
         );
     }
 
@@ -4947,7 +5125,7 @@ export class UI {
                 img = pic;
             }
             const tierText = spell.poweredBy !== undefined ? "its staff's own" : `tier ${spell.tier}`;
-            return h(
+            const element = h(
                 "div",
                 {
                     class: "spell" + (usable ? "" : " off") + (picked ? " on" : "") + (casting.spell?.id === spell.id ? " now" : ""),
@@ -4962,6 +5140,10 @@ export class UI {
                 },
                 img,
             );
+            clientKeyboardButton(element);
+            element.setAttribute("aria-label", `${spell.name}. ${status(spell)}`);
+            element.setAttribute("aria-disabled", String(!usable));
+            return element;
         };
         const grid = h(
             "div",

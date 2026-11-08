@@ -8,7 +8,7 @@
     "check-gear": "tsx scripts/check-gear.ts",
     "balance": "tsx scripts/balance.ts",
     "dev": "vite",
-    "test": "node --import tsx scripts/check-pathfinding.ts && node --import tsx scripts/check-loot.ts",
+    "test": "node --import tsx scripts/check-pathfinding.ts && node --import tsx scripts/check-loot.ts && node --import tsx scripts/check-gamepad.ts",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },

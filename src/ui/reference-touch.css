@@ -1,0 +1,134 @@
+/* The two translucent sticks in the supplied mobile reference. Their hit
+   areas stop at the ring, so taps on the surrounding world still walk. */
+@media (pointer: coarse) {
+    .reference-client {
+        --ref-stick-size: clamp(104px, 25.7vh, 152px);
+        --ref-stick-centre: clamp(96px, 14.15vw, 220px);
+        --ref-stick-bottom: clamp(100px, 22.2vh, 160px);
+    }
+
+    .reference-client .touch-zone,
+    .reference-client .touch-aim-zone {
+        position: absolute;
+        display: block;
+        top: auto;
+        bottom: calc(var(--ref-stick-bottom) - var(--ref-stick-size) / 2 + var(--safe-bottom, 0px));
+        width: var(--ref-stick-size);
+        height: var(--ref-stick-size);
+        border-radius: 50%;
+        touch-action: none;
+        pointer-events: auto;
+        user-select: none;
+        z-index: 2;
+    }
+
+    .reference-client .touch-zone {
+        left: calc(var(--ref-stick-centre) - var(--ref-stick-size) / 2 + var(--safe-left, 0px));
+    }
+
+    .reference-client .touch-aim-zone {
+        right: calc(var(--ref-stick-centre) - var(--ref-stick-size) / 2 + var(--safe-right, 0px));
+    }
+
+    .reference-client .touch-cluster {
+        display: block;
+        position: absolute;
+        inset: 0;
+        width: auto;
+        height: auto;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .reference-client .touch-rest,
+    .reference-client .touch-stick {
+        position: absolute;
+        inset: 0;
+        width: var(--ref-stick-size);
+        height: var(--ref-stick-size);
+        box-sizing: border-box;
+        border: 2px solid rgba(218, 217, 199, 0.3);
+        border-radius: 50%;
+        background: rgba(55, 52, 37, 0.07);
+        box-shadow: none;
+        pointer-events: none;
+    }
+
+    .reference-client .touch-stick {
+        inset: auto;
+        margin: calc(var(--ref-stick-size) / -2);
+        border-color: rgba(226, 222, 196, 0.48);
+    }
+
+    .reference-client .touch-rest-knob,
+    .reference-client .touch-knob {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 40%;
+        height: 40%;
+        margin: -20% 0 0 -20%;
+        border: 2px solid rgba(205, 187, 113, 0.62);
+        box-sizing: border-box;
+        border-radius: 50%;
+        background: rgba(172, 155, 83, 0.47);
+        box-shadow: inset 0 1px 2px rgba(226, 218, 156, 0.15);
+        pointer-events: none;
+    }
+
+    .reference-client .active .touch-knob {
+        background: rgba(183, 166, 89, 0.6);
+        border-color: rgba(222, 205, 133, 0.8);
+    }
+
+    .reference-client .reference-stick-label {
+        position: absolute;
+        left: -20%;
+        right: -20%;
+        top: calc(100% + 13px);
+        text-align: center;
+        color: #c4c0a5;
+        font: 15px "OSRS Plain", sans-serif;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 1px #0d0c08;
+        pointer-events: none;
+    }
+
+    .reference-client .touch-corner {
+        display: none;
+    }
+
+    .reference-client .reference-touch-use {
+        right: calc(var(--ref-stick-centre) - 42px + var(--safe-right, 0px));
+        bottom: calc(var(--ref-stick-bottom) + var(--ref-stick-size) / 2 + 13px + var(--safe-bottom, 0px));
+        width: 84px;
+        height: 43px;
+        border-radius: 8px;
+        border: 2px solid #807355;
+        background: linear-gradient(#68604b, #3e3a2e);
+        box-shadow: 0 0 0 2px #17150f, inset 0 0 0 1px #a39168;
+        pointer-events: auto;
+        color: #eee1ae;
+        z-index: 3;
+    }
+
+    .reference-client .reference-touch-use .touch-label {
+        font-size: 16px;
+    }
+
+    .reference-client .reference-touch-use .touch-sub {
+        font-size: 11px;
+        margin-top: 1px;
+    }
+
+    .reference-client .reference-touch-use.pressed {
+        background: #81704b;
+        box-shadow: 0 0 0 2px #17150f, inset 0 0 4px #17150f;
+    }
+
+    .reference-client .touch-rest[hidden],
+    .reference-client .touch-stick[hidden],
+    .reference-client .reference-touch-use[hidden] {
+        display: none;
+    }
+}
