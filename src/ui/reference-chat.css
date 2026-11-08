@@ -1,0 +1,186 @@
+/* The reference layout keeps its channel buttons at the top left and
+   opens the existing parchment chat at the bottom left. */
+.reference-chat-filters {
+    display: none;
+}
+
+.chat.reference-chat {
+    position: fixed;
+    left: calc(8px + env(safe-area-inset-left, 0px));
+    top: auto;
+    right: auto;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    width: min(510px, calc(100vw - 24px));
+    max-width: none;
+    transform: none;
+    display: flex;
+    flex-direction: column-reverse;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    box-sizing: border-box;
+    z-index: 30;
+    pointer-events: none;
+}
+
+.chat.reference-chat[hidden] {
+    display: none;
+}
+
+.chat.reference-chat .reference-chat-filters {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: calc(13px + env(safe-area-inset-left, 0px));
+    display: flex;
+    gap: clamp(3px, 0.47vw, 6px);
+    pointer-events: auto;
+}
+
+.chat.reference-chat .reference-chat-filter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    gap: 1px;
+    width: clamp(42px, 5.31vw, 68px);
+    height: clamp(36px, 8.46vh, 50px);
+    padding: 2px 0;
+    color: #e8e0c9;
+    font-family: "OSRS Plain", sans-serif;
+    font-size: clamp(12px, 1.25vw, 16px);
+    font-weight: normal;
+    line-height: 17px;
+    text-shadow: 1px 1px 0 #17150e;
+    background: linear-gradient(#696854, #514e3c 55%, #3e3d2e);
+    border: 2px solid #7d795f;
+    border-radius: 7px;
+    box-shadow: inset 1px 1px 1px #a39c76, inset -1px -2px 2px #302e20, 0 0 0 1px #29281e, 1px 3px 3px #0009;
+    cursor: pointer;
+}
+
+.chat.reference-chat .reference-chat-filter:hover,
+.chat.reference-chat .reference-chat-filter.selected {
+    background: linear-gradient(#80785b, #62563b 65%, #4b412d);
+    border-color: #b39a5c;
+}
+
+.chat.reference-chat .reference-chat-filter:active {
+    transform: translateY(1px);
+}
+
+.chat.reference-chat .reference-chat-filter:focus-visible,
+.chat.reference-chat .chat-bar:focus-visible,
+.chat.reference-chat .chat-log:focus-visible {
+    outline: 2px solid #ffe48a;
+    outline-offset: 2px;
+}
+
+.chat.reference-chat .reference-chat-state {
+    color: #d2bc72;
+    font-family: "OSRS Small", sans-serif;
+    line-height: 15px;
+}
+
+.chat.reference-chat .reference-chat-state:empty {
+    display: none;
+}
+
+.chat.reference-chat .reference-chat-state.on {
+    color: #19df0f;
+}
+
+.chat.reference-chat .reference-chat-state.off {
+    color: #c5b68e;
+}
+
+.chat.reference-chat .channel-about {
+    background: linear-gradient(#79553f, #62402c 60%, #493021);
+    border-color: #9f7954;
+}
+
+.chat.reference-chat:not(.open) .chat-bar,
+.chat.reference-chat .chat-ticker {
+    display: none;
+}
+
+.chat.reference-chat.open {
+    border: 4px ridge #756549;
+}
+
+.chat.reference-chat .chat-bar {
+    height: 25px;
+    border: 0;
+    background: #3e3527;
+    pointer-events: auto;
+}
+
+.chat.reference-chat .chat-panel {
+    border: 0;
+    color: #201c16;
+    background: #c2b18d;
+    text-shadow: none;
+    pointer-events: auto;
+}
+
+.chat.reference-chat .chat-panel[hidden] {
+    display: none;
+}
+
+.chat.reference-chat .chat-log {
+    height: 126px;
+    padding: 6px 8px;
+    font-size: 14px;
+    line-height: 18px;
+    scrollbar-color: #766443 #ae9a74;
+}
+
+.chat.reference-chat .chat-line.game {
+    color: #28221c;
+}
+
+.chat.reference-chat .chat-line.system {
+    color: #6f310d;
+}
+
+.chat.reference-chat .chat-name {
+    color: #292144;
+}
+
+.chat.reference-chat .chat-text {
+    color: #113764;
+}
+
+.chat.reference-chat .chat-input {
+    color: #241d15;
+    background: #d3c3a0;
+    border-color: #99815c;
+}
+
+.chat.reference-chat .reference-chat-empty {
+    padding: 3px 0;
+    color: #473a27;
+    line-height: 20px;
+    white-space: normal;
+}
+
+body:has(.full-map:not([hidden])) .chat.reference-chat {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+body:has(.full-map:not([hidden])) .chat.reference-chat .reference-chat-filters {
+    pointer-events: none;
+}
+
+@media (max-height: 500px) {
+    .chat.reference-chat .chat-log {
+        height: 90px;
+        font-size: 13px;
+        line-height: 17px;
+    }
+
+    .chat.reference-chat .reference-chat-filter {
+        line-height: 15px;
+    }
+}

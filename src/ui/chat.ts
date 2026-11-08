@@ -14,6 +14,7 @@ import { saveSettings, settings } from "../game/settings";
 
 type Kind = "game" | "party" | "system";
 type Entry = { kind: Kind; text: string; at: number; from?: string; name?: string };
+type Channel = "all" | "game" | "public" | "private" | "clan" | "trade" | "about";
 
 const CHAT_KEEP = 100;
 // How long a line shows on the folded bar
@@ -29,6 +30,12 @@ export class Chat {
     private readonly log: HTMLDivElement;
     private readonly form: HTMLFormElement;
     private readonly input: HTMLInputElement;
+    private readonly filters: HTMLElement;
+    private readonly filterButtons = new Map<Channel, HTMLButtonElement>();
+    private readonly filterStates = new Map<Channel, HTMLElement>();
+    private referenceLayout = false;
+    private referenceOpen = false;
+    private channel: Channel = "all";
     private entries: Entry[] = [];
     private unread = 0;
     private active = false;
@@ -46,9 +53,12 @@ export class Chat {
         this.badge = el("span", "chat-badge");
         const caret = el("span", "chat-caret");
         this.bar.append(label, this.latest, this.badge, caret);
-        this.bar.addEventListener("click", () => this.setOpen(!settings.chatOpen));
+        this.bar.addEventListener("click", () => this.setOpen(!this.opened));
         this.ticker = el("div", "chat-ticker");
         this.log = el("div", "chat-log");
+        this.log.tabIndex = 0;
+        this.log.setAttribute("role", "log");
+        this.log.setAttribute("aria-label", "Chat messages");
         this.input = el("input", "chat-input");
         this.input.type = "text";
         this.input.maxLength = MAX_CHAT_CHARS;
@@ -78,7 +88,41 @@ export class Chat {
         });
         this.panel = el("div", "chat-panel");
         this.panel.append(this.log, this.form);
-        this.root.append(this.bar, this.ticker, this.panel);
+        this.filters = el("nav", "reference-chat-filters");
+        this.filters.setAttribute("aria-label", "Chat controls");
+        const channels: [Channel, string, string][] = [
+            ["all", "All", "Show all game and party messages"],
+            ["game", "Game", "Show game messages"],
+            ["public", "Public", "Public chat is unavailable; view channel information"],
+            ["private", "Private", "Private messages are unavailable; view channel information"],
+            ["clan", "Clan", "Show your current party's chat"],
+            ["trade", "Trade", "Trade chat is unavailable; view channel information"],
+            ["about", "About", "View chat and game controls"],
+        ];
+        for (const [channel, name, title] of channels) {
+            const button = el("button", `reference-chat-filter channel-${channel}`);
+            button.type = "button";
+            button.title = title;
+            button.dataset.channel = channel;
+            const label = el("span", "reference-chat-name");
+            label.textContent = name;
+            const state = el("span", "reference-chat-state");
+            button.append(label, state);
+            button.addEventListener("click", () => {
+                if (channel === "all" && this.channel === "all" && this.opened) {
+                    this.setOpen(false);
+                    return;
+                }
+                this.channel = channel;
+                this.refreshForm();
+                this.redraw();
+                this.setOpen(true);
+            });
+            this.filterButtons.set(channel, button);
+            this.filterStates.set(channel, state);
+            this.filters.append(button);
+        }
+        this.root.append(this.filters, this.bar, this.ticker, this.panel);
         document.body.append(this.root);
         // Enter opens the box to type in, when there's a party to talk to
         window.addEventListener("keydown", (e) => {
@@ -93,6 +137,30 @@ export class Chat {
         new ResizeObserver(() => this.measure()).observe(this.root);
         session.onChat = (line) => this.heard(line);
         this.setOpen(settings.chatOpen, false);
+    }
+
+    private get opened(): boolean {
+        return this.referenceLayout ? this.referenceOpen : settings.chatOpen;
+    }
+
+    get isOpen(): boolean {
+        return this.opened;
+    }
+
+    close(): void {
+        if (this.opened) this.setOpen(false);
+    }
+
+    // The floating reference HUD starts with only its top buttons showing.
+    // The guild's saved chat preference is kept independently.
+    setReferenceLayout(enabled: boolean): void {
+        if (enabled === this.referenceLayout) return;
+        this.referenceLayout = enabled;
+        this.channel = "all";
+        this.root.classList.toggle("reference-chat", enabled);
+        this.setOpen(enabled ? false : settings.chatOpen, false);
+        this.refreshForm();
+        this.redraw();
     }
 
     // Shown in a run, or in a co-op room's lobby; the box to type in only
@@ -114,7 +182,7 @@ export class Chat {
     // The party changed (joined, left, a run started): who can be talked to
     refreshForm(): void {
         const party = this.session.room !== undefined;
-        this.form.hidden = !party;
+        this.form.hidden = !party || (this.referenceLayout && this.channel !== "all" && this.channel !== "clan");
         this.input.placeholder = party ? "Say something to your party" : "";
         if (!party && document.activeElement === this.input) {
             this.input.blur();
@@ -127,19 +195,33 @@ export class Chat {
         this.add({ kind: "game", text, at: performance.now() });
     }
 
+    // The client's Friends tab opens the same chat used by Enter.
+    openForParty(): void {
+        if (this.referenceLayout) {
+            this.channel = "clan";
+            this.refreshForm();
+            this.redraw();
+        }
+        this.setOpen(true);
+        if (!this.form.hidden) {
+            this.input.focus();
+        }
+    }
+
     private heard(line: ChatLine): void {
         if (line.system) {
             this.add({ kind: "system", text: line.text, at: performance.now() });
             return;
         }
         this.add({ kind: "party", text: line.text, from: line.from, name: line.name, at: performance.now() });
-        if (!settings.chatOpen && line.from !== this.session.id) {
+        if (!this.opened && line.from !== this.session.id) {
             this.unread++;
             this.renderBar();
         }
     }
 
     private send(): void {
+        if (this.form.hidden) return;
         const text = this.input.value.trim();
         if (!text) {
             this.input.blur();
@@ -163,7 +245,13 @@ export class Chat {
             this.entries.shift();
         }
         const stuck = this.log.scrollTop + this.log.clientHeight >= this.log.scrollHeight - 4;
-        this.log.append(this.line(entry));
+        const scrollTop = this.log.scrollTop;
+        if (this.referenceLayout) {
+            this.redraw();
+            if (!stuck) this.log.scrollTop = scrollTop;
+        } else {
+            this.log.append(this.line(entry));
+        }
         while (this.log.childElementCount > CHAT_KEEP) {
             this.log.firstElementChild?.remove();
         }
@@ -176,9 +264,11 @@ export class Chat {
     }
 
     private setOpen(open: boolean, save = true): void {
-        settings.chatOpen = open;
-        if (save) {
-            saveSettings();
+        if (this.referenceLayout) {
+            this.referenceOpen = open;
+        } else {
+            settings.chatOpen = open;
+            if (save) saveSettings();
         }
         this.root.classList.toggle("open", open);
         this.panel.hidden = !open;
@@ -196,18 +286,42 @@ export class Chat {
     // The bar: a word on how to talk, and folded, what's been missed (the
     // newest lines show under it, renderTicker's)
     private renderBar(): void {
-        const open = settings.chatOpen;
+        const open = this.opened;
         const party = this.session.room !== undefined;
         const coarse = window.matchMedia("(pointer: coarse)").matches;
-        this.latest.textContent = party ? (coarse ? "tap to talk" : "Enter to talk") : open ? "" : "game messages";
+        this.latest.textContent = party && !this.form.hidden ? (coarse ? "tap to talk" : "Enter to talk") : open ? "" : "game messages";
         this.badge.textContent = !open && this.unread > 0 ? String(this.unread) : "";
         this.badge.hidden = open || this.unread === 0;
+        this.renderFilters();
+    }
+
+    private renderFilters(): void {
+        const party = this.session.room !== undefined;
+        const states: Record<Channel, string> = {
+            all: !this.opened && this.unread ? String(this.unread) : "",
+            game: "On",
+            public: "Off",
+            private: "Off",
+            clan: party ? "On" : "Off",
+            trade: "Off",
+            about: "",
+        };
+        for (const [channel, button] of this.filterButtons) {
+            const selected = this.opened && this.channel === channel;
+            button.classList.toggle("selected", selected);
+            button.setAttribute("aria-pressed", String(selected));
+            const state = this.filterStates.get(channel)!;
+            state.textContent = states[channel];
+            state.classList.toggle("on", states[channel] === "On");
+            state.classList.toggle("off", states[channel] === "Off");
+        }
+        this.filterButtons.get("all")?.setAttribute("aria-expanded", String(this.opened));
     }
 
     // Folded, the last few lines show under the bar for a moment, as the
     // messages over the run did
     private renderTicker(): void {
-        if (settings.chatOpen || !this.active || this.root.classList.contains("docked")) {
+        if (this.opened || this.referenceLayout || !this.active || this.root.classList.contains("docked")) {
             this.ticker.replaceChildren();
             return;
         }
@@ -244,7 +358,25 @@ export class Chat {
 
     // Lines drawn again (a crown has just checked out)
     private redraw(): void {
-        this.log.replaceChildren(...this.entries.map((e) => this.line(e)));
+        const visible = this.referenceLayout ? this.entries.filter((entry) =>
+            this.channel === "all" || (this.channel === "game" && entry.kind !== "party") || (this.channel === "clan" && entry.kind === "party"),
+        ) : this.entries;
+        this.log.replaceChildren(...visible.map((e) => this.line(e)));
+        if (this.referenceLayout && visible.length === 0) {
+            const note = el("div", "reference-chat-empty");
+            const messages: Record<Channel, string> = {
+                all: "No messages yet.",
+                game: "Your game messages appear here.",
+                public: "Public chat is unavailable. Use Clan to talk with your current party.",
+                private: "Private messaging is unavailable. Your friends and party are listed in the Friends panel.",
+                clan: this.session.room ? "Your party's messages appear here. Type below to talk to the party." : "Join a party at the guild to chat with friends here.",
+                trade: "Trade chat is unavailable. Use the bank and trader's item controls to trade.",
+                about: "Click a top button to open this chat box; click All again or the Chat bar to close it. Clan shows your party's messages. Public, Private and Trade are unavailable. Move with the left stick or WASD; click ground to walk. The minimap opens the full map, where discovered ground can be selected as a destination.",
+            };
+            note.textContent = messages[this.channel];
+            this.log.append(note);
+        }
+        this.log.setAttribute("aria-label", this.referenceLayout ? `${this.channel === "clan" ? "Party" : this.channel[0].toUpperCase() + this.channel.slice(1)} chat messages` : "Chat messages");
         this.log.scrollTop = this.log.scrollHeight;
         this.renderTicker();
     }
@@ -278,7 +410,7 @@ export class Chat {
         } else if (docked) {
             document.body.append(this.root);
             this.root.classList.remove("docked");
-            this.panel.hidden = !settings.chatOpen;
+            this.panel.hidden = !this.opened;
         }
         this.renderTicker();
         this.measure();

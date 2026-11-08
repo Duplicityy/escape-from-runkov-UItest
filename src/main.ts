@@ -1,4 +1,7 @@
 import * as THREE from "three";
+import "./ui/client.css";
+import "./ui/reference-chat.css";
+import "./ui/reference-touch.css";
 
 import { COINS, ITEMS, PRIZES, SLOTS, rollGear, rollShopStock } from "./content/items";
 import { TASKS } from "./content/tasks";
@@ -17,6 +20,7 @@ import { GRAVE_RUNS, Grave, ItemStack, activeSlot, loadSave, loadedSlot, packSiz
 import { settings } from "./game/settings";
 import { isTouch } from "./ui/touch";
 import { UI } from "./ui/ui";
+import { GamepadControls } from "./ui/gamepad";
 
 const canvas = document.getElementById("game") as HTMLCanvasElement;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -42,6 +46,28 @@ const session = new Session();
 // The character in Lumbridge's courtyard behind the guild's screens
 const menu = new MenuScene(renderer);
 const ui = new UI(document.getElementById("ui")!, save, menu, session, { startRun });
+const gamepad = new GamepadControls({
+    run: () => run,
+    action: (action) => ui.controllerAction(action),
+    modal: () => ui.controllerModal,
+    mapOpen: () => ui.controllerMapOpen,
+    mapInput: (x, y, panX, panY, zoom, dt) => ui.controllerMapInput(x, y, panX, panY, zoom, dt),
+    mapConfirm: () => ui.controllerMapConfirm(),
+    message: (text) => ui.message(text),
+});
+gamepad.start();
+window.addEventListener("pagehide", gamepad.stop);
+window.addEventListener("pageshow", () => gamepad.start());
+window.__runkovNativeBack = () => {
+    if (ui.controllerAction("back")) return true;
+    if (run && !run.ended) return ui.controllerAction("pause");
+    return false;
+};
+window.__runkovNativePause = () => {
+    run?.releaseControllerInput();
+    if (run?.controlsEnabled) ui.controllerAction("pause");
+    window.dispatchEvent(new Event("blur"));
+};
 if (wiped) {
     ui.notice = "This version starts everyone fresh: the save from before it has been cleared.";
 }

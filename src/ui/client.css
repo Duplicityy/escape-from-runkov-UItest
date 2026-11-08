@@ -1,0 +1,305 @@
+/* The supplied reference: floating map and orbs, split stone icon rails,
+   and the world across the whole viewport. Pages only open on demand. */
+.reference-client {
+    --ref-button: clamp(34px, 8.12vh, 48px);
+    --ref-gap: clamp(3px, .68vh, 4px);
+    --ref-edge: clamp(8px, 1vw, 13px);
+    --ref-map: clamp(104px, 25vh, 148px);
+    --ref-orb-width: clamp(54px, 12.5vh, 74px);
+    --ref-orb-height: clamp(27px, 6.6vh, 39px);
+    --ref-camera-height: clamp(32px, 7.45vh, 44px);
+}
+
+.reference-client .client-tabs {
+    position: absolute;
+    inset: 0;
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border: 0;
+    pointer-events: none;
+}
+
+.reference-client .client-tabs-left,
+.reference-client .client-tabs-right {
+    position: absolute;
+    bottom: calc(15px + var(--safe-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: var(--ref-gap);
+    width: var(--ref-button);
+    pointer-events: auto;
+    z-index: 21;
+}
+.reference-client .client-tabs-left { left: calc(var(--ref-edge) + env(safe-area-inset-left, 0px)); }
+.reference-client .client-tabs-right { right: calc(var(--ref-edge) + env(safe-area-inset-right, 0px)); }
+
+.reference-client .client-tab {
+    position: relative;
+    width: var(--ref-button);
+    height: var(--ref-button);
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 3px solid #25251e;
+    border-radius: 11px;
+    background: linear-gradient(145deg, #8c8770, #66634f 34%, #585340 70%, #6c6650);
+    box-shadow: inset 1px 2px 1px #b2aa8b, inset -2px -2px 2px #38382d, 1px 2px 2px #000b;
+    color: #e2d4a8;
+}
+.reference-client .client-tab:hover,
+.reference-client .client-tab.on {
+    background: linear-gradient(145deg, #999179, #75694d 45%, #665534);
+    border-color: #b3a575;
+    box-shadow: inset 1px 1px 2px #d3c598, inset -2px -2px 2px #3b3527, 1px 2px 3px #000a;
+}
+.reference-client .client-tab-symbol {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    filter: none;
+}
+.reference-client .client-tab-symbol > .icon-sprite { transform: scale(.85); }
+.reference-client .osrs-interface-icon { display: block; object-fit: contain; image-rendering: pixelated; pointer-events: none; user-select: none; }
+.reference-client .client-tab-symbol > .osrs-interface-icon { width: auto; height: auto; max-width: 32px; max-height: 32px; }
+.reference-client .client-tab-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.reference-client .client-minimap-frame {
+    position: absolute;
+    top: calc(11px + var(--safe-top, 0px));
+    right: calc(11px + env(safe-area-inset-right, 0px));
+    width: var(--ref-map);
+    height: var(--ref-map);
+    pointer-events: none;
+    z-index: 9;
+}
+.reference-client .client-minimap-frame .minimap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 3px ridge #a29b75;
+    border-radius: 50%;
+    background: #171b13;
+    box-shadow: 0 0 0 1px #34352a, 0 2px 3px #0009;
+    image-rendering: pixelated;
+    pointer-events: auto;
+    cursor: pointer;
+}
+.reference-client .client-compass {
+    position: absolute;
+    overflow: hidden;
+    top: 0;
+    left: calc(var(--ref-orb-height) * -.42);
+    width: var(--ref-orb-height);
+    height: var(--ref-orb-height);
+    padding: 0;
+    border: 3px ridge #9d997d;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 30%, #b6b6a0, #77796b 48%, #45483b 70%);
+    box-shadow: 1px 2px 2px #0009;
+    color: #932f30;
+    font-size: clamp(14px, 3vh, 18px);
+    pointer-events: auto;
+}
+.reference-client .client-compass .osrs-interface-icon { width: 100%; height: 100%; }
+.reference-client .client-meters {
+    position: absolute;
+    right: calc(100% + 9px);
+    top: calc(var(--ref-map) * .29);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    pointer-events: auto;
+}
+.reference-client .client-orb {
+    --orb-fill: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: var(--ref-orb-width);
+    height: var(--ref-orb-height);
+    padding: 0 0 0 7px;
+    border: 2px solid #55533d;
+    border-radius: 5px 24px 24px 5px;
+    background: linear-gradient(#565949, #414334 60%, #393a2f);
+    box-shadow: inset 1px 1px #8b8c69, 0 1px 2px #000b;
+    text-align: left;
+    pointer-events: auto;
+}
+.reference-client .client-orb .fill { display: none; }
+.reference-client .client-orb .label { position: relative; z-index: 2; width: calc(var(--ref-orb-width) - var(--ref-orb-height) - 4px); font: normal clamp(13px, 3.05vh, 18px)/1 "OSRS Bold", sans-serif; color: #21e521; text-align: left; text-shadow: 1px 1px #0a1608; white-space: nowrap; }
+.reference-client .client-orb-icon { position: absolute; top: -1px; right: -1px; width: calc(var(--ref-orb-height) - 2px); height: calc(var(--ref-orb-height) - 2px); display: flex; align-items: center; justify-content: center; border-radius: 50%; background: conic-gradient(#c4bd77 var(--orb-fill), #51503a 0); }
+.reference-client .client-orb-icon::before { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: #424536; box-shadow: inset 0 0 3px #111; }
+.reference-client .client-orb-icon .osrs-interface-icon { position: relative; width: auto; height: auto; max-width: 23px; max-height: 23px; }
+.reference-client .client-orb.ready { border-color: #9c9159; }
+.reference-client .client-orb.prayer.on { box-shadow: inset 0 0 0 1px #d6c86c, 0 0 5px #dcba6144; }
+.reference-client .client-orb.pack .label { font-size: clamp(12px, 3.05vh, 18px); }
+.reference-client .client-map-caption { position: absolute; top: calc(100% + 23px); right: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: auto; }
+.reference-client .client-world-label { padding: 5px 10px; border-radius: 3px; background: #202520ce; font: normal 16px/20px "OSRS Plain", sans-serif; color: #d4d2bf; white-space: nowrap; }
+.reference-client .client-map-caption .clock { display: none; }
+.reference-client .client-map-caption .clock.urgent { display: block; margin: 0; padding: 3px 6px; font-size: 12px; white-space: nowrap; background: #292015dd; }
+
+.reference-client .client-camera {
+    position: absolute;
+    top: calc(14px + var(--safe-top, 0px));
+    right: calc(var(--ref-map) + var(--ref-orb-width) + 34px + env(safe-area-inset-right, 0px));
+    width: clamp(88px, 18.6vh, 110px);
+    height: var(--ref-camera-height);
+    padding: 0;
+    border: 2px solid #b8a879;
+    border-radius: 2px;
+    background: linear-gradient(#635f47, #6b6349);
+    box-shadow: inset 1px 1px #898168, 1px 2px 3px #0008;
+    color: #d6cfb5;
+    font-size: clamp(16px, 3.5vh, 20px);
+    z-index: 10;
+}
+.reference-client .client-camera-panel {
+    position: absolute;
+    top: calc(22px + var(--ref-camera-height) + var(--safe-top, 0px));
+    right: calc(var(--ref-map) + var(--ref-orb-width) + 34px + env(safe-area-inset-right, 0px));
+    width: 220px;
+    max-width: calc(100vw - 30px);
+    padding: 12px;
+    border: 3px ridge #988668;
+    background: #403b2e url(/ui/interface-bg.png);
+    box-shadow: 0 4px 15px #000b;
+    z-index: 20;
+    transform: none;
+}
+.reference-client .client-camera-panel[hidden] { display: none; }
+.reference-client .client-camera-panel h3 { margin: 0 0 10px; text-align: center; color: var(--orange); font-size: 18px; font-weight: normal; }
+.reference-client .client-camera-label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+.reference-client .client-camera-panel input { width: 100%; }
+.reference-client .client-camera-buttons { display: flex; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.reference-client .client-camera-buttons button { padding: 4px 12px; font-size: 14px; }
+.reference-client .client-camera-panel .hint { margin-top: 10px; font-size: 12px; }
+
+.reference-client .client-panel {
+    position: absolute;
+    top: auto;
+    bottom: calc(15px + var(--safe-bottom, 0px));
+    left: auto;
+    right: calc(var(--ref-edge) + var(--ref-button) + 10px + env(safe-area-inset-right, 0px));
+    width: 244px;
+    max-width: calc(100vw - 2 * var(--ref-button) - 36px);
+    max-height: calc(100dvh - var(--ref-map) - 84px - var(--safe-top, 0px) - var(--safe-bottom, 0px));
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: 12px 9px;
+    border: 6px solid #5e533e;
+    border-image: url(/ui/interface-border.png) 6 / 6px / 0 repeat;
+    background: #423a2c url(/ui/interface-bg.png);
+    box-shadow: 0 3px 14px #000b;
+    scrollbar-width: thin;
+    scrollbar-color: #8a7753 #282219;
+    z-index: 20;
+    transform: none;
+}
+.reference-client .client-panel[data-side="left"] { left: calc(var(--ref-edge) + var(--ref-button) + 10px + env(safe-area-inset-left, 0px)); right: auto; max-height: calc(100dvh - 82px - var(--safe-top, 0px) - var(--safe-bottom, 0px)); }
+.reference-client .client-panel[hidden] { display: none; }
+.reference-client .client-panel-close { position: absolute; right: 4px; top: 4px; width: 22px; height: 22px; padding: 0; font-size: 20px; line-height: 18px; border: 1px solid #7d6d4e; background: #3e3324; z-index: 1; }
+.reference-client .client-panel h3 { margin: 2px 0 10px; padding-right: 15px; text-align: center; color: var(--orange); font-size: 16px; font-weight: normal; }
+.reference-client .client-panel .hint { font-size: 13px; line-height: 17px; margin: 8px 0; }
+.reference-client .client-panel .pack-head { justify-content: space-between; padding-right: 22px; margin-bottom: 6px; }
+.reference-client .client-panel .pack-head h3 { padding: 0; margin: 0; font-size: 15px; }
+.reference-client .client-panel .pack-head button { padding: 2px 6px; font-size: 12px; }
+.reference-client .client-panel .slots { width: max-content; max-width: 100%; grid-template-columns: repeat(4, 44px); gap: 2px 7px; margin: 0 auto; padding: 4px 0; border: 0; background: transparent; }
+.reference-client .client-panel .slot { height: 36px; }
+.reference-client .client-equipment { margin: 0 auto 14px; grid-template-columns: repeat(3, 44px); gap: 5px 10px; justify-content: center; }
+.reference-client .client-equipment .equip-slot { width: 44px; height: 40px; min-width: 0; padding: 0; border: 1px solid #242017; box-shadow: inset 1px 1px 2px #0009, 1px 1px #8a775048; background: #28251e77; }
+.reference-client .client-equipment .none { border: 0; box-shadow: none; background: none; }
+.reference-client .client-equipment .slot-name { color: #a39170; font-size: 11px; }
+.reference-client .client-stat-list { margin: 12px 0; font-size: 14px; }
+.reference-client .client-stat-list > div { display: flex; justify-content: space-between; gap: 8px; padding: 4px 2px; border-bottom: 1px solid #75644755; }
+.reference-client .client-stat-list strong { color: #e9daaf; font-weight: normal; }
+.reference-client .client-prayer-points { text-align: center; color: #e4d491; margin: 10px 0; }
+.reference-client .client-prayers { display: flex; flex-direction: column; gap: 8px; }
+.reference-client .client-prayer { display: flex; align-items: center; gap: 8px; padding: 8px 6px; text-align: left; font-size: 14px; }
+.reference-client .client-prayer img { width: 24px; height: 24px; object-fit: contain; image-rendering: pixelated; }
+.reference-client .client-prayer span { flex: 1; }
+.reference-client .client-prayer small { color: #c4b58f; font: 12px "OSRS Small", sans-serif; }
+.reference-client .client-prayer.on { background: #61552c; box-shadow: inset 0 0 0 1px #e0c65d; }
+.reference-client .client-loot-total { display: flex; gap: 10px; align-items: center; justify-content: center; padding: 12px 2px; margin-bottom: 8px; background: #1b17144d; border: 1px solid #8a73533d; }
+.reference-client .client-loot-total > div { display: flex; flex-direction: column; gap: 3px; }
+.reference-client .client-loot-total strong { color: #ffe05e; font: normal 20px "OSRS Bold", sans-serif; }
+.reference-client .client-loot-total span { color: #bcad8d; font-size: 12px; }
+.reference-client .client-loot-row { display: flex; gap: 6px; align-items: center; border-bottom: 1px solid #7b654240; padding: 6px 0; }
+.reference-client .client-loot-row > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.reference-client .client-loot-row .name { color: #e2d2af; font-size: 14px; overflow-wrap: anywhere; }
+.reference-client .client-loot-row small { color: #baa986; font-size: 12px; }
+.reference-client .client-loot-row .coins { flex: none; font-size: 12px; color: #f4d45f; }
+.reference-client .client-loot-note { padding-top: 8px; border-top: 1px solid #75644755; }
+.reference-client .client-empty { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; color: #bdae8a; font-size: 14px; }
+.reference-client .client-empty-symbol { font-size: 38px; color: #a1874c; }
+.reference-client .client-empty strong { color: #ddc995; font-weight: normal; }
+.reference-client .client-weapon { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 2px; text-align: center; }
+.reference-client .client-weapon strong { font-weight: normal; color: #e4d0a0; }
+.reference-client .client-special-button { width: 100%; font-size: 14px; padding: 8px 4px; }
+.reference-client .client-special-button.ready { color: #d9ed83; background: #3a4624; }
+.reference-client .client-task { display: flex; flex-direction: column; gap: 4px; padding: 9px 2px; border-bottom: 1px solid #75644755; font-size: 14px; }
+.reference-client .client-task small { color: #d9bb64; }
+.reference-client .client-task.done { color: #7cbd5b; }
+.reference-client .client-task.done small { color: #9b9a7d; }
+.reference-client .client-panel .contract { margin: 10px 0; width: auto; max-width: 100%; }
+.reference-client .client-panel .contract-head,
+.reference-client .client-panel .contract-foot { flex-wrap: wrap; }
+.reference-client .client-friend-row { display: flex; flex-direction: column; gap: 3px; margin: 8px 0; font-size: 14px; }
+.reference-client .client-friend-row small { color: #a4987c; }
+.reference-client .client-friend-row.online { color: #84c86b; }
+.reference-client .client-character-name { text-align: center; color: #f5d383; font-size: 21px; margin: 20px 0; }
+.reference-client .client-music-label { display: flex; justify-content: space-between; margin: 20px 0 8px; font-size: 14px; }
+.reference-client .client-panel input[type="range"] { width: 100%; margin-bottom: 16px; }
+.reference-client .spell-page { width: auto; max-width: none; }
+.reference-client .spellbook { width: auto; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 4px; }
+.reference-client .spell { min-width: 0; width: auto; height: 40px; }
+.reference-client .spell img { width: 36px; height: 36px; }
+.reference-client .book-tabs button { padding: 4px 8px; }
+.reference-client .spell-detail { width: auto; }
+
+.reference-client .hotbar { position: absolute; display: flex; left: 50%; right: auto; bottom: calc(13px + var(--safe-bottom, 0px)); gap: 4px; transform: translateX(-50%); transform-origin: center bottom; }
+.reference-client .hotslot { width: 34px; height: 34px; border: 2px ridge #8c7b54; background: #514d3dd9; box-shadow: 1px 2px 3px #0007; }
+.reference-client .hotslot.empty { display: none; }
+.reference-client .hotslot .icon-sprite { transform: scale(.78); }
+.reference-client .hotslot .key { top: -1px; left: 1px; font-size: 9px; line-height: 11px; }
+.reference-client .hotslot .count { right: 1px; bottom: 0; font-size: 10px; }
+.reference-client .hotslot .timer { font-size: 10px; }
+.reference-client .prompt { left: 50%; bottom: calc(57px + var(--safe-bottom, 0px)); max-width: calc(100vw - 170px); padding: 5px 10px; font-size: 14px; text-align: center; }
+.reference-client > .party { position: absolute; left: 14px; top: calc(76px + var(--safe-top, 0px)); width: 190px; }
+.reference-client .boss-bar { top: calc(75px + var(--safe-top, 0px)); left: 50%; width: min(360px, 40vw); }
+.reference-client .touch-corner { display: none; }
+.reference-client .client-tab:focus-visible,
+.reference-client .client-orb:focus-visible,
+.reference-client .client-camera:focus-visible,
+.reference-client .client-panel :focus-visible,
+.reference-client .client-camera-panel :focus-visible,
+.gamepad-focus { outline: 3px solid #f0cf66 !important; outline-offset: 2px; }
+
+@media (max-height: 470px) {
+    .reference-client .client-tab { border-radius: 8px; border-width: 2px; }
+    .reference-client .client-tab-symbol { transform: scale(.83); }
+    .reference-client .client-meters { gap: 3px; }
+    .reference-client .client-orb { padding-left: 5px; }
+    .reference-client .client-orb-icon .osrs-interface-icon { max-width: 20px; max-height: 20px; }
+    .reference-client .client-map-caption { top: calc(100% + 9px); }
+    .reference-client .client-world-label { padding: 3px 7px; font-size: 13px; line-height: 17px; }
+    .reference-client .client-panel { width: 232px; padding: 10px 7px; }
+    .reference-client .client-panel .slots { gap: 2px 5px; }
+    .reference-client .client-panel .slot { height: 34px; }
+    .reference-client .client-camera-panel { width: 200px; }
+    .reference-client .hotbar { bottom: 10px; }
+}

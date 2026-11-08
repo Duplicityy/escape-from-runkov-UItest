@@ -101,6 +101,7 @@ import {
     tint,
 } from "./assets";
 import { assetUrl } from "./paths";
+import { LootTracker } from "./loot";
 import { REGEN_DELAY, REGEN_PER_SECOND, ammoScale, enemyHit, playerHit } from "./combat";
 import { Rng, makeRng } from "./dungeon";
 import {
@@ -126,6 +127,7 @@ import { playMusic } from "./music";
 import { PlayerLook, RUN_CLIP_SPEED } from "./player";
 import { isKept } from "./kit";
 import { Region, Tile, TileSet, loadRegion } from "./region";
+import { findWalkPath } from "./pathfinding";
 import { Character, Equipment, Grave, ItemStack } from "./save";
 import { ZOOM_MAX, ZOOM_MIN, saveSettings, settings } from "./settings";
 
@@ -376,6 +378,8 @@ type Pickup = {
     x: number;
     z: number;
     age: number;
+    // Items put down from a pack are transfers, not new world loot.
+    noLoot?: boolean;
 };
 
 // The soft round light behind a piece of gear on the ground, drawn once in
@@ -755,6 +759,7 @@ export class Run {
     inventory: ItemStack[];
     equipment: Equipment;
     coins: number;
+    readonly loot = new LootTracker();
     stats: GearStats;
     prompt = "";
     boss?: { name: string; hp: number; maxHp: number };
@@ -930,6 +935,12 @@ export class Run {
     // How far apart two fingers were at the pinch's last move
     private pinchFrom?: number;
 
+    // Click walking is an optional route through the existing free movement.
+    private walkPath: Tile[] = [];
+    private walkMarker?: THREE.LineSegments;
+    private walkStuckFor = 0;
+    private readonly worldRay = new THREE.Raycaster();
+
     private keys = new Set<string>();
     private wantAttack = false;
     // How much longer a press waits for the weapon to be ready
@@ -937,6 +948,13 @@ export class Run {
     // A touch screen's stick (ui/touch.ts): which way and how far, -1 to 1,
     // added to the keys
     readonly stick = { x: 0, z: 0 };
+    // Separate from touch input so releasing a controller cannot release a
+    // thumb still holding the screen's movement stick.
+    private readonly controllerStick = { x: 0, z: 0 };
+    private controllerInteract = false;
+    private controllerAttack = false;
+    private touchAttack = false;
+    private readonly aimInput = { x: 0, z: 0 };
     // A flow field to each hero enemies can be after, worked out every
     // quarter second (one hero outside co-op)
     private flows = new Map<string, Int16Array>();
@@ -1235,6 +1253,11 @@ export class Run {
         ctx.fill();
     }
 
+    // Map navigation shares the fog-of-war check used by map markers.
+    isDiscovered(x: number, z: number): boolean {
+        return Number.isFinite(x) && Number.isFinite(z) && this.isExplored(x, z);
+    }
+
     private isExplored(x: number, z: number): boolean {
         const g = this.region;
         const tx = g.tileX(x) - g.baseX;
@@ -1353,6 +1376,9 @@ export class Run {
                 dot(m.x, m.z, "#9a9a9a", 2);
             }
         }
+        if (this.walkDestination) {
+            dot(this.walkDestination.x, this.walkDestination.z, "#ffd040", 4);
+        }
         if (!this.done) {
             dot(this.px, this.pz, "#ffffff", 3);
         }
@@ -1450,6 +1476,9 @@ export class Run {
             } else if (m.corpse) {
                 dot(m.x, m.z, "#9a9a9a", 0.8);
             }
+        }
+        if (this.walkDestination) {
+            dot(this.walkDestination.x, this.walkDestination.z, "#ffd040", 1.1, true);
         }
         if (!this.done) {
             // You, with which way you face
@@ -2126,10 +2155,18 @@ export class Run {
             this.paused = paused;
         }
         this.keys.clear();
+        if (paused) this.cancelWalk();
+        this.fingers.clear();
+        this.turnPointer = undefined;
+        this.pinchFrom = undefined;
         this.wantAttack = false;
         this.attackAsked = 0;
         this.stick.x = 0;
         this.stick.z = 0;
+        this.releaseControllerInput();
+        this.touchAttack = false;
+        this.aimInput.x = 0;
+        this.aimInput.z = 0;
         if (!paused) {
             // The time spent paused isn't a frame
             this.clock.getDelta();
@@ -2414,12 +2451,67 @@ export class Run {
         this.zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom));
     }
 
+    get controlsEnabled(): boolean {
+        return !this.paused && !this.menuOpen && !this.dead && !this.done && !this.ended;
+    }
+
+    setControllerMove(x: number, z: number): void {
+        const length = Math.hypot(x, z);
+        if (!this.controlsEnabled || !Number.isFinite(length)) {
+            this.controllerStick.x = this.controllerStick.z = 0;
+            return;
+        }
+        this.controllerStick.x = x / Math.max(1, length);
+        this.controllerStick.z = z / Math.max(1, length);
+        if (length > 0) this.cancelWalk();
+    }
+
+    setControllerInteract(down: boolean): void {
+        this.controllerInteract = down && this.controlsEnabled;
+        if (this.controllerInteract) this.cancelWalk();
+    }
+
+    requestAttack(down = true): void {
+        this.controllerAttack = down && this.controlsEnabled;
+    }
+
+    setTouchAttack(down: boolean): void {
+        this.touchAttack = down && this.controlsEnabled;
+    }
+
+    releaseControllerInput(): void {
+        this.controllerStick.x = this.controllerStick.z = 0;
+        this.controllerInteract = false;
+        this.controllerAttack = false;
+    }
+
+    orbitCamera(dx: number, dy: number): void {
+        if (this.controlsEnabled && Number.isFinite(dx) && Number.isFinite(dy)) this.dragCamera(dx, dy);
+    }
+
+    resetCamera(): void {
+        this.cameraYaw = 0;
+        this.cameraPitch = BASE_PITCH;
+    }
+
+    // The right touch stick aims in screen directions. A swing still faces
+    // its selected target and uses the same range, cooldown and hit rules.
+    aimDirection(x: number, z: number): void {
+        if (!this.controlsEnabled || !Number.isFinite(x) || !Number.isFinite(z)) {
+            this.aimInput.x = this.aimInput.z = 0;
+            return;
+        }
+        this.aimInput.x = x;
+        this.aimInput.z = z;
+    }
+
     // A key pressed or let go of by a touch screen's button
     press(code: string, down: boolean): void {
         if (this.paused || this.menuOpen || this.done) {
             return;
         }
         if (down) {
+            if (this.isWalkKey(code) || code === "KeyE") this.cancelWalk();
             this.keys.add(code);
             if (code === "Space") {
                 this.wantAttack = true;
@@ -2430,6 +2522,9 @@ export class Run {
     }
 
     stop(): void {
+        this.cancelWalk();
+        this.releaseControllerInput();
+        this.touchAttack = false;
         if (this.frame !== undefined) {
             cancelAnimationFrame(this.frame);
         }
@@ -2469,6 +2564,7 @@ export class Run {
         if ((e.target as HTMLElement).tagName === "INPUT" || this.paused || this.menuOpen || this.done) {
             return;
         }
+        if (this.isWalkKey(e.code) || e.code === "KeyE") this.cancelWalk();
         this.keys.add(e.code);
         if (e.code === "Space") {
             this.wantAttack = true;
@@ -2501,10 +2597,11 @@ export class Run {
     };
 
     private onMouseDown = (e: PointerEvent): void => {
-        const onWorld = (e.target as HTMLElement).tagName === "CANVAS";
-        // A finger on the world swings as it lands, as a click does, and can
-        // go on to drag the camera round; a second makes it a pinch
-        if (e.pointerType === "touch" && onWorld) {
+        const onWorld = e.target === this.renderer.domElement;
+        if (!onWorld || this.paused || this.menuOpen || this.done || this.dead) return;
+        // A tap walks when released; dragging and pinching only move the
+        // camera, so rotating a touch view never starts an accidental route.
+        if (e.pointerType === "touch") {
             this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY, fromX: e.clientX, fromY: e.clientY, dragged: false });
             if (this.fingers.size > 1) {
                 for (const f of this.fingers.values()) {
@@ -2512,6 +2609,7 @@ export class Run {
                 }
                 this.pinchFrom = this.fingerSpread();
             }
+            return;
         }
         if (e.button === 1 && onWorld) {
             e.preventDefault();
@@ -2526,14 +2624,95 @@ export class Run {
             }
             return;
         }
-        if (e.button === 0 && !this.paused && !this.menuOpen && onWorld) {
-            this.wantAttack = true;
+        if (e.button === 0) {
+            this.clickWorld(e.clientX, e.clientY);
         }
     };
 
+    private isWalkKey(code: string): boolean {
+        return ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(code);
+    }
+
+    // Public so an interface (for example, a minimap) can use the same route.
+    walkTo(x: number, z: number): boolean {
+        return this.planWalk(x, z, false);
+    }
+
+    // The map is paused while choosing a route. Queue it now, and it starts
+    // only when the interface resumes the run. Fogged destinations stay shut.
+    walkToMap(x: number, z: number): boolean {
+        if (!this.isDiscovered(x, z)) return false;
+        if (!this.planWalk(x, z, true)) return false;
+        const destination = this.walkDestination!;
+        if (!this.isDiscovered(destination.x, destination.z)) {
+            this.cancelWalk();
+            return false;
+        }
+        return true;
+    }
+
+    private planWalk(x: number, z: number, fromMap: boolean): boolean {
+        if ((!fromMap && (this.paused || this.menuOpen)) || this.done || this.dead || this.extracting > 0 || !Number.isFinite(x) || !Number.isFinite(z)) return false;
+        this.cancelWalk();
+        this.walkPath = findWalkPath(this.region, { x: this.px, z: this.pz }, { x, z }, COLLISION_RADIUS);
+        const destination = this.walkDestination;
+        if (!destination) return false;
+        if (!this.walkMarker) {
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-0.22, 0, -0.22), new THREE.Vector3(0.22, 0, 0.22),
+                new THREE.Vector3(-0.22, 0, 0.22), new THREE.Vector3(0.22, 0, -0.22),
+            ]);
+            const material = new THREE.LineBasicMaterial({ color: 0xffd040, depthTest: false });
+            this.disposables.push(geometry, material);
+            this.walkMarker = new THREE.LineSegments(geometry, material);
+            this.walkMarker.renderOrder = 10;
+            this.scene.add(this.walkMarker);
+        }
+        this.walkMarker.position.set(destination.x, this.groundY(destination.x, destination.z) + 0.06, destination.z);
+        this.walkMarker.visible = true;
+        return true;
+    }
+
+    get walkDestination(): Readonly<Tile> | undefined {
+        return this.walkPath[this.walkPath.length - 1];
+    }
+
+    cancelWalk(): void {
+        this.walkPath = [];
+        this.walkStuckFor = 0;
+        if (this.walkMarker) this.walkMarker.visible = false;
+    }
+
+    private clickWorld(clientX: number, clientY: number): void {
+        if (this.paused || this.menuOpen || this.done || this.dead) return;
+        const rect = this.renderer.domElement.getBoundingClientRect();
+        this.camera.updateMatrixWorld();
+        this.worldRay.setFromCamera(new THREE.Vector2(
+            (clientX - rect.left) / rect.width * 2 - 1,
+            1 - (clientY - rect.top) / rect.height * 2,
+        ), this.camera);
+        const visible = (object: THREE.Object3D): boolean => {
+            for (let part: THREE.Object3D | null = object; part; part = part.parent) {
+                if (!part.visible) return false;
+            }
+            return true;
+        };
+        const terrain = this.map && this.worldRay.intersectObject(this.map, true).find((hit) => visible(hit.object));
+        const actors = this.enemies.filter((enemy) => enemy.state !== "dead").map((enemy) => enemy.actor.root);
+        const enemy = this.worldRay.intersectObjects(actors, true).find((hit) => visible(hit.object));
+        if (enemy && (!terrain || enemy.distance < terrain.distance + 0.05)) {
+            // Keep a deliberate swing at passive enemies. The existing combat
+            // code still decides range, line of sight and the swing's target.
+            this.cancelWalk();
+            this.wantAttack = true;
+        } else if (terrain) {
+            this.walkTo(terrain.point.x, terrain.point.z);
+        }
+    }
+
     // The browser's own middle-button scrolling stays off the world
     private onMiddleDown = (e: MouseEvent): void => {
-        if (e.button === 1 && (e.target as HTMLElement).tagName === "CANVAS") {
+        if (e.button === 1 && e.target === this.renderer.domElement) {
             e.preventDefault();
         }
     };
@@ -2574,6 +2753,10 @@ export class Run {
     };
 
     private onPointerUp = (e: PointerEvent): void => {
+        const finger = this.fingers.get(e.pointerId);
+        if (finger && !finger.dragged && e.type !== "pointercancel" && Math.hypot(e.clientX - finger.fromX, e.clientY - finger.fromY) <= TAP_SLOP) {
+            this.clickWorld(e.clientX, e.clientY);
+        }
         if (e.pointerId === this.turnPointer) {
             this.turnPointer = undefined;
         }
@@ -2689,6 +2872,7 @@ export class Run {
         }
         this.coins += mine;
         this.coinsFound += mine;
+        this.loot.record(COINS, mine);
         this.hooks.onMessage(
             by === this.coop?.heroes.find((h) => h.id === this.self.id)?.name
                 ? `You find ${count.toLocaleString()} coins: ${mine.toLocaleString()} of them are your share.`
@@ -3277,6 +3461,7 @@ export class Run {
     private updatePlayer(dt: number): void {
         const p = this.player;
         if (this.done || this.dead) {
+            this.cancelWalk();
             this.overhead?.show("none", this.px, 0, this.pz);
         }
         if (this.done) {
@@ -3308,12 +3493,37 @@ export class Run {
         if (this.keys.has("KeyD") || this.keys.has("ArrowRight")) dx += 1;
         dx += this.stick.x;
         dz += this.stick.z;
+        // Mouse, keyboard and touch keep priority when inputs overlap.
+        if (dx === 0 && dz === 0) {
+            dx = this.controllerStick.x;
+            dz = this.controllerStick.z;
+        }
         // Up on the keys or the stick is away from the camera, however it's
         // turned (the turn of the camera's offset, done to the way)
         if (this.cameraYaw !== 0) {
             const cos = Math.cos(this.cameraYaw);
             const sin = Math.sin(this.cameraYaw);
             [dx, dz] = [dx * cos + dz * sin, dz * cos - dx * sin];
+        }
+        const manualMove = dx !== 0 || dz !== 0;
+        let walkDistance = Infinity;
+        if (manualMove) {
+            this.cancelWalk();
+        } else if (!this.menuOpen) {
+            while (this.walkPath.length > 0) {
+                const waypoint = this.walkPath[0];
+                walkDistance = Math.hypot(waypoint.x - this.px, waypoint.z - this.pz);
+                // Reach the actual waypoint before turning. Cutting even a
+                // small fraction off a corner can lose the wall clearance
+                // that the planned next segment was checked against.
+                if (walkDistance > 0.00001) {
+                    dx = waypoint.x - this.px;
+                    dz = waypoint.z - this.pz;
+                    break;
+                }
+                this.walkPath.shift();
+            }
+            if (this.walkPath.length === 0) this.cancelWalk();
         }
         const moving = dx !== 0 || dz !== 0;
         const swinging = this.swingIn >= 0;
@@ -3345,7 +3555,14 @@ export class Run {
             dx /= len;
             dz /= len;
             const speed = this.speed();
-            [this.px, this.pz] = this.moveCircle(this.px, this.pz, dx * speed * dt, dz * speed * dt, COLLISION_RADIUS);
+            const step = Math.min(speed * dt, walkDistance);
+            const beforeX = this.px;
+            const beforeZ = this.pz;
+            [this.px, this.pz] = this.moveCircle(this.px, this.pz, dx * step, dz * step, COLLISION_RADIUS);
+            if (this.walkPath.length > 0) {
+                this.walkStuckFor = Math.hypot(this.px - beforeX, this.pz - beforeZ) < step * 0.1 ? this.walkStuckFor + dt : 0;
+                if (this.walkStuckFor > 0.5) this.cancelWalk();
+            }
             if (!swinging) {
                 this.facing = Math.atan2(dx, dz);
                 p.play("run", { speed: RUN_CLIP_SPEED });
@@ -3371,7 +3588,7 @@ export class Run {
             this.attackAsked = ATTACK_BUFFER;
             this.wantAttack = false;
         }
-        const asked = this.attackAsked > 0;
+        const asked = this.attackAsked > 0 || this.controllerAttack || this.touchAttack;
         if (this.attackCooldown <= 0 && !swinging) {
             if (asked || this.nearestEnemy(this.stats.range, true, false)) {
                 this.beginSwing(asked);
@@ -3381,6 +3598,11 @@ export class Run {
         this.attackAsked = Math.max(0, this.attackAsked - dt);
 
         const groundY = this.groundY(this.px, this.pz);
+        if (this.swingIn < 0 && Math.hypot(this.aimInput.x, this.aimInput.z) > 0.15) {
+            const cos = Math.cos(this.cameraYaw);
+            const sin = Math.sin(this.cameraYaw);
+            this.facing = Math.atan2(this.aimInput.x * cos + this.aimInput.z * sin, this.aimInput.z * cos - this.aimInput.x * sin);
+        }
         p.root.position.set(this.px, groundY, this.pz);
         p.root.rotation.y = this.facing;
         const top = groundY + p.height * this.character.size;
@@ -4930,7 +5152,7 @@ export class Run {
 
     // Something dropped here, scattered up to this far (a kill's drops a
     // little, a chest's not at all); the host tells the guests where it lay
-    private dropPickup(id: number, count: number, x: number, z: number, scatter = 0.8, uid = this.nextUid++): void {
+    private dropPickup(id: number, count: number, x: number, z: number, scatter = 0.8, uid = this.nextUid++, noLoot = false): void {
         // Its cell of the icon sheet, through the world's brightness curve, so
         // a dark icon reads on the ground
         const material = new THREE.SpriteMaterial({ map: iconTexture(id), transparent: true });
@@ -4947,7 +5169,7 @@ export class Run {
             }
         }
         if (this.coop?.role === "host") {
-            this.coop.send({ k: "drop", u: uid, i: id, n: count, x: round2(x), z: round2(z) } satisfies DownMessage);
+            this.coop.send({ k: "drop", u: uid, i: id, n: count, x: round2(x), z: round2(z), ...(noLoot ? { noLoot: 1 as const } : {}) } satisfies DownMessage);
         }
         const y = this.groundY(x, z);
         sprite.position.set(x, y + 0.5, z);
@@ -4998,7 +5220,7 @@ export class Run {
             }
             this.hooks.onMessage(`${item.name} gleams on the ground.`);
         }
-        this.pickups.push({ uid, id, count, sprite, shadow, beam, glow, x, z, age: 0 });
+        this.pickups.push({ uid, id, count, sprite, shadow, beam, glow, x, z, age: 0, noLoot });
     }
 
     // A pickup off the ground, whoever took it
@@ -5019,10 +5241,11 @@ export class Run {
     }
 
     // Something into the pack (or the purse): whether it went, with a word
-    private takeItem(id: number, count: number): boolean {
+    private takeItem(id: number, count: number, noLoot = false): boolean {
         if (id === COINS) {
             this.coins += count;
             this.coinsFound += count;
+            if (!noLoot) this.loot.record(id, count);
             return true;
         }
         if (!canCarry(this.inventory, id, count)) {
@@ -5039,6 +5262,7 @@ export class Run {
             }
             return false;
         }
+        if (!noLoot) this.loot.record(id, count);
         if (id === CLUE_SCROLL) {
             this.setClue();
         } else if (id === VAULT_KEY) {
@@ -5121,7 +5345,7 @@ export class Run {
                     this.noRoom(p.id);
                     continue;
                 }
-                if (!this.takeItem(p.id, room)) {
+                if (!this.takeItem(p.id, room, p.noLoot)) {
                     continue;
                 }
                 if (room < p.count) {
@@ -5150,7 +5374,7 @@ export class Run {
             return;
         }
         const near = (x: number, z: number) => Math.hypot(x - this.px, z - this.pz) < 1.6;
-        const pressed = this.keys.has("KeyE");
+        const pressed = this.keys.has("KeyE") || this.controllerInteract;
 
         // A mate who's down: held E at their side brings them back up
         const downed = this.downedMateNear();
@@ -5964,7 +6188,7 @@ export class Run {
                 break;
             }
             case "drop":
-                this.dropPickup(message.i, message.n, message.x, message.z, 0, message.u);
+                this.dropPickup(message.i, message.n, message.x, message.z, 0, message.u, !!message.noLoot);
                 break;
             case "balloons":
                 if (Array.isArray(message.b)) {
@@ -5990,7 +6214,7 @@ export class Run {
                 this.requested.delete(message.u);
                 if (p) {
                     if (message.to === me) {
-                        this.takeItem(p.id, message.n ?? p.count);
+                        this.takeItem(p.id, message.n ?? p.count, p.noLoot);
                         this.hooks.onChanged();
                     }
                     // Part taken: the rest stays where it is
@@ -6175,7 +6399,7 @@ export class Run {
             }
             case "drop":
                 if (message.n > 0 && message.n <= 1000) {
-                    this.dropPickup(message.i, message.n, message.x, message.z, 0);
+                    this.dropPickup(message.i, message.n, message.x, message.z, 0, undefined, true);
                 }
                 break;
             case "open": {
@@ -6331,7 +6555,7 @@ export class Run {
         if (this.coop?.role === "guest") {
             this.coop.send({ k: "drop", i: id, n: count, x: round2(dx), z: round2(dz) } satisfies UpMessage);
         } else {
-            this.dropPickup(id, count, dx, dz, 0);
+            this.dropPickup(id, count, dx, dz, 0, undefined, true);
         }
         this.hooks.onMessage(`You drop ${count > 1 ? count + " " : ""}${item.name}.`);
         this.hooks.onChanged();
